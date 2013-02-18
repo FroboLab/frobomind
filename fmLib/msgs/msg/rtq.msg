@@ -1,0 +1,7 @@
+Header header
+int32 BrushlessCounter
+int32 BrushlessCounterRelative
+float64 BatteryVoltage
+float64 BatteryAmpere
+float64 TrackDistance
+float64 TrackDistanceRelative
