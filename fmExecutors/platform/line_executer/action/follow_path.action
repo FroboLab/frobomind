@@ -1,0 +1,8 @@
+#goal
+nav_msgs/Path path
+---
+#result
+geometry_msgs/PoseStamped resulting_pose
+---
+# feedback
+uint16 reached_pose_nr

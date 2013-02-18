@@ -1,0 +1,7 @@
+uint8 UP=1
+uint8 DOWN=0
+uint8 direction
+float64 timeout
+---
+uint8 percent_complete
+---
