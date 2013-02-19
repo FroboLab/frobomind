@@ -32,7 +32,7 @@
 # steered robot platform and publishes an odometry message.
 #
 # 2012-04-25 morl Created
-# 2013-02-19 kjen Major cleanup
+# 2013-02-19 kjen Major cleanup, now supporting global robot parameters
 #
 #****************************************************************************/
 
@@ -51,12 +51,11 @@ using namespace std;
 class SimpleOdom
 {
 public:
-	SimpleOdom(double tm_l, double tm_r, double wdist, double max_diff)
+	SimpleOdom(double tick_to_meter, double wheel_dist, double max_time_diff)
 	{
-		this->tm_l = tm_l;
-		this->tm_r = tm_r;
-		this->wdist = wdist;
-		this->max_diff = max_diff;
+		this->tick_to_meter = tick_to_meter;
+		this->wheel_dist = wheel_dist;
+		this->max_time_diff = max_time_diff;
 
 		delta_l = delta_r = 0;
 		x = y = theta = 0;
@@ -112,17 +111,17 @@ public:
 		if(l_updated && r_updated)
 		{
 			// check update times
-			if((l_time_latest - r_time_latest).toSec() > max_diff)
+			if((l_time_latest - r_time_latest).toSec() > max_time_diff)
 			{
 				ROS_WARN("Encoder stamp (left - right) differs %.4f",(l_time_latest - r_time_latest).toSec());
 			}
 			r_updated = l_updated = false;
 			
-			delta_l *= tm_l; // convert from ticks to meter
-			delta_r *= tm_r;
+			delta_l *= tick_to_meter; // convert from ticks to meter
+			delta_r *= tick_to_meter;
 
 			double dx = (delta_l + delta_r)/2; // approx. distance (assuming linear motion during dt)
-			double dtheta = (delta_r - delta_l)/wdist; // change in orientation
+			double dtheta = (delta_r - delta_l)/wheel_dist; // change in orientation
 			// ROS_INFO("Odo %.3f %.3f",delta_l, delta_r);
  			delta_l = delta_r = 0;
 
@@ -170,13 +169,11 @@ public:
 	std::string base_frame,odom_frame;
 
 private:
-	double tm_l, tm_r;
-	double wdist;
+	double tick_to_meter, wheel_dist, max_time_diff;
 	double delta_l, delta_r;
 	bool l_updated, r_updated;
 	ros::Time l_time_latest, l_time_prev, r_time_latest, r_time_prev;
 	bool l_ready, r_ready;
-	double max_diff;
 	double x, y, theta;
 	ros::Time time_now, time_before;
 	msgs::encoder prev_l, prev_r;
@@ -194,7 +191,9 @@ int main(int argc, char** argv) {
 	string subscribe_enc_l;
 	string subscribe_enc_r;
 
-	double wdist, tm_r, tm_l, max_diff;
+	double wheel_radius, wheel_ticks_rev, tick_to_meter;
+	double wheel_dist;
+	double max_time_diff;
 	ros::Subscriber s1,s2;
 
 	// publishers
@@ -204,14 +203,17 @@ int main(int argc, char** argv) {
 	nh.param<string>("enc_left_sub", subscribe_enc_l, "/fmInformation/encoder_left");
 	nh.param<string>("enc_right_sub", subscribe_enc_r, "/fmInformation/encoder_right");
 
-	// parameters
-	nh.param<double>("ticks_to_meter_left", tm_l, 2*(M_PI)*0.24/8192);
-	nh.param<double>("ticks_to_meter_right", tm_r, 2*(M_PI)*0.24/8192);
-	nh.param<double>("max_time_diff", max_diff,1);
-	nh.param<double>("wheel_distance_meter", wdist, 0.59);
+	// robot parameters
+	nh.param<double>("diff_steer_wheel_radius", wheel_radius, 0.25);
+	nh.param<double>("diff_steer_wheel_ticks_per_rev", wheel_ticks_rev, 360);
+	nh.param<double>("diff_steer_wheel_distance", wheel_dist, 1.0);
+	tick_to_meter = 2*M_PI*wheel_radius/wheel_ticks_rev;
+
+	// other parameters
+	nh.param<double>("max_time_diff", max_time_diff,1);
 
 	// init class
-	SimpleOdom p(tm_l, tm_r, wdist, max_diff);
+	SimpleOdom p(tick_to_meter, wheel_dist, max_time_diff);
 
 	// subscriber callback functions
 	s1 = nh.subscribe(subscribe_enc_l,15,&SimpleOdom::processLeftEncoder,&p);
