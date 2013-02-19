@@ -56,6 +56,7 @@ void FrobitInterface::makeItSpin( void )
 	local_node_handler.param<double>(		"ms_in_between", 		parameters.ms_in_between, 	100		);
 	local_node_handler.param<double>(		"vel_publish_interval",	parameters.interval,		0.05	);
 	local_node_handler.param<double>(		"vel_timeout",			parameters.timeout,			1		);
+	local_node_handler.param<bool>(			"castor_front",			parameters.castor_front,	true	);
 
 	/* m/s -> ticks/entry * 1 m/s = 1/(pi*wheel_diameter) rps = ticks_pr_round/(pi*wheel_diameter) ticks/sec = */
 	vel_to_motor_const = ( parameters.ticks_pr_round / ( 3.14 * parameters.wheel_diameter ) ) * ( 1 / parameters.ms_in_between );
@@ -139,6 +140,12 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
 
 		left_vel *= vel_to_motor_const;
 		right_vel *= vel_to_motor_const;
+
+		if(parameters.castor_front)
+		{
+			left_vel *= -1;
+			right_vel *= -1;
+		}
 	}
 	else
 	{

@@ -84,6 +84,7 @@ private:
 		double				interval;				//!< period of the timer publishing motor commands [ms]
 		double 				max_velocity;			//!< maximum possible motor command
 		double				timeout;				//!< watchdog timeout [s]
+		bool				castor_front;			//!< Is the castor wheel in front?
 		/**@} @}*/
 	} parameters;
 
