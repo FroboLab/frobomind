@@ -1,6 +1,9 @@
 # all files ending with a tilde
 *~
 
+# Ignore Python .pyc
+*.pyc
+
 # Ignore dependencies
 executive_smach
 joystick_drivers
