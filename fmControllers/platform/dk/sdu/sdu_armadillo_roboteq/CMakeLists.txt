@@ -66,7 +66,8 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
-# add_executable(sdu_armadillo_node src/sdu_armadillo_node.cpp)
+add_executable(roboteq_node src/roboteq.cpp)
+add_executable(roboteq_srv_node src/roboteq_srv.cpp)
 
 ## Add dependencies to the executable
 # add_dependencies(sdu_armadillo_node ${PROJECT_NAME})
