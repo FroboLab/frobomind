@@ -40,8 +40,8 @@ from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import Bool
 
 node_upd_freq = 10 # Hz
-spd_left = 0.005 # m/s
-spd_right = 0.005 # m/s
+spd_left = 0.32 # m/s
+spd_right = 0.32 # m/s
 
 def talker():
 	rospy.init_node('frobit_test_set_speed')

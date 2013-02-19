@@ -204,9 +204,9 @@ int main(int argc, char** argv) {
 	nh.param<string>("enc_right_sub", subscribe_enc_r, "/fmInformation/encoder_right");
 
 	// robot parameters
-	nh.param<double>("diff_steer_wheel_radius", wheel_radius, 0.25);
-	nh.param<double>("diff_steer_wheel_ticks_per_rev", wheel_ticks_rev, 360);
-	nh.param<double>("diff_steer_wheel_distance", wheel_dist, 1.0);
+	nh.param<double>("/diff_steer_wheel_radius", wheel_radius, 0.25);
+	nh.param<double>("/diff_steer_wheel_ticks_per_rev", wheel_ticks_rev, 360);
+	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);
 	tick_to_meter = 2*M_PI*wheel_radius/wheel_ticks_rev;
 
 	// other parameters

@@ -44,9 +44,9 @@ FrobitInterface::FrobitInterface() :
 void FrobitInterface::makeItSpin(void)
 {
   // Get global parameters
-  global_node_handler.param<double>("robot_max_velocity", parameters.max_velocity, 1);
-  global_node_handler.param<double>("diff_steer_wheel_radius", parameters.wheel_radius, 1);
-  global_node_handler.param<double>("diff_steer_wheel_ticks_per_rev", parameters.ticks_pr_rev, 360);
+  global_node_handler.param<double>("/robot_max_velocity", parameters.max_velocity, 1);
+  global_node_handler.param<double>("/diff_steer_wheel_radius", parameters.wheel_radius, 1);
+  global_node_handler.param<double>("/diff_steer_wheel_ticks_per_rev", parameters.ticks_pr_rev, 360);
 
   // Get local parameters
   local_node_handler.param<std::string>("nmea_sub", topics.nmea_sub, "/fmData/nmea_from_frobit");
@@ -58,7 +58,7 @@ void FrobitInterface::makeItSpin(void)
   local_node_handler.param<std::string>("encoder_right_pub", topics.encoder_right, "/fmInformation/encoder_right");
   local_node_handler.param<bool>("castor_front", parameters.castor_front, true);
   local_node_handler.param<double>("cmd_vel_timeout", parameters.timeout, 1);
-  local_node_handler.param<double>("nmea_to_frobit_interval", parameters.interval, 0.05);
+  local_node_handler.param<double>("nmea_to_frobit_interval", parameters.interval, 0.1);
 
   meters_to_ticks = parameters.ticks_pr_rev / (2 * M_PI * parameters.wheel_radius);
 
@@ -121,7 +121,7 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
     active = false;
   }
 
-  if (ros::Time::now() > last_deadman_received + ros::Duration(parameters.interval))
+  if (ros::Time::now() > last_deadman_received + ros::Duration(0.2))
   {
     deadman = false;
   }
@@ -139,16 +139,19 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
       right_vel = messages.cmd_vel_left.twist.linear.x * -1;
     }
 
-    //correct high velocities
-    if (left_vel > parameters.max_velocity)
-      left_vel = parameters.max_velocity;
-    else if (left_vel < -parameters.max_velocity)
-      left_vel = -parameters.max_velocity;
+    // limit to max robot velocity (safety measure only)
+    //correct for higher vheel velocities due to the diff drive
+    double corr_max_velocity = parameters.max_velocity + abs(abs(left_vel)-abs(right_vel))/2; 
 
-    if (right_vel > parameters.max_velocity)
-      right_vel = parameters.max_velocity;
-    else if (right_vel < -parameters.max_velocity)
-      right_vel = -parameters.max_velocity;
+    if (left_vel > corr_max_velocity)
+      left_vel = corr_max_velocity;
+    else if (left_vel < -corr_max_velocity)
+      left_vel = -corr_max_velocity;
+
+    if (right_vel > corr_max_velocity)
+      right_vel = corr_max_velocity;
+    else if (right_vel < -corr_max_velocity)
+      right_vel = -corr_max_velocity; 
 
     // Convert from [m/s]
     left_vel *= meters_to_ticks;

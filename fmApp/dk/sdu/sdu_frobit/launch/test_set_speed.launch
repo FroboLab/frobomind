@@ -1,5 +1,5 @@
 <launch>
-	<param name="robot_max_velocity" value="0.5"/>
+	<param name="robot_max_velocity" value="0.50"/>
 	<param name="diff_steer_wheel_radius" value="0.051"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
 	<param name="diff_steer_wheel_distance" value="0.215"/>

@@ -1,5 +1,5 @@
 <launch>
-	<param name="robot_max_velocity" value="0.5"/>
+	<param name="robot_max_velocity" value="1.0"/>
 	<param name="diff_steer_wheel_radius" value="0.051"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
 	<param name="diff_steer_wheel_distance" value="0.215"/>
@@ -42,13 +42,13 @@
 		<node pkg="sdu_frobit" name="frobit_remote" type="frobit_remote.py" output="screen">
     			<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="max_linear_velocity" value="0.03"/>
-			<param name="max_angular_velocity" value="0.15"/>
+			<param name="max_linear_velocity" value="1.5"/>
+			<param name="max_angular_velocity" value="1.8"/>
 			<param name="deadband" value="0.001"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
 			<param name="status_topic" value="/fmData/status"/>
-			<param name="publish_frequency" value="5"/>
+			<param name="publish_frequency" value="10"/>
 		</node>
 	</group>
 
