@@ -32,7 +32,7 @@ FrobitInterface::FrobitInterface()
 {
 	left_vel = 0;
 	right_vel = 0;
-	vel_to_motor_const = 0;
+	meters_to_ticks = 0;
 
 	active = false;
 	deadman = false;
@@ -58,8 +58,7 @@ void FrobitInterface::makeItSpin( void )
 	local_node_handler.param<double>(		"vel_timeout",			parameters.timeout,			1		);
 	local_node_handler.param<bool>(			"castor_front",			parameters.castor_front,	true	);
 
-	/* m/s -> ticks/entry * 1 m/s = 1/(pi*wheel_diameter) rps = ticks_pr_round/(pi*wheel_diameter) ticks/sec = */
-	vel_to_motor_const = ( parameters.ticks_pr_round / ( 3.14 * parameters.wheel_diameter ) ) * ( 1 / parameters.ms_in_between );
+	meters_to_ticks = parameters.ticks_pr_round / ( 2 * M_PI * parameters.wheel_diameter );
 
 	subscribers.cmd_vel_left = 	global_node_handler.subscribe<geometry_msgs::TwistStamped>(topics.cmd_vel_left, 2,&FrobitInterface::on_vel_msg_left,this);
 	subscribers.cmd_vel_right = global_node_handler.subscribe<geometry_msgs::TwistStamped>(topics.cmd_vel_right,2,&FrobitInterface::on_vel_msg_right,this);
@@ -146,8 +145,9 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
 		else if ( right_vel < - parameters.max_velocity )
 			right_vel = - parameters.max_velocity;
 
-		left_vel *= vel_to_motor_const;
-		right_vel *= vel_to_motor_const;
+		// Convert from [m/s]
+		left_vel *= meters_to_ticks;
+		right_vel *= meters_to_ticks;
 
 	}
 	else

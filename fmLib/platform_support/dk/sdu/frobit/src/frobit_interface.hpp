@@ -64,7 +64,7 @@ class FrobitInterface
 private:
 	double 				left_vel,
 						right_vel,
-						vel_to_motor_const;
+						meters_to_ticks;
 
 	bool 				active,
 						deadman;
