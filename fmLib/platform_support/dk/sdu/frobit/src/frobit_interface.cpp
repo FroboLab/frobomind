@@ -48,7 +48,7 @@ void FrobitInterface::makeItSpin( void )
 	local_node_handler.param<std::string>(	"cmd_vel_left_sub",		topics.cmd_vel_left, 	"/fmDecision/twist"				);
 	local_node_handler.param<std::string>(	"cmd_vel_right_sub", 	topics.cmd_vel_right, 	"/fmDecision/twist"				);
 	local_node_handler.param<std::string>(	"encoder_left_pub", 	topics.encoder_left, 	"/fmInformation/encoder_left"	);
-	local_node_handler.param<std::string>(	"encoder_right_pub", 	topics.encoder_right, 	"/fmAInformation/encoder_right"	);
+	local_node_handler.param<std::string>(	"encoder_right_pub", 	topics.encoder_right, 	"/fmInformation/encoder_right"	);
 
 	local_node_handler.param<double>(		"max_velocity", 		parameters.max_velocity,	255		);
 	local_node_handler.param<double>(		"wheel_diameter", 		parameters.wheel_diameter, 	0.01	);
@@ -124,15 +124,15 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
 
 	if(active && deadman)
 	{
-		if(!parameters.castor_front)
+		if(parameters.castor_front)
 		{
-			left_vel = messages.cmd_vel_right.twist.linear.x * 100;
-			right_vel = messages.cmd_vel_left.twist.linear.x * 100;
+			left_vel = messages.cmd_vel_left.twist.linear.x;
+			right_vel = messages.cmd_vel_right.twist.linear.x;
 		}
 		else
 		{
-			left_vel = messages.cmd_vel_left.twist.linear.x * -100;
-			right_vel = messages.cmd_vel_right.twist.linear.x * -100;
+			left_vel = messages.cmd_vel_right.twist.linear.x * -1;
+			right_vel = messages.cmd_vel_left.twist.linear.x * -1;
 		}
 
 		//correct high velocities
@@ -160,8 +160,8 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
 	messages.motor_command.header.stamp = ros::Time::now();
 	messages.motor_command.type = "PFBCT";
 	messages.motor_command.data.clear();
-	messages.motor_command.data.push_back( boost::lexical_cast<std::string>( (int)right_vel ) );
 	messages.motor_command.data.push_back( boost::lexical_cast<std::string>( (int)left_vel ) );
+	messages.motor_command.data.push_back( boost::lexical_cast<std::string>( (int)right_vel ) );
 
 	//publish message
 	publishers.nmea.publish(messages.motor_command);
