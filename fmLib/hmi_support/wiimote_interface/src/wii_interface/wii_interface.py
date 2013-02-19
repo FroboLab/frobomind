@@ -37,7 +37,9 @@ class WiiInterface():
                                            JoyFeedback( type=JoyFeedback.TYPE_RUMBLE, intensity=0, id=0 )] ) 
 
         # Get parameters
+        self.min_linear_velocity = rospy.get_param("~min_linear_velocity",0.5)
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
+        self.max_linear_velocity = self.max_linear_velocity - self.min_linear_velocity
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
         self.deadband = rospy.get_param("~deadband",0.1)
         self.publish_frequency = rospy.get_param("~publish_frequency",5)    
@@ -96,6 +98,14 @@ class WiiInterface():
         self.linear = (sum(self.pitch)/len(self.pitch) * self.max_linear_velocity)
         self.angular = -(sum(self.roll)/len(self.roll) * self.max_angular_velocity)
         
+        # Implement deadband on linear velocity
+        if self.linear < self.deadband and self.linear > -self.deadband :
+            self.linear = 0;
+        elif self.linear < 0 :
+            self.linear = self.linear - self.min_linear_velocity
+        elif self.linear > 0 :
+            self.linear = self.linear - self.min_linear_velocity 
+            
         # Implement deadband
         if self.angular < self.deadband and self.angular > -self.deadband :
             self.angular = 0;
@@ -103,6 +113,7 @@ class WiiInterface():
             self.angular = self.angular + self.deadband
         elif self.angular > 0 :
             self.angular = self.angular - self.deadband 
+        
         
         # Publish twist message                   
         self.twist.header.stamp = rospy.Time.now()
