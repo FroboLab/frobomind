@@ -1,5 +1,5 @@
 name            "World"
-interval_sim    2
+interval_sim    100
 resolution      0.1
 threads         4
 
@@ -12,47 +12,54 @@ window
 
 define bounds model
 (
-   size [ 28.5 48.5 1]
    color "gray30"
    boundary 1
    laser_return 1
    obstacle_return 1
+   gui_move 0
+)
+
+define obstacles model
+(
+   size [55 95 1]
+   bitmap "smiley.pgm"
+   color "red"
+   laser_return 1
+   gui_move 0
 )
 
 define laser_scanner ranger
 (
    sensor
    ( 		
-      range [ 0.0  1 ]
-      fov 360
-      samples 180
+      range [ 0.0  3 ]
+      fov 180
+      samples 90
    )
 )
 
-define robot position
+position
 (
-   size [0.4 0.4 0.1]
+   pose [ 0 0 0 0 ]
+   size [ 0.4 0.3 0.15 ] 
+   name "Frobit" 
+   color "blue"
    drive "diff"
-   loacalization "gps"
    gui_nose 1
    scount 2
    laser_scanner(pose [ 0 0 0 0 ])
-)
+   obstacle_return 1
 
-define robot_shape robot
-(
+   polygons 1
    block( 
-      points 6
-      point[0] [0 1]
-      point[1] [0 3]
+      points 4
+      point[0] [0 0]
+      point[1] [0 4]
       point[2] [1 4]
-      point[3] [5 2]
-      point[4] [5 0]
-      point[5] [1 0]
-    z [0 0.5]
-  )
+      point[3] [1 0]
+      z [0 0.5]
+   )
 )
-
 
 bounds
 (
@@ -62,10 +69,8 @@ bounds
    pose [ 0 0 0 0 ]
 )
 
-robot
+obstacles
 (
-   pose [ 0 0 0 0 ] 
-   name "RobotOne" 
-   color "blue"
-   size [1 1 1]
+   name "obstacles"
+   pose [ 0 0 0 0 ]
 )
