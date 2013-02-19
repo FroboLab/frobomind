@@ -1,4 +1,5 @@
 <launch>
+	<param name="robot_max_velocity" value="0.5"/>
 	<param name="diff_steer_wheel_radius" value="0.051"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
 	<param name="diff_steer_wheel_distance" value="0.215"/>
@@ -78,12 +79,8 @@
 			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
 			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>
 			<param name="castor_front" value="true"/>
-			<param name="max_velocity" value="45" />
-			<param name="wheel_diameter" value="0.102" />   
-			<param name="ticks_pr_round" value="180" />
-			<param name="ms_in_between" value="10" />
-			<param name="vel_publish_interval" value="0.1"/>          
-			<param name="vel_timeout" value="1"/>          
+			<param name="nmea_to_frobit_interval" value="0.1"/>          
+			<param name="cmd_vel_timeout" value="1"/>          
         	</node>
 
         	<node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
