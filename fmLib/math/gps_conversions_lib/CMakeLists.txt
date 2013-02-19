@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gpgga_to_utm)
+project(gps_conversions_lib)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp gps_conversions_lib)
+find_package(catkin REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -45,9 +45,9 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp gps_conversions_lib)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-#  LIBRARIES gpgga_to_utm
-#  CATKIN_DEPENDS msgs roscpp
+  INCLUDE_DIRS include
+  LIBRARIES gps_conversions_lib
+#  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
 
@@ -56,25 +56,23 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(include ${catkin_INCLUDE_DIRS} )
 
 ## Declare a cpp library
-# add_library(gpgga_to_utm
-#   src/${PROJECT_NAME}/gpgga_to_utm.cpp
-# )
+ add_library(gps_conversions_lib
+   src/gps_conversions_lib.cpp
+)
 
 ## Declare a cpp executable
- add_executable(gpgga_to_utm_node src/gpgga_to_utm_node.cpp)
+# add_executable(gps_conversions_lib_node src/gps_conversions_lib_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(gpgga_to_utm_node ${PROJECT_NAME})
+# add_dependencies(gps_conversions_lib_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(gpgga_to_utm_node
-   ${catkin_LIBRARIES}
- )
+# target_link_libraries(gps_conversions_lib_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -88,18 +86,18 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS gpgga_to_utm gpgga_to_utm_node
+ install(TARGETS gps_conversions_lib
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+ )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+ install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
+#  PATTERN ".svn" EXCLUDE
+ )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -113,7 +111,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_gpgga_to_utm.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gps_conversions_lib.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
