@@ -124,15 +124,15 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
 
 	if(active && deadman)
 	{
-		if(parameters.castor_front)
+		if(!parameters.castor_front)
 		{
-			left_vel = messages.cmd_vel_right.twist.linear.x * -100;
-			right_vel = messages.cmd_vel_left.twist.linear.x * -100;
+			left_vel = messages.cmd_vel_right.twist.linear.x * 100;
+			right_vel = messages.cmd_vel_left.twist.linear.x * 100;
 		}
 		else
 		{
-			left_vel = messages.cmd_vel_left.twist.linear.x * 100;
-			right_vel = messages.cmd_vel_right.twist.linear.x * 100;
+			left_vel = messages.cmd_vel_left.twist.linear.x * -100;
+			right_vel = messages.cmd_vel_right.twist.linear.x * -100;
 		}
 
 		//correct high velocities
