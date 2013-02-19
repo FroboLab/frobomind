@@ -4,10 +4,10 @@ project(sdu_armadillo_roboteq)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp)
+find_package(catkin REQUIRED COMPONENTS msgs roscpp geometry_msgs sensor_msgs std_msgs wiimote)# wiimote)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+# find_package(Boost REQUIRED COMPONENTS system thread)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -66,14 +66,13 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
-add_executable(roboteq_node src/roboteq.cpp)
-add_executable(roboteq_srv_node src/roboteq_srv.cpp)
+#add_executable(roboteq_node src/roboteq.cpp)# src/rtq_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(sdu_armadillo_node ${PROJECT_NAME})
+# add_dependencies(roboteq_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(sdu_armadillo_node
+# target_link_libraries(sdu_armadillo_roboteq_node
 #   ${catkin_LIBRARIES}
 # )
 
