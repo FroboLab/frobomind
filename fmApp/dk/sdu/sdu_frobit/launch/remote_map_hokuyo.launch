@@ -32,12 +32,9 @@
 			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
 			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="odom_pub" value="/fmKnowledge/odom" />
-			<param name="ticks_to_meter_left" value="0.00177933"/>
-			<param name="ticks_to_meter_right" value="0.00177933"/> 
-			<param name="wheel_dist_meter" value="0.215"></param>
-			<param name="max_time_diff" value="1"></param>      
 			<param name="vehicle_frame" value="base_footprint"></param>      
 			<param name="odom_estimate_frame" value="odom_combined"></param>      
+			<param name="max_time_diff" value="1"></param>      
 		</node>
 	</group>
 
