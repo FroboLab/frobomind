@@ -74,7 +74,7 @@
 			<param name="nmea_sub" value="/fmData/nmea_from_frobit"/>
 			<param name="nmea_pub" value="/fmData/nmea_to_frobit"/>
 			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
-			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>
+			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
 			<param name="castor_front" value="true"/>
 			<param name="nmea_to_frobit_interval" value="0.1"/>          
 			<param name="cmd_vel_timeout" value="1"/>          
