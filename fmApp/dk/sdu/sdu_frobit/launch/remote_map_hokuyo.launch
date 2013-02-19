@@ -27,9 +27,9 @@
 			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
 			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="odom_pub" value="/fmKnowledge/odom" />
-			<param name="ticks_to_meter_left" value="0.0016667"/>
-			<param name="ticks_to_meter_right" value="0.0016667"/> 
-			<param name="wheel_dist_meter" value="0.22"></param>
+			<param name="ticks_to_meter_left" value="0.00177933"/>
+			<param name="ticks_to_meter_right" value="0.00177933"/> 
+			<param name="wheel_dist_meter" value="0.215"></param>
 			<param name="max_time_diff" value="1"></param>      
 			<param name="vehicle_frame" value="base_footprint"></param>      
 			<param name="odom_estimate_frame" value="odom_combined"></param>      
@@ -40,9 +40,9 @@
 		<node pkg="sdu_frobit" name="frobit_remote" type="frobit_remote.py" output="screen">
     			<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="max_linear_velocity" value="0.05"/>
-			<param name="max_angular_velocity" value="0.01"/>
-			<param name="deadband" value="0.02"/>
+			<param name="max_linear_velocity" value="0.03"/>
+			<param name="max_angular_velocity" value="0.15"/>
+			<param name="deadband" value="0.001"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
 			<param name="status_topic" value="/fmData/status"/>
@@ -55,7 +55,7 @@
 			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
 			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left"/>
 			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right"/>
-			<param name="distance_center_to_wheel" value="0.11" />
+			<param name="distance_center_to_wheel" value="0.1075" />
 		</node>
 	</group>
 
@@ -71,12 +71,10 @@
 			<param name="deadman_sub" value="/fmSignals/deadman"/>
 			<param name="nmea_sub" value="/fmData/nmea_from_frobit"/>
 			<param name="nmea_pub" value="/fmData/nmea_to_frobit"/>
-            
 			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
 			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>
-            
 			<param name="max_velocity" value="45" />
-			<param name="wheel_diameter" value="0.105" />   
+			<param name="wheel_diameter" value="0.102" />   
 			<param name="ticks_pr_round" value="180" />
 			<param name="ms_in_between" value="10" />
 			<param name="vel_publish_interval" value="0.1"/>          
