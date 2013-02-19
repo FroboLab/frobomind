@@ -4,7 +4,7 @@ project(lidar_row_extractor)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure msgs geometry_msgs laser_geometry pcl_ros roscpp sensor_msgs tf visualization_msgs)
+find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure msgs geometry_msgs laser_geometry pcl pcl_ros roscpp sensor_msgs tf visualization_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -14,11 +14,6 @@ include_directories(${EIGEN_INCLUDE_DIRS})
 
 add_definitions(${EIGEN_DEFINITIONS})
 
-find_package(PCL REQUIRED)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
 # catkin_python_setup()
