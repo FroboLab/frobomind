@@ -1,5 +1,4 @@
 <launch>
-
 	<group ns="fmLib">
 		<node pkg="serial_string" type="serial_string_node" name="serial_comm_left">
 			<param name="publisher_topic" value="serial_comm_left_rx" />
@@ -18,7 +17,6 @@
 		</node>
 	</group>
 	
-
 	<group ns="fmControllers">
 		<node pkg="sdu_armadillo_roboteq" type="roboteq_node" name="roboteq_left">
 			<param name="cmd_vel_topic" value="/fmKinematics/cmd_vel_left" />
