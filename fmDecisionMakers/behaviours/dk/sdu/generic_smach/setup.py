@@ -4,7 +4,7 @@ from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
-  scripts=['mission_planners/remote.py'],
-)
-
+  packages=['wii_remote'],
+  package_dir={'':'src'}
+  )
 setup(**d)

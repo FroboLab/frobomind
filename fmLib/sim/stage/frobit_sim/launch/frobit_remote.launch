@@ -1,6 +1,6 @@
 <launch>
  	<node pkg="stage" type="stageros" name="simulator" args="$(find frobit_sim)/world/frobit.world"/>
-	<node pkg="rviz" type="rviz" name="visualization"/>
+	<node pkg="rviz" type="rviz" name="visualization" args="$(find frobit_sim)/conf/frobit.rviz"/>
 	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
 	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
 	<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py"/>

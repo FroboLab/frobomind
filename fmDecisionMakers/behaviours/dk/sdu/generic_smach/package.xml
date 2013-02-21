@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>sdu_frobit</name>
+  <name>generic_smach</name>
   <version>0.0.0</version>
-  <description>The sdu_frobit package</description>
+  <description>The generic_smach package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://ros.org/wiki/sdu_frobit</url> -->
+  <!-- <url type="website">http://ros.org/wiki/generic_smach</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -40,14 +40,10 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>smach</build_depend>
-  <run_depend>smach</run_depend>
-  <build_depend>smach_ros</build_depend>
-  <run_depend>smach_ros</run_depend>
-  <build_depend>wiimote_interface</build_depend>
-  <run_depend>wiimote_interface</run_depend>
-  <build_depend>generic_smach</build_depend>
-  <run_depend>generic_smach</run_depend>
+  <build_depend>rospy</build_depend>
+  <run_depend>rospy</run_depend>
+  <build_depend>msgs</build_depend>
+  <run_depend>msgs</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
