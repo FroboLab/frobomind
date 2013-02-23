@@ -1,5 +1,5 @@
 #/****************************************************************************
-# FroboMind wait.py
+# FroboMind wait_state.py
 # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
 # All rights reserved.
 #
