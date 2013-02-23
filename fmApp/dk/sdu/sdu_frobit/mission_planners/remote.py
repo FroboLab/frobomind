@@ -4,7 +4,7 @@ import smach
 import smach_ros
 import actionlib
 import threading
-from generic_smach.remote_behaviour import remote_behaviour
+from generic_smach.behaviours import remote_behaviour
 from wii_interface import wii_interface
            
 class mission():
@@ -13,34 +13,20 @@ class mission():
     """
     def __init__(self):
         rospy.init_node('mission_control')
-
         self.hmi = wii_interface.WiiInterface()
-            
-    def build_smach(self):
-        # Build the top level mission control from the remote control state and the autonomous state
-        self.mission_control = smach.StateMachine(outcomes=['preempted'])            
-        with self.mission_control:
-           remote_behaviour.build(self.hmi)
-            
-        sis = smach_ros.IntrospectionServer('StateMachineView', self.mission_control, '/SM_ROOT')           
-        sis.start()
        
-    def spin(self):        
-        self.mission_control.execute()
+    def spin(self):   
+        sm = remote_behaviour.build(self.hmi) 
+        sis = smach_ros.IntrospectionServer('StateMachineView', sm, '/SM_ROOT')           
+        sis.start()    
+        sm.execute()
         rospy.spin()
+        sm.request_preempt()
         sis.stop()
-
-def onPreempt(outcome_map):
-    """
-        Preempts all other states on child termination. 
-        TODO: Find a way to avoid this being a global function...
-    """
-    return True
     
 if __name__ == '__main__':
     try:
         node = mission()
-        node.build_smach()
         smach_thread = threading.Thread(target = node.spin)
         smach_thread.start()
     except rospy.ROSInterruptException:
