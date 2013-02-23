@@ -39,7 +39,7 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_frobit" name="frobit_remote" type="frobit_remote.py" output="screen">
+		<node pkg="sdu_frobit" name="frobit_remote" type="remote.py" output="screen">
     			<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="max_linear_velocity" value="1.5"/>

@@ -4,7 +4,8 @@ from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
-  packages=['wii_remote'],
-  package_dir={'':'src'}
-  )
+                             packages=['generic_smach'],
+                             package_dir={'': 'src'}
+                             )
+
 setup(**d)

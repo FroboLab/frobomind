@@ -7,13 +7,12 @@
 	
 
 	<group ns="fmHMI">
-		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-		</node>
-    	</group>
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true"/>
+    </group>
     	
-    	<group ns="fmDecisionMakers">
-    		<node pkg="sdu_frobit" name="frobit_remote" type="frobit_remote.py" output="screen">
-    					<param name="deadman_topic" value="/fmSignals/deadman" />
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_frobit" name="frobit_remote" type="remote.py" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="max_linear_velocity" value="1"/>
 			<param name="max_angular_velocity" value="2"/>
@@ -22,6 +21,6 @@
 			<param name="joy_topic" value="/fmHMI/joy" />
 			<param name="status_topic" value="/fmData/status"/>
 			<param name="publish_frequency" value="5"/>
-    </node>
-</group>
+		</node>
+	</group>
 </launch>
