@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #/****************************************************************************
 # FroboMind positionGoalActionServer.py
 # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
