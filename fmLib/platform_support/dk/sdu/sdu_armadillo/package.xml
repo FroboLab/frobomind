@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>sdu_armadillo_roboteq</name>
+  <name>sdu_armadillo</name>
   <version>0.0.0</version>
-  <description>The sdu_armadillo_roboteq package</description>
+  <description>The sdu_armadillo package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
