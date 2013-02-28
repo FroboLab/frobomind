@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(kongskilde_rowcleaner_controller)
+project(encoder_and_imu_to_odom)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib std_msgs actionlib_msgs msgs roscpp message_generation)
+find_package(catkin REQUIRED COMPONENTS msgs roscpp tf)
 
-add_action_files(DIRECTORY action FILES move_tool_simple.action)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -33,11 +32,10 @@ add_action_files(DIRECTORY action FILES move_tool_simple.action)
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   actionlib_msgs
-   std_msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   navigation_msgs#   sensor_msgs
+# )
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -48,8 +46,8 @@ add_action_files(DIRECTORY action FILES move_tool_simple.action)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES kongskilde_rowcleaner
-  CATKIN_DEPENDS actionlib actionlib_msgs std_msgs msgs roscpp
+#  LIBRARIES encoder_to_odom
+#  CATKIN_DEPENDS msgs navigation_msgs roscpp sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -59,22 +57,23 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(include
+  /usr/include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(kongskilde_rowcleaner
-#   src/${PROJECT_NAME}/kongskilde_rowcleaner.cpp
+# add_library(encoder_to_odom
+#   src/${PROJECT_NAME}/encoder_to_odom.cpp
 # )
 
 ## Declare a cpp executable
- add_executable(kongskilde_rowcleaner_controller_node src/kongskilde_rowcleaner_node.cpp src/kongskilderowcleaner.cpp)
+ add_executable(encoder_imu_odom_node src/encoder_imu_odom.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(kongskilde_rowcleaner_controller_node ${PROJECT_NAME})
+ add_dependencies(encoder_imu_odom_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(kongskilde_rowcleaner_controller_node
+ target_link_libraries(encoder_imu_odom_node
    ${catkin_LIBRARIES}
  )
 
@@ -90,7 +89,7 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS kongskilde_rowcleaner kongskilde_rowcleaner_node
+# install(TARGETS encoder_to_odom encoder_to_odom_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -115,7 +114,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_kongskilde_rowcleaner.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_encoder_to_odom.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

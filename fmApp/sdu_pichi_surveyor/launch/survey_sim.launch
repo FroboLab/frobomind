@@ -1,6 +1,6 @@
 <launch>
- 	<node pkg="stage" type="stageros" name="simulator" args="$(find frobit_sim)/world/frobit.world"/>
-	<node pkg="rviz" type="rviz" name="visualization" args="$(find frobit_sim)/conf/frobit.rviz"/>
+ 	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_pichi_surveyor)/world/frobit.world"/>
+	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_surveyor)/conf/default.rviz"/>
 	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
 	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
 	<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py"/>
@@ -10,7 +10,7 @@
     </group>
     	
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_frobit" name="mission_control" type="survey.py">
+		<node pkg="sdu_pichi_surveyor" name="mission_control" type="survey.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="max_linear_velocity" value="1"/>

@@ -1,5 +1,5 @@
 <launch>
-	<node pkg="rviz" type="rviz" name="visualization" args="$(find frobit)/conf/odom_viz.vcg"/>
+	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_frobit_remote)/conf/default.rviz"/>
 
     <group ns="fmLib">
         <node pkg="nmea" name="nmea_node" type="nmea_node" output="screen">

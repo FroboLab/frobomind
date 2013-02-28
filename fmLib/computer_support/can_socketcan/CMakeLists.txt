@@ -57,8 +57,8 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(include
-  ${catkin_INCLUDE_DIRS}
   /usr/include
+  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library

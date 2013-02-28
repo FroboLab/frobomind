@@ -52,7 +52,7 @@ void kongskilde_rowcleaner::on_serial_rx(const msgs::serial::ConstPtr& msg)
 }
 
 void kongskilde_rowcleaner::on_action_goal(
-		const kongskilde_rowcleaner_controller::move_tool_simpleGoalConstPtr& goal)
+		const sdu_vibro_crop::move_tool_simpleGoalConstPtr& goal)
 {
 	ros::Rate r(10);
 	bool success=false;
@@ -107,7 +107,7 @@ void kongskilde_rowcleaner::transmitStop()
 void kongskilde_rowcleaner::transmitAction(int action)
 {
 
-	if(action == kongskilde_rowcleaner_controller::move_tool_simpleGoal::UP)
+	if(action == sdu_vibro_crop::move_tool_simpleGoal::UP)
 	{
 		if( this->invert)
 		{
@@ -120,7 +120,7 @@ void kongskilde_rowcleaner::transmitAction(int action)
 		}
 		serial_pub.publish(tx_msg);
 	}
-	else if (action == kongskilde_rowcleaner_controller::move_tool_simpleGoal::DOWN)
+	else if (action == sdu_vibro_crop::move_tool_simpleGoal::DOWN)
 	{
 		if(this->invert)
 		{

@@ -10,7 +10,7 @@
 
 #include <ros/ros.h>
 #include <msgs/serial.h>
-#include <kongskilde_rowcleaner_controller/move_tool_simpleAction.h>
+#include <sdu_vibro_crop/move_tool_simpleAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <boost/bind.hpp>
 
@@ -29,17 +29,17 @@ public:
 
 private:
 
-	void on_action_goal(const kongskilde_rowcleaner_controller::move_tool_simpleGoalConstPtr& goal);
+	void on_action_goal(const sdu_vibro_crop::move_tool_simpleGoalConstPtr& goal);
 	void transmitStop();
 	void transmitAction(int action);
 
 	bool invert;
-	actionlib::SimpleActionServer<kongskilde_rowcleaner_controller::move_tool_simpleAction> as;
+	actionlib::SimpleActionServer<sdu_vibro_crop::move_tool_simpleAction> as;
 	msgs::serial tx_msg;
 
 	ros::Duration maximum_move_time;
 
-	kongskilde_rowcleaner_controller::move_tool_simpleResult result;
+	sdu_vibro_crop::move_tool_simpleResult result;
 
 	bool serial_detected;
 

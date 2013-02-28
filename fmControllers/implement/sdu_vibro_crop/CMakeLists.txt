@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(frobit_sim)
+project(sdu_vibro_crop)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
+find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs msgs roscpp)
 
+add_action_files(DIRECTORY action FILES move_tool_simple.action)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -16,6 +17,10 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
 #######################################
 ## Declare ROS messages and services ##
 #######################################
+add_action_files(
+  DIRECTORY action
+  FILES move_tool_simple.action
+)
 
 ## Generate messages in the 'msg' folder
 # add_message_files(
@@ -32,10 +37,11 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   actionlib_msgs
+   std_msgs
+ )
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -46,9 +52,9 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES frobit_sim
-#  CATKIN_DEPENDS msgs roscpp rospy
-#  DEPENDS system_lib
+#  LIBRARIES kongskilde_rowcleaner
+  CATKIN_DEPENDS actionlib_msgs
+#  DEPENDS actionlib
 )
 
 ###########
@@ -61,20 +67,20 @@ include_directories(include
 )
 
 ## Declare a cpp library
-# add_library(frobit_sim
-#   src/${PROJECT_NAME}/frobit_sim.cpp
+# add_library(kongskilde_rowcleaner
+#   src/${PROJECT_NAME}/kongskilde_rowcleaner.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(frobit_sim_node src/frobit_sim_node.cpp)
+ add_executable(kongskilde_rowcleaner_controller_node src/kongskilde_rowcleaner_node.cpp src/kongskilderowcleaner.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(frobit_sim_node ${PROJECT_NAME})
+ add_dependencies(kongskilde_rowcleaner_controller_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(frobit_sim_node
-#   ${catkin_LIBRARIES}
-# )
+ target_link_libraries(kongskilde_rowcleaner_controller_node
+   ${catkin_LIBRARIES}
+ )
 
 #############
 ## Install ##
@@ -88,7 +94,7 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS frobit_sim frobit_sim_node
+# install(TARGETS kongskilde_rowcleaner kongskilde_rowcleaner_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -113,7 +119,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_frobit_sim.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_kongskilde_rowcleaner.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -4,7 +4,7 @@ project(encoder_to_odom)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs nav_msgs roscpp sensor_msgs tf)
+find_package(catkin REQUIRED COMPONENTS msgs roscpp tf)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -57,6 +57,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(include
+  /usr/include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -67,20 +68,15 @@ include_directories(include
 
 ## Declare a cpp executable
  add_executable(encoder_odom_node src/encoder_odom.cpp)
- add_executable(encoder_imu_odom_node src/encoder_imu_odom.cpp)
 
 ## Add dependencies to the executable
  add_dependencies(encoder_odom_node ${PROJECT_NAME})
- add_dependencies(encoder_imu_odom_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(encoder_odom_node
    ${catkin_LIBRARIES}
  )
 
- target_link_libraries(encoder_imu_odom_node
-   ${catkin_LIBRARIES}
- )
 
 #############
 ## Install ##
