@@ -63,13 +63,18 @@ class WiiInterface():
                                            JoyFeedback( type=JoyFeedback.TYPE_RUMBLE, intensity=0, id=0 )] ) 
 
         # Get parameters
+        self.full = rospy.get_param("~full_range",50) #%
+        self.full = self.full / 100.0 # not %
+        
         self.min_linear_velocity = rospy.get_param("~min_linear_velocity",0.2)
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
-        self.max_linear_velocity = self.max_linear_velocity - self.min_linear_velocity
+ #       self.max_linear_velocity = self.max_linear_velocity - self.min_linear_velocity
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
         self.min_angular_velocity = rospy.get_param("~min_angular_velocity",0.2)
-        self.max_angular_velocity = self.max_angular_velocity - self.min_angular_velocity
-        self.deadband = rospy.get_param("~deadband",0.1)
+ #       self.max_angular_velocity = self.max_angular_velocity - self.min_angular_velocity
+        self.deadband = rospy.get_param("~deadband",5) # %
+        self.deadband = self.deadband / 100.0
+        
         self.publish_frequency = rospy.get_param("~publish_frequency",5)    
         
         # Get topic names
@@ -123,25 +128,41 @@ class WiiInterface():
             Method to average filter and publish twist from wiimote input
         """
         # Calculate average of the ten latest messages
-        self.linear = (sum(self.pitch)/len(self.pitch) * self.max_linear_velocity)
-        self.angular = -(sum(self.roll)/len(self.roll) * self.max_angular_velocity)
+        self.linear = (sum(self.pitch)/len(self.pitch))
+        self.angular = -(sum(self.roll)/len(self.roll))      
         
         # Implement deadband on linear velocity
         if self.linear < self.deadband and self.linear > -self.deadband :
             self.linear = 0;
-        elif self.linear < 0 :
-            self.linear = self.linear - self.min_linear_velocity
-        elif self.linear > 0 :
-            self.linear = self.linear + self.min_linear_velocity 
             
-        # Implement deadband
+        # Implement deadband on angular velocity
         if self.angular < self.deadband and self.angular > -self.deadband :
             self.angular = 0;
-        elif self.angular < 0 :
-            self.angular = self.angular - self.min_angular_velocity
-        elif self.angular > 0 :
-            self.angular = self.angular + self.min_angular_velocity
+            
+        if self.linear > self.full :
+            self.linear = self.full
+        elif self.linear < - self.full :
+            self.linear = - self.full
+        self.linear = ( self.linear / self.full ) * self.max_linear_velocity
         
+        if self.angular > self.full :
+            self.angular = self.full
+        elif self.angular < - self.full :
+            self.angular = - self.full
+        self.angular = ( self.angular / self.full ) * self.max_angular_velocity
+        
+
+#        elif self.linear < 0 :
+#            self.linear = self.linear - self.min_linear_velocity
+#        elif self.linear > 0 :
+#            self.linear = self.linear + self.min_linear_velocity 
+            
+
+#        elif self.angular < 0 :
+#            self.angular = self.angular - self.min_angular_velocity
+#        elif self.angular > 0 :
+#            self.angular = self.angular + self.min_angular_velocity
+         
         
         # Publish twist message                   
         self.twist.header.stamp = rospy.Time.now()
