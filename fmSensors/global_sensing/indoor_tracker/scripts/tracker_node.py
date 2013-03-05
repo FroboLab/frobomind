@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from indoor_tracker.MarkerLocator import *
-from nav_msgs.msg import Odometry 
+
 from time import time
 import sys
 import numpy as np
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     print 'function vers1 takes %f' %(t1-t0)
     print 'function vers2 takes %f' %(t2-t1)
     
-    toFind = [9]    
+    toFind = [7]    
     
     if PublishToROS:  
         RP = RosPublisher(toFind)

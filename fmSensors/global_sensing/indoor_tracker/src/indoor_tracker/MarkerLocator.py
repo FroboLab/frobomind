@@ -4,6 +4,9 @@ import sys
 import numpy as np
 import cv2.cv as cv
 import math
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import TransformStamped
+import tf
 
 '''
 2012-10-10
@@ -321,19 +324,37 @@ class RosPublisher:
         # will be tracked.
         self.pup = []
         self.markers = markers
+        self.odom = Odometry()
+        self.odom_broadcaster = tf.TransformBroadcaster()
+        self.tf = TransformStamped()
         for i in markers:
-            self.pup.append( rospy.Publisher('positionPuplisher' + str(i), Point)  )       
+            self.pup.append( rospy.Publisher('positionPuplisher' + str(i), Odometry)  )
+#            self.pup.append( rospy.Publisher('positionPuplisher' + str(i), Point)  )       
         rospy.init_node('FrobitLocator')   
 
     def publishMarkerLocations(self, locations):
         j = 0   
-        try:     
-            for i in self.markers:
-                print 'x%i %i  y%i %i  o%i %8.3f' %(i, locations[j][0], i, locations[j][1], i, locations[j][2])
-                #ros function        
-                self.pup[j].publish(  Point( locations[j][0], locations[j][1], locations[j][2] )  )
-                j = j + 1                
-        except:
-            pass
+#        try:     
+        for i in self.markers:
+            print 'x%i %i  y%i %i  o%i %8.3f' %(i, locations[j][0], i, locations[j][1], i, locations[j][2])
+            #ros function  
+            self.odom.header.stamp = rospy.Time.now()
+            self.odom.pose.pose.position.x = locations[j][0]/100.0
+            self.odom.pose.pose.position.y = locations[j][1]/100.0
+            self.odom.pose.pose.position.z = 0.0
+            self.odom.pose.pose.orientation.x = math.cos( locations[j][2] / 2 )
+            self.odom.pose.pose.orientation.y = 0
+            self.odom.pose.pose.orientation.z = 0
+            self.odom.pose.pose.orientation.w = math.sin( locations[j][2] / 2 )
+            self.pup[j].publish( self.odom )
+            
+            self.odom_broadcaster.sendTransform((locations[j][0]/100.0, locations[j][1]/100.0, 0),
+                     tf.transformations.quaternion_from_euler(0, 0, locations[j][2]),
+                     rospy.Time.now(),
+                     "/odom",
+                     "/base_link") 
+            j = j + 1                
+#        except:
+#            pass
 
 
