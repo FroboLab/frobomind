@@ -32,7 +32,8 @@
 # steered robot platform and publishes an odometry message.
 #
 # 2012-03-13 morl original code
-# 2013-03-04 kjen cleanup, now utilizes serial_nmea
+# 2013-03-04 kjen cleanup, now utilizes serial_nmea,
+# 2013-03-04 kjen now publishes ROS Imu message instead of acceleration and gyro
 #
 #****************************************************************************/
 
@@ -49,33 +50,31 @@ int main(int argc, char **argv)
 	ros::NodeHandle n("~");
 
 	string sub_id;
-	string pub_acc,pub_gyro,pub_mag;
+	string pub_imu, pub_mag;
 	string frame_id;
+	bool enu_selected;
+	bool use_imu,use_mag;
 
-	bool use_acc,use_mag,use_gyro;
-
-	n.param<string>("frame_id", frame_id, "/base_link");
+	n.param<string>("frame_id", frame_id, "imu_link");
+	n.param<bool>("use_enu",enu_selected,false);
 
 	n.param<string>("nmea_from_imu_sub",sub_id,"/fmData/nmea_from_imu");
-	n.param<string>("accelerometer_pub",pub_acc,"/fmInformation/accelerometer");
-	n.param<string>("gyroscope_pub",pub_gyro,"/fmInformation/gyroscope");
+	n.param<string>("imu_pub",pub_imu,"/fmInformation/imu");
 	n.param<string>("magnetometer_pub",pub_mag,"/fmInformation/magnetometer");
 
-	n.param<bool>("publish_accelerometer",use_acc,true);
-	n.param<bool>("publish_gyroscope",use_gyro,true);
+	n.param<bool>("publish_imu",use_imu,true);
 	n.param<bool>("publish_magnetometer",use_mag,true);
 
 	SparkFun9DOF node;
 
 	node.setFrameId(frame_id);
 
-	node.setAccTopic (nh.advertise<msgs::accelerometer>(pub_acc , 1));
-	node.setGyroTopic(nh.advertise<msgs::gyroscope>    (pub_gyro, 1));
-	node.setMagTopic (nh.advertise<msgs::magnetometer> (pub_mag , 1));
+	node.setImuTopic(nh.advertise<sensor_msgs::Imu>    (pub_imu, 1));
+	node.setMagTopic (nh.advertise<msgs::magnetometer> (pub_mag, 1));
 
-	node.enableAccelerometer(use_acc);
-	node.enableGyro(use_gyro);
+	node.enableImu(use_imu);
 	node.enableMag(use_mag);
+	node.selectENU (enu_selected);
 
 	ros::Subscriber sub = nh.subscribe(sub_id.c_str(), 1, &SparkFun9DOF::newMsgCallback,&node);
 

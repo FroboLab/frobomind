@@ -50,19 +50,19 @@ SparkFun9DOF::~SparkFun9DOF()
 	// TODO Auto-generated destructor stub
 }
 
-void SparkFun9DOF::enableAccelerometer(bool yes)
+void SparkFun9DOF::enableImu(bool yes)
 {
-	is_enabled_acc_ = yes;
-}
-
-void SparkFun9DOF::enableGyro(bool yes)
-{
-	is_enabled_gyro_ = yes;
+	is_enabled_imu_ = yes;
 }
 
 void SparkFun9DOF::enableMag(bool yes)
 {
 	is_enabled_mag_ = yes;
+}
+
+void SparkFun9DOF::selectENU(bool yes)
+{
+	is_selected_enu_ = yes;
 }
 
 void SparkFun9DOF::setFrameId(string frame_id)
@@ -87,18 +87,13 @@ void SparkFun9DOF::newMsgCallback(const msgs::nmea::ConstPtr& msg)
 					a_x = boost::lexical_cast<int>(msg->data[0]) / 1000.0 * 4 * 9.82;
 					a_y = boost::lexical_cast<int>(msg->data[1]) / 1000.0 * 4 * 9.82;
 					a_z = boost::lexical_cast<int>(msg->data[2]) / 1000.0 * 4 * 9.82;
-
 					g_x = boost::lexical_cast<int>(msg->data[3]) * 1/14.375 * DEG2RAD;
 					g_y = boost::lexical_cast<int>(msg->data[4]) * 1/14.375 * DEG2RAD;
 					g_z = boost::lexical_cast<int>(msg->data[5]) * 1/14.375 * DEG2RAD;
 
-					if(is_enabled_acc_)
+					if(is_enabled_imu_)
 					{
-						publishAcc();
-					}
-					if(is_enabled_gyro_)
-					{
-						publishGyro();
+						publishImu();
 					}
 				}
 				catch(boost::bad_lexical_cast &)
@@ -162,38 +157,58 @@ void SparkFun9DOF::publishMag()
 	pub_mag_.publish(msg_mag_);
 }
 
-void SparkFun9DOF::publishAcc()
+void SparkFun9DOF::publishImu()
 {
-	++msg_acc_.header.seq;
-	msg_acc_.header.frame_id = frame_id_;
-	msg_acc_.header.stamp = ros::Time::now();
-	msg_acc_.x = a_x;
-	msg_acc_.y = a_y;
-	msg_acc_.z = a_z;
 
-	pub_acc_.publish(msg_acc_);
+
+	++msg_imu.header.seq;
+	msg_imu.header.frame_id = frame_id_;
+	msg_imu.header.stamp = ros::Time::now();
+
+	if(is_selected_enu_)
+	{
+		// ENU orientation
+		msg_imu.orientation_covariance[0] = -1; // As instructed here: http://www.ros.org/doc/api/sensor_msgs/html/msg/Imu.html
+		msg_imu.orientation.x = 0;
+		msg_imu.orientation.y = 0;
+		msg_imu.orientation.z = 0;
+		msg_imu.orientation.w = 0;
+
+		// acceleration
+		msg_imu.linear_acceleration.x = a_x;
+		msg_imu.linear_acceleration.y = a_y;
+		msg_imu.linear_acceleration.z = a_z;
+
+		// angular rates
+		msg_imu.angular_velocity.x = g_x;
+		msg_imu.angular_velocity.y = g_y;
+		msg_imu.angular_velocity.z = g_z;
+	}
+	else
+	{
+		// NED ORIENTATION
+		/* swap x and y and negate z */
+		msg_imu.orientation.y = 0;
+		msg_imu.orientation.x = 0;
+		msg_imu.orientation.z = 0;
+		msg_imu.orientation.w = 0;
+
+		// acceleration swap x y negate z
+		msg_imu.linear_acceleration.y = a_x;
+		msg_imu.linear_acceleration.x = a_y;
+		msg_imu.linear_acceleration.z = - a_z;
+
+		// angular rates swap x y and negate z
+		msg_imu.angular_velocity.y = g_x;
+		msg_imu.angular_velocity.x = g_y;
+		msg_imu.angular_velocity.z = -g_z;
+	}
+	pub_imu_.publish(msg_imu);
 }
 
-void SparkFun9DOF::publishGyro()
+void SparkFun9DOF::setImuTopic(ros::Publisher pub)
 {
-	++msg_gyro_.header.seq;
-	msg_gyro_.header.frame_id = frame_id_;
-	msg_gyro_.header.stamp = ros::Time::now();
-	msg_gyro_.x = g_x;
-	msg_gyro_.y = g_y;
-	msg_gyro_.z = g_z;
-
-	pub_gyro_.publish(msg_gyro_);
-}
-
-void SparkFun9DOF::setGyroTopic(ros::Publisher pub)
-{
-	pub_gyro_ = pub;
-}
-
-void SparkFun9DOF::setAccTopic(ros::Publisher pub)
-{
-	pub_acc_ = pub;
+	pub_imu_ = pub;
 }
 
 void SparkFun9DOF::setMagTopic(ros::Publisher pub)

@@ -1,13 +1,20 @@
 <launch>
+	<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args=""/>
+
+	<group ns="transforms">
+		<node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0.0 0 0.0 0 0 0 base_footprint imu_link 100"/>
+	</group>
+
 	<group ns="fmSensors">
 		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
 			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
-			<param name="accelerometer_pub" value="/fmInformation/accelerometer"/>
-			<param name="gyroscope_pub" value="/fmInformation/gyroscope"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
 			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
-			<param name="publish_accelerometer" type="bool" value="true"/>
-			<param name="publish_gyroscope" type="bool" value="true"/>
-			<param name="publish_magnetometer" type="bool" value="true"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="true"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
 		 </node>
 	</group>
 
