@@ -1,0 +1,31 @@
+<launch>
+	<group ns="fmSensors">
+		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="accelerometer_pub" value="/fmInformation/accelerometer"/>
+			<param name="gyroscope_pub" value="/fmInformation/gyroscope"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_accelerometer" type="bool" value="true"/>
+			<param name="publish_gyroscope" type="bool" value="true"/>
+			<param name="publish_magnetometer" type="bool" value="true"/>
+		 </node>
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="serial_nmea" name="imu_nmea_node" type="nmea_node" output="screen">
+		    <param name="str_to_msg_sub" value="/fmData/imu_rx" />   
+		    <param name="str_to_msg_pub" value="/fmData/nmea_from_imu" />
+		    <param name="msg_to_str_sub" value="/fmData/nmea_to_imu" />   
+		    <param name="msg_to_str_pub" value="/fmData/imu_tx" />           
+		    <!-- <param name="use_nmea_checksum" type="boolean" value="true" /> -->
+		</node>
+
+		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" >
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/ttyUSB0" />	
+			<param name="baudrate" value="57600" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+	</group>
+</launch>
