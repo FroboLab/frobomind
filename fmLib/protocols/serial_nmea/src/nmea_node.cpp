@@ -1,3 +1,43 @@
+/*****************************************************************************
+# NMEA node
+# Copyright (c) 2012-2013,
+#	Leon Bonde Larsen <leon@bondelarsen.d>
+#	Kjeld Jensen <kjeld@frobomind.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name FroboMind nor the
+#      names of its contributors may be used to endorse or promote products
+#      derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#*****************************************************************************
+#
+# This node reads NMEA messages from a serial stream, decodes the information
+# and verifys the checksum.
+#
+# 2012-xx-xx lelar original code
+# 2013-03-04 kjen  bugfix, more robust error handling,
+#                  added length to nmea msg, checksum is validated on
+#                  incoming msgs regardles of use_nmea_checksum value
+#                  OUTGOING CHECKSUM NOT YET IMPLEMENTED
+#
+#****************************************************************************/
 
 #include <stdio.h>
 #include <string.h>
@@ -84,37 +124,44 @@ void str_to_msg_callback(const msgs::serial::ConstPtr& msg) {
 
 	if (msg->data[0] == '$')
 	{	
-		//build message
+		//build NMEA message data type
 		nmea_msg.header.stamp = ros::Time::now();
 		nmea_msg.type.clear();
 		nmea_msg.data.clear();
+		nmea_msg.length = 0;
 		nmea_msg.valid = false;
+
+		// test if checksum is appended to the received message
+		bool checksum_appended = nmeastr.find("*");
 
 		boost::char_separator<char> sep("$,*\r");
 		tokenizer tokens(nmeastr, sep);
 		std::vector<std::string> nmea;
 		nmea.assign(tokens.begin(), tokens.end());
-		if (nmea.size() >= 4 && nmea.at(0) == "PFBST")
+		if (nmea.size() >= 3)
 		{
 			nmea_msg.type = nmea.at(0);
-			try {
-
-				for (int i = 1 ; i < nmea.size() ; i++ )
+			if(checksum_appended == true)
+			{
+				int i;
+				for (i = 1 ; i < nmea.size()-1 ; i++ )
 					nmea_msg.data.push_back( nmea.at(i).c_str() );
+				nmea_msg.length = i-1; // number of data values
 
-				if(use_checksum)
+				if (!verify_checksum(nmea))
 				{
-					if (!verify_checksum(nmea))
-					{
-						ROS_WARN("NMEA string discarded due to faulty checksum");
-					}
-					else
-						nmea_msg.valid = true;
+					ROS_WARN("NMEA string discarded due to faulty checksum");
 				}
 				else
 					nmea_msg.valid = true;
-			} catch (boost::bad_lexical_cast &) {
-				ROS_WARN("nmea_parser: bad lexical cast");
+			}
+			else
+			{
+				int i;
+				for (i = 1 ; i < nmea.size() ; i++ )
+					nmea_msg.data.push_back( nmea.at(i).c_str() );
+				nmea_msg.length = i; // number of data values
+				nmea_msg.valid = true;
 			}
 		}
 		else
@@ -143,8 +190,14 @@ void msg_to_str_callback(const msgs::nmea::ConstPtr& msg) {
 	nmea_list.push_back(msg->type);
 	nmea_list.push_back(",");
 	nmea_list.push_back(data_string);
-//	nmea_list.push_back("*");
-//	nmea_list.push_back("00");
+	
+	if (use_checksum == true)
+	{
+		// TODO: Add support for optional checksum on transmitted NMEA messages
+
+	//	nmea_list.push_back("*"); 
+	//	nmea_list.push_back("00");
+	}
 	nmea_list.push_back("\r\n");
 
 	nmea_string.header.stamp = msg->header.stamp;
