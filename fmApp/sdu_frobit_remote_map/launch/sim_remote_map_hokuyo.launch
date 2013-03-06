@@ -19,11 +19,10 @@
 		<node pkg="sdu_frobit_remote_map" name="frobit_remote" type="remote.py" output="screen">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="max_linear_velocity" value="4"/>
-			<param name="max_angular_velocity" value="2"/>
-			<param name="min_linear_velocity" value="0.2"/>
-			<param name="min_angular_velocity" value="0.2"/>
-			<param name="deadband" value="0.1"/>
+			<param name="max_linear_velocity" value="1.5"/>
+			<param name="max_angular_velocity" value="1.8"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="40"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
 			<param name="status_topic" value="/fmData/status"/>
