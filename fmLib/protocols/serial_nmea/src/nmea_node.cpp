@@ -56,6 +56,7 @@ ros::Publisher str_to_msg_pub;
 ros::Publisher msg_to_str_pub;
 msgs::nmea nmea_msg;
 bool use_checksum;
+int fixed_fields;
 
 
 typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -103,7 +104,8 @@ bool verify_checksum(std::vector<std::string> tokens) {
 	unsigned char *string_breakdown;
 
 	//Calculate check sum
-	for (unsigned int i = 0; i < tokens.size() - 1; i++) {
+	for (unsigned int i = 0; i < tokens.size() - 1; i++)
+	{
 		string_breakdown = (unsigned char*) tokens.at(i).c_str();
 
 		for (unsigned int j = 0; j < tokens.at(i).length(); j++)
@@ -111,9 +113,13 @@ bool verify_checksum(std::vector<std::string> tokens) {
 				checksum ^= string_breakdown[j];
 
 		//Remember the ','
-		if (i < (tokens.size() - 2))
-			checksum ^= ',';
+		if (! fixed_fields)
+			if (i < (tokens.size() - 2))
+				checksum ^= ',';
 	}
+
+	if ( fixed_fields % 2 != 0 )
+		checksum ^= ',';
 
 	return (checksum == expected_checksum);
 }
@@ -227,6 +233,7 @@ int main(int argc, char **argv) {
 	n.param<std::string>("msg_to_str_pub", msg_to_str_pub_id,
 			"/fmCSP/S0_tx_msg");
 	n.param<bool>("use_nmea_checksum" , use_checksum , false);
+	n.param<int>("fixed_no_of_fields" , fixed_fields , 0);
 
 	ros::Subscriber str_to_msg_sub = nh.subscribe(str_to_msg_sub_id, 10, str_to_msg_callback);
 	str_to_msg_pub = nh.advertise<msgs::nmea>(str_to_msg_pub_id, 1);
