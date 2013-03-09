@@ -1,0 +1,22 @@
+<launch>
+    <node pkg="serial_nmea" name="nmea_node" type="nmea_node" output="screen">
+        <param name="str_to_msg_sub" value="/fmData/rx" />   
+        <param name="str_to_msg_pub" value="/fmLib/nmea_from_gps" />
+        <param name="msg_to_str_sub" value="/fmLib/nmea_to_gps" />   
+        <param name="msg_to_str_pub" value="/fmData/tx" />           
+        <param name="use_nmea_checksum" type="boolean" value="true" />
+    </node>
+
+	<node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
+        <param name="publisher_topic" value="/fmData/rx" />	 
+        <param name="subscriber_topic" value="/fmData/tx" />
+		<param name="device" value="/dev/ttyUSB0" />	
+		<param name="baudrate" value="115200" />
+		<param name="termination_character" value="10"/>
+	</node>
+
+    <node pkg="topcon_g3" type="init_serial_nmea.py" name="gps_initializer" output="screen">
+ 		<param name="serial_topic" value="/fmData/tx"/>
+ 		<param name="message_string" value="%%em,/dev/ser/a,nmea/GGA/NP:0.2" />
+    </node>
+</launch>
