@@ -11,5 +11,3 @@ joystick_drivers
 # Ignore top-level symbolic link to CMakeLists.txt
 /CMakeLists.txt
 
-# Ignore submodule settings
-.gitmodules
