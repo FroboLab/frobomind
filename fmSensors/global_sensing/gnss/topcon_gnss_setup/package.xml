@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>topcon_g3</name>
+  <name>topcon_gnss_setup</name>
   <version>0.0.0</version>
   <description>The topcon_g3 package</description>
 

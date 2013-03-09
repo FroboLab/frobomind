@@ -37,17 +37,27 @@ class serialInitializer():
         rospy.init_node('topcon_initializer')
         
         self.topic = rospy.get_param("~serial_topic",'/fmData/tx')
-        self.message = rospy.get_param("~message_string",'test')
+        self.message1 = rospy.get_param("~message_string1","")
+        self.message2 = rospy.get_param("~message_string2","")
+        self.message3 = rospy.get_param("~message_string3","")
         
         self.rate = rospy.Rate(1)
         self.serial_pub = rospy.Publisher(self.topic, serial)
         self.serial_msg = serial()
-        self.serial_msg.data = self.message
+        
         
     def spin(self): 
         while not rospy.is_shutdown() :
-            self.serial_msg.header.stamp = rospy.Time.now()     
-            self.serial_pub.publish(self.serial_msg)
+            self.serial_msg.header.stamp = rospy.Time.now()
+            if self.message1 :
+                self.serial_msg.data = self.message1     
+                self.serial_pub.publish(self.serial_msg)
+            if self.message2 :
+                self.serial_msg.data = self.message2     
+                self.serial_pub.publish(self.serial_msg)
+            if self.message3 :
+                self.serial_msg.data = self.message3     
+                self.serial_pub.publish(self.serial_msg)    
             self.rate.sleep()
             
     
