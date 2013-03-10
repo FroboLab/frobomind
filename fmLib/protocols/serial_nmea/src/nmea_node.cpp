@@ -211,15 +211,11 @@ int main(int argc, char **argv) {
 	std::string msg_to_str_sub_id;
 	std::string msg_to_str_pub_id;
 
-	n.param<std::string>("str_to_msg_sub", str_to_msg_sub_id,
-			"/fmCSP/S0_rx_msg");
-	n.param<std::string>("str_to_msg_pub", str_to_msg_pub_id,
-			"/nmea_in");
-	n.param<std::string>("msg_to_str_sub", msg_to_str_sub_id,
-			"/nmea_out");
-	n.param<std::string>("msg_to_str_pub", msg_to_str_pub_id,
-			"/fmCSP/S0_tx_msg");
-	n.param<bool>("use_nmea_checksum" , use_checksum , false);
+	n.param<std::string>("str_to_msg_sub", str_to_msg_sub_id,"/fmData/rx");
+	n.param<std::string>("str_to_msg_pub", str_to_msg_pub_id,"/fmData/nmea_in");
+	n.param<std::string>("msg_to_str_sub", msg_to_str_sub_id,"/fmData/nmea_out");
+	n.param<std::string>("msg_to_str_pub", msg_to_str_pub_id,"/fmData/tx");
+	n.param<bool>("use_nmea_checksum" , use_checksum , true);
 
 	ros::Subscriber str_to_msg_sub = nh.subscribe(str_to_msg_sub_id, 10, str_to_msg_callback);
 	str_to_msg_pub = nh.advertise<msgs::nmea>(str_to_msg_pub_id, 1);
