@@ -93,7 +93,9 @@
 			<param name="cmd_vel_timeout" value="1"/>          
         	</node>
 
-        	<node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<!-- <param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/> --> <!-- Leon -->
+			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/> <!-- Kjeld -->
 		</node>
 
 		<node pkg="serial_nmea" name="imu_nmea_node" type="nmea_node" output="screen">
