@@ -1,0 +1,7 @@
+{
+  Angle_scale: 2.0,
+  Delta_rabbit: 4.0,
+  Delta_waypoint: 0.1,
+  Distance_scale: 0.0015,
+  Rabbit_type: 0
+}
