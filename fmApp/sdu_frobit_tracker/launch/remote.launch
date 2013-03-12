@@ -8,7 +8,7 @@
 	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
 	<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py"/>
 
-	<node pkg="indoor_tracker" type="tracker_node.py" name="tracker"/>
+	<node pkg="MarkerLocator" type="tracker_node.py" name="tracker"/>
 	<remap from="/positionPublisher7" to="/base_pose_ground_truth"/>
 
 	<group ns="fmDecisionMakers">
