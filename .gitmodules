@@ -4,3 +4,6 @@
 [submodule "executive_smach"]
 	path = fmDependencies/executive_smach
 	url = git@github.com:FroboLab/executive_smach.git
+[submodule "MarkerLocator"]
+	path = fmDependencies/MarkerLocator
+	url = git@github.com:FroboLab/MarkerLocator.git
