@@ -18,7 +18,7 @@
     <node pkg="topcon_gnss_setup" type="topcon_initializer_node.py" name="gps_initializer" output="screen">
  		<param name="serial_topic" value="/fmData/tx"/>
  		<param name="message_string1" value="%%em,/dev/ser/a,nmea/GGA/NP:0.2" />
- 		<param name="message_string2" value="set,/par/pos/pd/ionr,0" />
- 		<param name="message_string3" value="%%em,/dev/ser/c,nmea/GSV/NP:0.5" />
+ 		<!--param name="message_string2" value="set,/par/pos/pd/ionr,0" /-->
+ 		<!--param name="message_string3" value="%%em,/dev/ser/c,nmea/GSV/NP:0.5" /-->
     </node>
 </launch>
