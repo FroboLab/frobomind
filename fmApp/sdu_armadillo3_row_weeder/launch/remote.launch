@@ -1,0 +1,36 @@
+<launch>
+	<include file="$(find sdu_armadillo3_row_weeder)/launch/base.launch"/>	
+
+	<group ns="fmDecisionMakers">
+    	<node pkg="sdu_armadillo3_row_weeder" type="remote.py" name="remote" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="max_linear_velocity" value="0.1"/>
+			<param name="max_angular_velocity" value="0.2"/>
+			<param name="deadband" value="1"/>
+			<param name="reduced_range" value="40"/>
+			<param name="feedback_topic" value="/fmHMI/joy/set_feedback" />
+			<param name="joy_topic" value="/fmHMI/joy" />
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="publish_frequency" value="10"/>
+		</node>
+		
+		<node pkg="sdu_vibro_crop" type="kongskilde_rowcleaner_controller_node" name="kongskilde_row_cleaner" respawn="true">
+            <param name="serial_rx_sub" value="/fmCSP/com3_rx" />
+        	<param name="serial_tx_pub" value="/fmCSP/com3_tx" />
+        	<param name="invert_operation" value="true"/>
+    	</node>
+	</group>
+   
+    <group ns="fmHMI">
+        <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true" />
+	</group>
+	
+	<node pkg="serial_string" type="serial_string_node" name="serial_comm_right">
+		<param name="publisher_topic" value="/fmCSP/com3_rx" />
+		<param name="subscriber_topic" value="/fmCSP/com3_tx" />
+		<param name="device" value="/dev/ttyUSB0" />
+		<param name="baudrate" value="38400" />
+	</node>
+	
+</launch>

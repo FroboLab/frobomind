@@ -1,5 +1,5 @@
 <launch>
-	<include file="$(find sdu_armadillo_3)/launch/base.launch"/>	
+	<include file="$(find sdu_armadillo3_remote)/launch/base.launch"/>	
 
 	<group ns="fmDecisionMakers">
     	<node pkg="sdu_armadillo3_remote" type="remote.py" name="remote" output="screen">
