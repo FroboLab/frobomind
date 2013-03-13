@@ -1,0 +1,10 @@
+ #!/bin/bash
+ cd ..
+ basedir=$(pwd)
+ for file in $(find . -name 'Doxyfile'); do
+     makedir=$(dirname "$file")
+     echo $file - $makedir
+     cd "$basedir"
+     cd "$makedir"
+     doxygen Doxyfile
+ done

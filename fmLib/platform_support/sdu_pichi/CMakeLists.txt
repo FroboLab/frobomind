@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp roboteq)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
-# catkin_python_setup()
+ catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -82,10 +82,10 @@ include_directories(include
 
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
- install(PROGRAMS
-   scripts/test
-   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+# install(PROGRAMS
+#   scripts/test
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS sdu_pichi sdu_pichi_node

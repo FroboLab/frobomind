@@ -45,6 +45,7 @@ class WiiInterface():
     """
     def __init__(self):
         # Setup parameters
+        rospy.loginfo("wii interface initialized")
         self.automode = False
         self.deadman = Bool(False)
         self.linear = 0
@@ -61,6 +62,9 @@ class WiiInterface():
                                            JoyFeedback( type=JoyFeedback.TYPE_LED, intensity=0, id=2 ), 
                                            JoyFeedback( type=JoyFeedback.TYPE_LED, intensity=0, id=3 ), 
                                            JoyFeedback( type=JoyFeedback.TYPE_RUMBLE, intensity=0, id=0 )] ) 
+        
+        # Callbacks
+        self.button_A_cb = self.no_callback_registered
 
         # Get parameters
         self.reduced_range = rospy.get_param("~reduced_range",50) # Given in percent
@@ -84,16 +88,38 @@ class WiiInterface():
         self.fb_pub = rospy.Publisher(self.feedback_topic, JoyFeedbackArray)
         self.joy_sub = rospy.Subscriber(self.joy_topic, Joy, self.onJoy )
         self.status_sub = rospy.Subscriber(self.status_topic, StringStamped , self.onStatus)
+
+    def no_callback_registered(self):
+        rospy.loginfo("Button A pressed but no callback was registered")
+        
+    def register_callback_button_A(self,cb):
+        self.button_A_cb = cb
         
     def onJoy(self,msg):
         """
             Callback method handling Joy messages
+            Index   Button   Usage
+            0       1        Enter automode
+            1       2        Exit automode
+            2       A        Callback
+            3       B        Deadman
+            4       Plus
+            5       Minus
+            6       Left
+            7       Right
+            8       Up
+            9       Down
+            10      HOME
         """
         # Handle automode buttons
         if msg.buttons[0] == 1 :
             self.automode = True
         if msg.buttons[1] == 1 :
             self.automode = False
+        
+        # Handle button A callback
+        if msg.buttons[2] == 1 :
+            self.button_A_cb()
             
         # Handle deadman button
         if msg.buttons[3] == 1 :

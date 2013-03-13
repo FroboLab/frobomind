@@ -17,7 +17,7 @@
 # identify the project. Note that if you do not use Doxywizard you need 
 # to put quotes around the project name if it contains spaces.
 
-PROJECT_NAME           = sdu_frobit
+PROJECT_NAME           = sdu_pichi
 
 # The INPUT tag can be used to specify the files and/or directories that contain 
 # documented source files. You may enter file names like "myfile.cpp" or 
@@ -31,7 +31,7 @@ INPUT                  = src/ scripts/ launch/ include/
 # If a relative path is entered, it will be relative to the location 
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = ../../../fmDoc/sdu_frobit/
+OUTPUT_DIRECTORY       = ../../../fmDoc/sdu_pichi/
 
 # This tag specifies the encoding used for all characters in the config file 
 # that follow. The default is UTF-8 which is also the encoding used for all 

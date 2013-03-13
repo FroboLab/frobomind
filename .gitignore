@@ -4,6 +4,9 @@
 # Ignore Python .pyc
 *.pyc
 
+# Ignore doxygen files
+fmDocs/*
+
 # Ignore top-level symbolic link to CMakeLists.txt
 /CMakeLists.txt
 

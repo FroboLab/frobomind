@@ -42,7 +42,9 @@ class Mission():
     """
     def __init__(self):
         rospy.init_node('mission_control')
+        rospy.loginfo("mission control initialized")
         self.hmi = wii_interface.WiiInterface()
+        self.hmi.register_callback_button_A(self.onButtonA)
           
     def build(self):
          # Build the autonomous state as concurrence between wiimote and measuring behaviour to allow user preemption
@@ -68,6 +70,9 @@ class Mission():
         sm.execute()
         rospy.spin()
         sis.stop()
+        
+    def onButtonA(self):
+        rospy.loginfo("A pressed")
 
 def onPreempt(outcome_map):
     """
