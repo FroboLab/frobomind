@@ -243,7 +243,7 @@ void rabbitPlanner::actionExecute(const line_executer::follow_pathGoalConstPtr& 
 	}
 
 
-	ROS_INFO("Path has %d entries",path->size());
+	ROS_INFO("Path has %ld entries",path->size());
 	publishPath();
 
 	while(!success)

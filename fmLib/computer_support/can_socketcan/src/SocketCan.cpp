@@ -85,7 +85,7 @@ void SocketCan::processCanTxEvent(const msgs::can::ConstPtr& msg)
 	}
 	catch (boost::system::system_error &e)
 	{
-		ROS_ERROR(e.what());
+		ROS_ERROR("%s",e.what());
 	}
 }
 

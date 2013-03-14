@@ -66,7 +66,7 @@ void serialInterface::readHandler(const boost::system::error_code& error,
 
 		if(is.bad() || is.fail())
 		{
-			ROS_ERROR("Failed to extract line from serial %d");
+			ROS_ERROR("Failed to extract line from serial");
 		}
 		else
 		{
