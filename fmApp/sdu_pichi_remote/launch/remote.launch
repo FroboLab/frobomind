@@ -41,6 +41,7 @@
 			<param name="power_ch1_topic" value="/fmData/power_left"/>
 			<param name="power_ch2_topic" value="/fmData/power_right"/>
 			<param name="status_topic" value="/fmData/status"/>	
+			<param name="mps_to_rpm" value="1432"/>
 			<param name="p_gain" value="50"/>
 			<param name="i_gain" value="0"/>
 			<param name="d_gain" value="0"/>         

@@ -47,9 +47,10 @@ class sender():
         self.ui.register_cb(self.onUpdate)
         
         # Init node an set up publisher  
-        rospy.init_node('PID_trimmer')      
+        rospy.init_node('PID_trimmer', anonymous=True)      
         self.serial_pub = rospy.Publisher("/fmData/tx", serial)
         self.serial_msg = serial()
+        self.rate = rospy.Rate(10)
     
     def spin(self):
         """Method to start GUI"""
@@ -64,26 +65,31 @@ class sender():
             self.serial_pub.publish(self.serial_msg)
             self.serial_msg.data = "^KP 2 " + p_gain
             self.serial_pub.publish(self.serial_msg)
+            self.rate.sleep()
         if i_gain :
             self.serial_msg.data = "^KI 1 " + i_gain
             self.serial_pub.publish(self.serial_msg)
             self.serial_msg.data = "^KI 2 " + i_gain
             self.serial_pub.publish(self.serial_msg)
+            self.rate.sleep()
         if d_gain :
             self.serial_msg.data = "^KD 1 " + d_gain
             self.serial_pub.publish(self.serial_msg)
             self.serial_msg.data = "^KD 2 " + d_gain
             self.serial_pub.publish(self.serial_msg)
+            self.rate.sleep()
         if ramp_up :
             self.serial_msg.data = "^MAC 1 " + ramp_up
             self.serial_pub.publish(self.serial_msg)
             self.serial_msg.data = "^MAC 2 " + ramp_up
             self.serial_pub.publish(self.serial_msg)
+            self.rate.sleep()
         if ramp_down :
             self.serial_msg.data = "^MDEC 1 " + ramp_down
             self.serial_pub.publish(self.serial_msg)
             self.serial_msg.data = "^MDEC 2 " + ramp_down
             self.serial_pub.publish(self.serial_msg)
+            self.rate.sleep()
 
 if __name__ == "__main__":
     """main function to instantiate the class and spin"""
