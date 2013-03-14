@@ -48,13 +48,13 @@ class WiiInterface():
         rospy.loginfo("wii interface initialized")
         self.automode = False
         self.deadman = Bool(False)
-        self.linear = 0
-        self.angular = 0
+        self.linear = 0.0
+        self.angular = 0.0
         self.next_state_change = rospy.Time.now() + rospy.Duration(1)
         self.rumble_on = False
         self.warning = False
-        self.pitch = [0 , 0 , 0 , 0 , 0 , 0 , 0, 0 , 0 , 0]
-        self.roll = [0 , 0 , 0 , 0 , 0 , 0 , 0, 0 , 0 , 0]
+        self.pitch = [0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0, 0.0 , 0.0 , 0.0]
+        self.roll = [0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0, 0.0 , 0.0 , 0.0]
         self.ptr = 0
         self.twist = TwistStamped()
         self.fb = JoyFeedbackArray( array=[JoyFeedback( type=JoyFeedback.TYPE_LED, intensity=0, id=0 ), 
@@ -69,13 +69,13 @@ class WiiInterface():
         self.button_down_cb = self.no_callback_registered
 
         # Get parameters
-        self.reduced_range = rospy.get_param("~reduced_range",50) # Given in percent
+        self.reduced_range = rospy.get_param("~reduced_range",40) # Given in percent
         self.reduced_range = self.reduced_range / 100.0 # Convert to ratio
         self.deadband = rospy.get_param("~deadband",5) # Given in percent
-        self.deadband = self.deadband / 100.0 # Convert to ratio
+        self.deadband = self.deadband / 100.0 # Convert to rati
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
-        self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
-        self.publish_frequency = rospy.get_param("~publish_frequency",5)    
+        self.max_angular_velocity = rospy.get_param("~max_angular_velocity",4)
+        self.publish_frequency = rospy.get_param("~publish_frequency",10)    
         
         # Get topic names
         self.deadman_topic = rospy.get_param("~deadman_topic",'deadman')
