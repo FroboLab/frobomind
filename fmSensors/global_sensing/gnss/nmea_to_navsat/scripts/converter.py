@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind wii_interface.py
+# FroboMind NMEA to NavSat Converter
 # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
 # Some parts of this code is copied from 
 # nmea_gps_driver Copyright (c) 2012, Steven Martin, Eric Perko
