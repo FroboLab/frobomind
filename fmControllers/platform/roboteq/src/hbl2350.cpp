@@ -230,11 +230,11 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 					cmd_vel_active = false;
 				}
 
-				if(ros::Time::now() - last_serial_msg > max_time_diff)
+				if(ros::Time::now() - last_serial_msg > max_time_diff * 3)
 				{
 					ROS_WARN("Lost connection to RoboTeq - shutting down");
 					velocity_ch1 = velocity_ch2 = 0;
-					initialised = false;
+					initialised = online = false;
 				}
 
 				if(deadman_active && cmd_vel_active && initialised)
