@@ -1,15 +1,15 @@
 <launch>
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_frobit_remote_map" name="frobit_remote" type="remote.py" output="screen">
+		<node pkg="sdu_pichi_remote" name="mission_control" type="remote.py" output="screen">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="max_linear_velocity" value="2"/>
-			<param name="max_angular_velocity" value="4"/>
-			<param name="deadband" value="5"/>
-			<param name="reduced_range" value="40"/>
+			<param name="status_topic" value="/fmData/status"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
-			<param name="status_topic" value="/fmData/status"/>
+			<param name="max_linear_velocity" value="0.5"/>
+			<param name="max_angular_velocity" value="1.0"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="50"/>
 			<param name="publish_frequency" value="10"/>
 		</node>
 	</group>
@@ -42,13 +42,14 @@
 			<param name="power_ch2_topic" value="/fmData/power_right"/>
 			<param name="status_topic" value="/fmData/status"/>	
 			<param name="mps_to_rpm" value="1432"/>
+			<param name="closed_loop_operation" value="true"/>
 			<param name="p_gain" value="50"/>
 			<param name="i_gain" value="0"/>
 			<param name="d_gain" value="0"/>         
         </node>
 
         <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
-        	<!--param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/-->
+        	<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/><!-- Wiimote marked ROBO[LAB] -->
 		</node>
 		
 	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
@@ -60,5 +61,7 @@
 		</node>	
 	</group>
 	
+		<!-- PID trimmer -->
+		<node pkg="sdu_pichi" name="PID_trimmer" type="trimmer.py" output="screen" />
 	
 </launch>

@@ -48,7 +48,7 @@ class sender():
         
         # Init node an set up publisher  
         rospy.init_node('PID_trimmer', anonymous=True)      
-        self.serial_pub = rospy.Publisher("/fmData/tx", serial)
+        self.serial_pub = rospy.Publisher("/fmData/command", serial)
         self.serial_msg = serial()
         self.rate = rospy.Rate(10)
     
@@ -61,33 +61,38 @@ class sender():
         """Callback method to publish set commands"""
         self.serial_msg.header.stamp = rospy.Time.now()
         if p_gain :
-            self.serial_msg.data = "^KP 1 " + p_gain
+            self.serial_msg.data = "^KP 1 " + p_gain + "\r"
             self.serial_pub.publish(self.serial_msg)
-            self.serial_msg.data = "^KP 2 " + p_gain
+            self.rate.sleep()
+            self.serial_msg.data = "^KP 2 " + p_gain + "\r"
             self.serial_pub.publish(self.serial_msg)
             self.rate.sleep()
         if i_gain :
-            self.serial_msg.data = "^KI 1 " + i_gain
+            self.serial_msg.data = "^KI 1 " + i_gain + "\r"
             self.serial_pub.publish(self.serial_msg)
-            self.serial_msg.data = "^KI 2 " + i_gain
+            self.rate.sleep()
+            self.serial_msg.data = "^KI 2 " + i_gain + "\r"
             self.serial_pub.publish(self.serial_msg)
             self.rate.sleep()
         if d_gain :
-            self.serial_msg.data = "^KD 1 " + d_gain
+            self.serial_msg.data = "^KD 1 " + d_gain + "\r"
             self.serial_pub.publish(self.serial_msg)
-            self.serial_msg.data = "^KD 2 " + d_gain
+            self.rate.sleep()
+            self.serial_msg.data = "^KD 2 " + d_gain + "\r"
             self.serial_pub.publish(self.serial_msg)
             self.rate.sleep()
         if ramp_up :
-            self.serial_msg.data = "^MAC 1 " + ramp_up
+            self.serial_msg.data = "^MAC 1 " + ramp_up + "\r"
             self.serial_pub.publish(self.serial_msg)
-            self.serial_msg.data = "^MAC 2 " + ramp_up
+            self.rate.sleep()
+            self.serial_msg.data = "^MAC 2 " + ramp_up + "\r"
             self.serial_pub.publish(self.serial_msg)
             self.rate.sleep()
         if ramp_down :
-            self.serial_msg.data = "^MDEC 1 " + ramp_down
+            self.serial_msg.data = "^MDEC 1 " + ramp_down + "\r"
             self.serial_pub.publish(self.serial_msg)
-            self.serial_msg.data = "^MDEC 2 " + ramp_down
+            self.rate.sleep()
+            self.serial_msg.data = "^MDEC 2 " + ramp_down + "\r"
             self.serial_pub.publish(self.serial_msg)
             self.rate.sleep()
 

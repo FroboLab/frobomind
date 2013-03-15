@@ -73,13 +73,14 @@ int main(int argc, char **argv)
 
   serialInterface serialInterface(s_publisher);
   serialInterface.term_char = (char)term;
-  serialInterface.openDevice(device, baudrate);
 
+  /* keep trying until connection is made */
+  while(serialInterface.openDevice(device, baudrate))
+	  sleep(2);
 
   s_subscriber = nh.subscribe<msgs::serial> (subscriber_topic.c_str(), 20, &serialInterface::writeHandler, &serialInterface);
-
   ros::spin();
-
   return 0;
+
 }
 

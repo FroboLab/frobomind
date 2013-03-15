@@ -118,8 +118,14 @@ void serialInterface::writeHandler(const msgs::serial::ConstPtr& msg)
 {
 	if (serial_.is_open())
 	{
-		serial_.write_some(
-				boost::asio::buffer(msg->data.c_str(), msg->data.length()));
+		try
+		{
+			serial_.write_some(
+					boost::asio::buffer(msg->data.c_str(), msg->data.length()));
+		}
+		catch (boost::system::system_error &e) {ROS_ERROR("Write operation failed: %s", e.what());}
+		catch (...) {ROS_ERROR("Write operation failed");}
+
 	}
 }
 

@@ -17,6 +17,7 @@ hbl2350::hbl2350( )
 					cmd_vel_ch2_topic,
 					serial_tx_topic,
 					serial_rx_topic,
+					command_relay_topic,
 					deadman_topic,
 					encoder_ch1_topic,
 					encoder_ch2_topic,
@@ -49,6 +50,7 @@ hbl2350::hbl2350( )
 	local_node_handler.param<std::string>("cmd_vel_ch2_topic",	cmd_vel_ch2_topic,		"/fmActuators/cmd_vel_ch2");
 	local_node_handler.param<std::string>("serial_rx_topic",	serial_rx_topic,		"/fmCSP/S0_rx");
 	local_node_handler.param<std::string>("serial_tx_topic",	serial_tx_topic,		"/fmCSP/S0_tx");
+	local_node_handler.param<std::string>("command_relay_topic",command_relay_topic,	"/fmData/command");
 	local_node_handler.param<std::string>("deadman_topic",		deadman_topic,			"/fmHMI/joy");
 	local_node_handler.param<std::string>("encoder_ch1_topic",	encoder_ch1_topic,		"/fmSensors/encoder_ch1");
 	local_node_handler.param<std::string>("encoder_ch2_topic",	encoder_ch2_topic,		"/fmSensors/encoder_ch2");
@@ -60,6 +62,7 @@ hbl2350::hbl2350( )
 	local_node_handler.param<int>("p_gain",	p_gain_ch1,	1);
 	local_node_handler.param<int>("i_gain",	i_gain_ch1,	0);
 	local_node_handler.param<int>("d_gain",	d_gain_ch1,	0);
+	local_node_handler.param<bool>("closed_loop_operation",	closed_loop_operation,	false);
 	p_gain_ch2 = p_gain_ch1;
 	i_gain_ch2 = i_gain_ch1;
 	d_gain_ch2 = d_gain_ch1;
@@ -79,9 +82,11 @@ hbl2350::hbl2350( )
 
 	// Set subscriber topics
 	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl2350::onSerial,this);
+	command_relay_sub = local_node_handler.subscribe<msgs::serial>(command_relay_topic,10,&hbl2350::onCommand,this);
 	cmd_vel_ch1_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&hbl2350::onCmdVelCh1,this);
 	cmd_vel_ch2_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&hbl2350::onCmdVelCh2,this);
 	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl2350::onDeadman,this);
+
 }
 
 void hbl2350::spin(void)
@@ -126,8 +131,16 @@ void hbl2350::initController(void)
 	transmit(2, "^PWMF", 200 ); sleep(TIME_BETWEEN_COMMANDS);						// 20 kHz PWM
 	transmit(2, "^THLD", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Medium sensitive short circuit detection
 
-	transmit(3, "^MMOD", 1,	0 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
-	transmit(3, "^MMOD", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
+	if(closed_loop_operation)
+	{
+		transmit(3, "^MMOD", 1,	1 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
+		transmit(3, "^MMOD", 2,	1 ); sleep(TIME_BETWEEN_COMMANDS);
+	}
+	else
+	{
+		transmit(3, "^MMOD", 1,	0 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
+		transmit(3, "^MMOD", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
+	}
 	transmit(3, "^DFC",	1, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Emergency causes motors to stop
 	transmit(3, "^DFC ", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^ALIM", 1, 750 ); sleep(TIME_BETWEEN_COMMANDS);					// Maximum current is 75A for both channels
@@ -151,7 +164,8 @@ void hbl2350::initController(void)
 	transmit(3, "^MXPR", 1,	95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors reverse
 	transmit(3, "^MXPR", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MXRPM", 1,	max_rpm ); sleep(TIME_BETWEEN_COMMANDS);			// Set maximum rounds per minute
-	transmit(3, "^MXRPM", 2,	max_rpm ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(3, "^MXRPM", 2,	max_rpm );
+	sleep(2);
 
 	ROS_INFO("Initialization finished");
 	initialised = true;
@@ -176,6 +190,15 @@ void hbl2350::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 {
 	deadman_active = msg->data;
 	last_deadman_received = ros::Time::now();
+}
+
+/*!Callback for relaying command strings*/
+void hbl2350::onCommand(const msgs::serial::ConstPtr& msg)
+{
+	ROS_WARN("Command callback");
+	serial_out.header.stamp = ros::Time::now();
+	serial_out.data = msg->data;
+	serial_publisher.publish(serial_out);
 }
 
 void hbl2350::onTimer(const ros::TimerEvent& e)
