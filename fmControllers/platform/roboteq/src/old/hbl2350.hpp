@@ -1,14 +1,12 @@
 #ifndef HBL2350_HPP_
 #define HBL2350_HPP_
 
-#define TIME_BETWEEN_COMMANDS 0.2
-
 #include <ros/ros.h>
-#include "roboteq/roboteq.hpp"
+#include "RoboTeQ.hpp"
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
-#include <msgs/StringStamped.h>
-#include <msgs/IntStamped.h>
+#include <fmMsgs/StringStamped.h>
+#include <fmMsgs/IntStamped.h>
 #include <cstdarg>
 
 class hbl2350 : public RoboTeQ
@@ -61,7 +59,7 @@ public:
 	void					onCmdVelCh1(const geometry_msgs::TwistStamped::ConstPtr&);
 	void					onDeadman(const std_msgs::Bool::ConstPtr&);
 	void					onTimer(const ros::TimerEvent&);
-	void 					onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
+	void 					onSerial(const fmMsgs::serial::ConstPtr& msg){serialCallback(msg);}
 
 	void					setSerialPub(ros::Publisher pub){serial_publisher = pub;}
 	void					setStatusPub(ros::Publisher pub){status_publisher = pub;}

@@ -1,4 +1,4 @@
-#include "roboteq/hbl2350.hpp"
+#include "hbl2350.hpp"
 
 int main (int argc, char** argv)
 {
@@ -31,7 +31,6 @@ hbl2350::hbl2350( )
 	deadman_active = false;
 	last_deadman_received = ros::Time::now();
 	initialised = false;
-	online = false;
 	last_serial_msg = ros::Time::now();
 	cmd_vel_active = false;
 	idle = true;
@@ -69,16 +68,16 @@ hbl2350::hbl2350( )
 	local_node_handler.param<double>("mps_to_rpm",mps_to_rpm,5);
 
 	// Set publisher topics
-	setSerialPub( 		local_node_handler.advertise<msgs::serial>(		serial_tx_topic,	10) );
-	setEncoderCh1Pub( 	local_node_handler.advertise<msgs::IntStamped>(	encoder_ch1_topic,	10) );
-	setEncoderCh2Pub( 	local_node_handler.advertise<msgs::IntStamped>(	encoder_ch2_topic,	10) );
-	setPowerCh1Pub( 	local_node_handler.advertise<msgs::IntStamped>(	power_ch1_topic,	10) );
-	setPowerCh2Pub( 	local_node_handler.advertise<msgs::IntStamped>(	power_ch2_topic,	10) );
-	setStatusPub(		local_node_handler.advertise<msgs::StringStamped>(status_topic,		10) );
+	setSerialPub( 		local_node_handler.advertise<fmMsgs::serial>(		serial_tx_topic,	10) );
+	setEncoderCh1Pub( 	local_node_handler.advertise<fmMsgs::IntStamped>(	encoder_ch1_topic,	10) );
+	setEncoderCh2Pub( 	local_node_handler.advertise<fmMsgs::IntStamped>(	encoder_ch2_topic,	10) );
+	setPowerCh1Pub( 	local_node_handler.advertise<fmMsgs::IntStamped>(	power_ch1_topic,	10) );
+	setPowerCh2Pub( 	local_node_handler.advertise<fmMsgs::IntStamped>(	power_ch2_topic,	10) );
+	setStatusPub(		local_node_handler.advertise<fmMsgs::StringStamped>(status_topic,		10) );
 //	setTemperaturePub(	local_node_handler.advertise<fmMsgs::StringStamped>(temperature_topic,	10) );
 
 	// Set subscriber topics
-	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl2350::onSerial,this);
+	serial_sub = local_node_handler.subscribe<fmMsgs::serial>(serial_rx_topic,10,&hbl2350::onSerial,this);
 	cmd_vel_ch1_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&hbl2350::onCmdVelCh1,this);
 	cmd_vel_ch2_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&hbl2350::onCmdVelCh2,this);
 	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl2350::onDeadman,this);
@@ -86,7 +85,7 @@ hbl2350::hbl2350( )
 
 void hbl2350::spin(void)
 {
-	// Wait for RoboTeQ to come online
+	// Wait for RoboTeQ to come omline
 	ros::Rate r(5);
 	while(!this->subscribers())
 	{
@@ -105,53 +104,53 @@ void hbl2350::initController(void)
 {
 	ROS_INFO("Initializing...");
 	sleep(1);
-	transmit(2,	"^ECHOF", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Echo is disabled
+	transmit(2,	"^ECHOF", 1 ); sleep(0.2);						// Echo is disabled
 
-	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
-	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
-	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
-	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
-	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
-	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
-	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
-	transmit(1,	"# 10" ); sleep(TIME_BETWEEN_COMMANDS);							// Repeat buffer every 10 ms
+	transmit(1,	"# C"); sleep(0.2);								// Clear buffer
+	transmit(1,	"?P"); sleep(0.2);								// Request power readings
+	transmit(1,	"?V"); sleep(0.2);								// Request voltage readings
+	transmit(1,	"?T"); sleep(0.2);								// Request temperature readings
+	transmit(1,	"?FS"); sleep(0.2);								// Request status flag
+	transmit(1, "?FF"); sleep(0.2);								// Request fault flag
+	transmit(1, "?CB"); sleep(0.2);								// Request absolute hall count
+	transmit(1,	"# 10" ); sleep(0.2);							// Repeat buffer every 10 ms
 
-	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority
-	transmit(2, "^RWD",	1000 ); sleep(TIME_BETWEEN_COMMANDS);						// One second watchdog
-	transmit(2, "^BLFB", 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
-	transmit(2, "^BLSTD", 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
-	transmit(2, "^BPOL", 9 ); sleep(TIME_BETWEEN_COMMANDS);						// M12980-1 motor has 9 pole-pairs
-	transmit(2, "^OVL",	550 ); sleep(TIME_BETWEEN_COMMANDS);						// Over voltage alerts if >55V
-	transmit(2, "^UVL",	485 ); sleep(TIME_BETWEEN_COMMANDS);						// Under voltage alerts if <48.5V
-	transmit(2, "^PWMF", 200 ); sleep(TIME_BETWEEN_COMMANDS);						// 20 kHz PWM
-	transmit(2, "^THLD", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Medium sensitive short circuit detection
+	transmit(4, "^CPRI", 1,	0, 0 ); sleep(0.2);					// Serial is first and only priority
+	transmit(2, "^RWD",	1000 ); sleep(0.2);						// One second watchdog
+	transmit(2, "^BLFB", 0 ); sleep(0.2);						// Use hall sensors as motor feedback
+	transmit(2, "^BLSTD", 2 ); sleep(0.2);						// Stall detection 500ms@25%
+	transmit(2, "^BPOL", 9 ); sleep(0.2);						// M12980-1 motor has 9 pole-pairs
+	transmit(2, "^OVL",	550 ); sleep(0.2);						// Over voltage alerts if >55V
+	transmit(2, "^UVL",	485 ); sleep(0.2);						// Under voltage alerts if <48.5V
+	transmit(2, "^PWMF", 200 ); sleep(0.2);						// 20 kHz PWM
+	transmit(2, "^THLD", 1 ); sleep(0.2);						// Medium sensitive short circuit detection
 
-	transmit(3, "^MMOD", 1,	0 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
-	transmit(3, "^MMOD", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^DFC",	1, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Emergency causes motors to stop
-	transmit(3, "^DFC ", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^ALIM", 1, 750 ); sleep(TIME_BETWEEN_COMMANDS);					// Maximum current is 75A for both channels
-	transmit(3, "^ALIM", 2, 750 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^CLERD", 1, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Closed-loop error detection disabled
-	transmit(3, "^CLERD", 2, 0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^ICAP", 1,	anti_windup_percent	); sleep(TIME_BETWEEN_COMMANDS);	// Integral cap anti-windup
-	transmit(3, "^ICAP ", 2, anti_windup_percent ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^KP", 1, p_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Proportional gain for closed-loop control
-	transmit(3, "^KP", 2, p_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^KI", 1, i_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Integral gain for closed-loop control
-	transmit(3, "^KI", 2, i_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^KD", 1, d_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Differential gain for closed-loop control
-	transmit(3, "^KD", 2, d_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MAC",	1, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed acceleration
-	transmit(3, "^MAC",	2, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MDEC", 1,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed deceleration
-	transmit(3, "^MDEC", 2,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MXPF", 1, 95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors forward
-	transmit(3, "^MXPF", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MXPR", 1,	95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors reverse
-	transmit(3, "^MXPR", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MXRPM", 1,	max_rpm ); sleep(TIME_BETWEEN_COMMANDS);			// Set maximum rounds per minute
-	transmit(3, "^MXRPM", 2,	max_rpm ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(3, "^MMOD", 1,	0 ); sleep(0.2);					// Both channels in closed-loop mode
+	transmit(3, "^MMOD", 2,	0 ); sleep(0.2);
+	transmit(3, "^DFC",	1, 0 ); sleep(0.2);						// Emergency causes motors to stop
+	transmit(3, "^DFC ", 2,	0 ); sleep(0.2);
+	transmit(3, "^ALIM", 1, 750 ); sleep(0.2);					// Maximum current is 75A for both channels
+	transmit(3, "^ALIM", 2, 750 ); sleep(0.2);
+	transmit(3, "^CLERD", 1, 0 ); sleep(0.2);					// Closed-loop error detection disabled
+	transmit(3, "^CLERD", 2, 0 ); sleep(0.2);
+	transmit(3, "^ICAP", 1,	anti_windup_percent	); sleep(0.2);	// Integral cap anti-windup
+	transmit(3, "^ICAP ", 2, anti_windup_percent ); sleep(0.2);
+	transmit(3, "^KP", 1, p_gain_ch1 ); sleep(0.2);				// Proportional gain for closed-loop control
+	transmit(3, "^KP", 2, p_gain_ch2 ); sleep(0.2);
+	transmit(3, "^KI", 1, i_gain_ch1 ); sleep(0.2);				// Integral gain for closed-loop control
+	transmit(3, "^KI", 2, i_gain_ch2 ); sleep(0.2);
+	transmit(3, "^KD", 1, d_gain_ch1 ); sleep(0.2);				// Differential gain for closed-loop control
+	transmit(3, "^KD", 2, d_gain_ch2 ); sleep(0.2);
+	transmit(3, "^MAC",	1, max_acceleration	); sleep(0.2);		// Maximum allowed acceleration
+	transmit(3, "^MAC",	2, max_acceleration	); sleep(0.2);
+	transmit(3, "^MDEC", 1,	max_deceleration ); sleep(0.2);		// Maximum allowed deceleration
+	transmit(3, "^MDEC", 2,	max_deceleration ); sleep(0.2);
+	transmit(3, "^MXPF", 1, 95 ); sleep(0.2);					// 95% of battery voltage can be applied to motors forward
+	transmit(3, "^MXPF", 2,	95 ); sleep(0.2);
+	transmit(3, "^MXPR", 1,	95 ); sleep(0.2);					// 95% of battery voltage can be applied to motors reverse
+	transmit(3, "^MXPR", 2,	95 ); sleep(0.2);
+	transmit(3, "^MXRPM", 1,	max_rpm ); sleep(0.2);			// Set maximum rounds per minute
+	transmit(3, "^MXRPM", 2,	max_rpm ); sleep(0.2);
 
 	ROS_INFO("Initialization finished");
 	initialised = true;
