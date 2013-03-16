@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind survey.py
-# Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
+# FroboMind SDU Weeding Trial Mission Planner (navigate_waypoints.py)
+# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,9 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#*****************************************************************************
+# Template inherited from FroboMind survey.py
+# Copyright (c) 2013, Leon Bonde Larsen <leon@bondelarsen.dk>
 #****************************************************************************/
 import rospy
 import smach
@@ -42,7 +45,7 @@ class Mission():
     """
     def __init__(self):
         rospy.init_node('mission_control')
-        rospy.loginfo("mission control initialized")
+        rospy.loginfo(rospy.get_name() + " Initialized")
         self.hmi = wii_interface.WiiInterface()
         self.hmi.register_callback_button_A(self.onButtonA)
           
@@ -88,3 +91,4 @@ if __name__ == '__main__':
         smach_thread.start()
     except rospy.ROSInterruptException:
         pass
+

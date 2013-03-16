@@ -2,7 +2,6 @@
  	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_pichi_surveyor)/world/frobit.world"/>
 	<!-- node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_surveyor)/conf/default.rviz"/ -->
 	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
-	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
 	<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py">
 		<param name="straight_line" value="True"/>
 	</node>
@@ -31,10 +30,15 @@
 			<param name="joy_topic" value="/fmLib/joy" />
 			<param name="status_topic" value="/fmData/status"/>		
 			<param name="max_linear_velocity" value="2"/>
-			<param name="max_angular_velocity" value="3"/>
+			<param name="max_angular_velocity" value="2"/>
 			<param name="deadband" value="5"/>
-			<param name="reduced_range" value="40"/>
+			<param name="reduced_range" value="45"/>
 			<param name="publish_frequency" value="5"/>
 		</node>
 	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
+	</group>
+
 </launch>
