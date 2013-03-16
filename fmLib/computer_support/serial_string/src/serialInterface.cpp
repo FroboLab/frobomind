@@ -82,19 +82,36 @@ void serialInterface::readHandler(const boost::system::error_code& error,
 
 void serialInterface::readSome()
 {
-	if (ros::ok())
+	if (serial_.is_open() /*ros::ok()*/)
 	{
+		try
+		{
 		//serial_.async_read_some(boost::asio::buffer(&rx_buffer_, 1), boost::bind(&serialInterface::readHandler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		boost::asio::async_read_until(serial_, readbuffer, term_char,
 				boost::bind(&serialInterface::readHandler, this,
 						boost::asio::placeholders::error,
 						boost::asio::placeholders::bytes_transferred));
+		}
+		catch (boost::system::system_error &e)
+		{
+			ROS_ERROR("Read operation failed. Attempting recovery...");
+			try{
+			recoverConnection();
+			} catch (...){ROS_ERROR("Recovery failed!");}
+		}
+		catch (...)
+		{
+			ROS_ERROR("Write operation failed");
+		}
+
 	}
 }
 
 bool serialInterface::openDevice(std::string device, int baudrate)
 {
 	ROS_DEBUG("Open Device");
+	dev = device;
+	baud = baudrate;
 	try
 	{
 		boost::asio::serial_port_base::baud_rate BAUD(baudrate);
@@ -102,8 +119,22 @@ bool serialInterface::openDevice(std::string device, int baudrate)
 		serial_.set_option(BAUD);
 	} catch (boost::system::system_error &e)
 	{
-		ROS_ERROR(
-				"Connection to device %s failed; %s", e.what(), device.c_str());
+		ROS_ERROR("Connection to device %s failed; %s", e.what(), device.c_str());
+		if (serial_.is_open())
+		{
+			try
+			{
+				ROS_ERROR("Attempting to cancel connection...");
+				serial_.cancel();
+			} catch (...){ROS_ERROR("Attempt to cancel connection failed...");}
+			sleep(1);
+			try
+			{
+				ROS_ERROR("Attempting to close connection...");
+				serial_.close();
+			} catch (...) {ROS_ERROR("Attempt to close connection failed...");}
+			sleep(1);
+		}
 		return 1;
 	}
 	/* start the read from the serial device */
@@ -123,10 +154,31 @@ void serialInterface::writeHandler(const msgs::serial::ConstPtr& msg)
 			serial_.write_some(
 					boost::asio::buffer(msg->data.c_str(), msg->data.length()));
 		}
-		catch (boost::system::system_error &e) {ROS_ERROR("Write operation failed: %s", e.what());}
-		catch (...) {ROS_ERROR("Write operation failed");}
+		catch (boost::system::system_error &e)
+		{
+			ROS_ERROR("Write operation failed. Attempting recovery...");
+			try{
+			recoverConnection();
+			} catch (...){ROS_ERROR("Recovery failed!");}
+		}
+		catch (...)
+		{
+			ROS_ERROR("Write operation failed");
+		}
 
 	}
+}
+
+void serialInterface::recoverConnection(void)
+{
+	//ROS_ERROR("Write operation failed: %s", e.what());
+	//handle the 'write_some: Input/output error' caused by interrupted connection
+	try
+	{
+		ROS_ERROR("Attempting to re-open connection...");
+		while(openDevice(dev,baud))
+			sleep(2);
+	} catch (...){ROS_ERROR("Attempt to re-open failed.");}
 }
 
 serialInterface::~serialInterface()

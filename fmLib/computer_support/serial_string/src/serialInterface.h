@@ -59,7 +59,8 @@ private:
   boost::asio::streambuf readbuffer;
 
   msgs::serial serial_rx_msg;
-
+  std::string dev;
+  int baud;
 
   /* private methods */
   void readSome();
@@ -71,6 +72,7 @@ public:
   serialInterface(ros::Publisher& rx_publisher);
   bool openDevice(std::string device, int baudrate);
   void writeHandler(const msgs::serial::ConstPtr& msg);
+  void recoverConnection(void);
   virtual ~serialInterface();
 
   char term_char;
