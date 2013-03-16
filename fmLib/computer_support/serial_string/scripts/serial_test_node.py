@@ -32,6 +32,14 @@ from msgs.msg import serial,nmea
 class tester():
     """    
         Sends a serial message and receives the relay. 
+        
+        The purpose of this script is to test the robustness of serial_string_node. The test 
+        setup is a USB to serial converter where rx and tx is connected to make any transmitted
+        message appear on the input. 
+        The first test is to start the node whitout the USB connected. The node should keep 
+        trying to connect until the USB is present and the connection is made.
+        The second test is to remove the USB while the node is running and reinsert it. The node 
+        should then continue working or respawn and continue working.
     """
     def __init__(self):
         rospy.init_node('topcon_initializer')

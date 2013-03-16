@@ -1,4 +1,5 @@
 <launch>
+		<!-- Testing serial_string node. See detailed test description in serial_test_node.py -->
 	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true">
 	        <param name="publisher_topic" value="/fmData/rx" />	 
 	        <param name="subscriber_topic" value="/fmData/tx" />	
