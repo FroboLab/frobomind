@@ -1,0 +1,13 @@
+<launch>
+		<!-- Testing serial_string node. See detailed test description in serial_test_node.py -->
+	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true">
+	        <param name="publisher_topic" value="/fmData/rx" />	 
+	        <param name="subscriber_topic" value="/fmData/tx" />	
+	        <param name="device" value="/dev/ttyUSB0" />	
+	        <param name="baudrate" value="115200" />
+	        <param name="termination_character" value="13"/>
+		</node>	
+	
+	<node pkg="serial_string" name="serial_tester" type="serial_test_node.py" output="screen"/>
+	
+</launch>

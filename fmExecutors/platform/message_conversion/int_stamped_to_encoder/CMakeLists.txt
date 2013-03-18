@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(serial_string)
+project(int_stamped_to_encoder)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp msgs)
+find_package(catkin REQUIRED COMPONENTS rospy)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -45,9 +45,9 @@ find_package(catkin REQUIRED COMPONENTS roscpp msgs)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-#  LIBRARIES serial_string
-#  CATKIN_DEPENDS roscpp
+#  INCLUDE_DIRS include
+#  LIBRARIES twist_stamped_to_twist
+#  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
 
@@ -56,26 +56,23 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-)
+# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(serial_string
-#   src/${PROJECT_NAME}/serial_string.cpp
+# add_library(twist_stamped_to_twist
+#   src/${PROJECT_NAME}/twist_stamped_to_twist.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(serial_string_node src/serial_string_node.cpp)
-add_executable(serial_string_node src/serial_string.cpp src/serialInterface.cpp)
+# add_executable(twist_stamped_to_twist_node src/twist_stamped_to_twist_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(serial_string_node ${PROJECT_NAME})
+# add_dependencies(twist_stamped_to_twist_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(serial_string_node
-   ${catkin_LIBRARIES}
- )
+# target_link_libraries(twist_stamped_to_twist_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -83,13 +80,13 @@ add_executable(serial_string_node src/serial_string.cpp src/serialInterface.cpp)
 
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+ install(PROGRAMS
+   scripts/cmd_vel_converter
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS serial_string serial_string_node
+# install(TARGETS twist_stamped_to_twist twist_stamped_to_twist_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -114,7 +111,7 @@ add_executable(serial_string_node src/serial_string.cpp src/serialInterface.cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_serial_string.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_twist_stamped_to_twist.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
