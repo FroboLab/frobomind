@@ -6,8 +6,8 @@
 			<param name="status_topic" value="/fmData/status"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
-			<param name="max_linear_velocity" value="0.5"/>
-			<param name="max_angular_velocity" value="1.0"/>
+			<param name="max_linear_velocity" value="4.0"/>
+			<param name="max_angular_velocity" value="4.0"/>
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="50"/>
 			<param name="publish_frequency" value="10"/>
@@ -21,12 +21,6 @@
 			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right"/>
 			<param name="distance_center_to_wheel" value="0.42" />
 		</node>
-	</group>
-
-	<group ns="transforms">
-		<node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 100"/>
-		<node pkg="tf" type="static_transform_publisher" name="left_wheel_link_broadcaster"	args="0 0.42 0 0 0 0 base_link left_wheel_link 100"/>
-		<node pkg="tf" type="static_transform_publisher" name="right_wheel_link_broadcaster" args="0 -0.42 0 0 0 0 base_link right_wheel_link 100"/>
 	</group>
 
 	<group ns="fmLib">
@@ -43,7 +37,7 @@
 			<param name="status_topic" value="/fmData/status"/>	
 			<param name="mps_to_rpm" value="1432"/>
 			<!--param name="closed_loop_operation" value="true"/-->
-			<param name="p_gain" value="10"/>
+			<param name="p_gain" value="100"/>
 			<param name="i_gain" value="0"/>
 			<param name="d_gain" value="0"/>         
         </node>
@@ -52,10 +46,10 @@
         	<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/><!-- Wiimote marked ROBO[LAB] -->
 		</node>
 		
-	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
+	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true" >
 	        <param name="publisher_topic" value="/fmData/rx" />	 
 	        <param name="subscriber_topic" value="/fmData/tx" />	
-	        <param name="device" value="/dev/ttyACM0" />	
+	        <param name="device" value="/dev/ttyUSB0" />	
 	        <param name="baudrate" value="115200" />
 	        <param name="termination_character" value="13"/>
 		</node>	

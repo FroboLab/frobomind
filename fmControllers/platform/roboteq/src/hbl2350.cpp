@@ -123,11 +123,18 @@ void hbl2350::initController(void)
 
 	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority
 	transmit(2, "^RWD",	1000 ); sleep(TIME_BETWEEN_COMMANDS);						// One second watchdog
-	transmit(2, "^BLFB", 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
-	transmit(2, "^BLSTD", 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
-	transmit(2, "^BPOL", 9 ); sleep(TIME_BETWEEN_COMMANDS);						// M12980-1 motor has 9 pole-pairs
+
+	transmit(3, "^BLFB", 1, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
+	transmit(3, "^BLFB", 2, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
+
+	transmit(3, "^BLSTD", 1, 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
+	transmit(3, "^BLSTD", 2, 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
+
+	transmit(3, "^BPOL", 1, 9 ); sleep(TIME_BETWEEN_COMMANDS);						// M12980-1 motor has 9 pole-pairs
+	transmit(3, "^BPOL", 2, 9 ); sleep(TIME_BETWEEN_COMMANDS);						// M12980-1 motor has 9 pole-pairs
+
 	transmit(2, "^OVL",	550 ); sleep(TIME_BETWEEN_COMMANDS);						// Over voltage alerts if >55V
-	transmit(2, "^UVL",	485 ); sleep(TIME_BETWEEN_COMMANDS);						// Under voltage alerts if <48.5V
+	transmit(2, "^UVL",	480 ); sleep(TIME_BETWEEN_COMMANDS);						// Under voltage alerts if <48.5V
 	transmit(2, "^PWMF", 200 ); sleep(TIME_BETWEEN_COMMANDS);						// 20 kHz PWM
 	transmit(2, "^THLD", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Medium sensitive short circuit detection
 
@@ -135,26 +142,27 @@ void hbl2350::initController(void)
 	{
 		transmit(3, "^MMOD", 1,	1 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
 		transmit(3, "^MMOD", 2,	1 ); sleep(TIME_BETWEEN_COMMANDS);
+		transmit(3, "^ICAP", 1,	anti_windup_percent	); sleep(TIME_BETWEEN_COMMANDS);	// Integral cap anti-windup
+		transmit(3, "^ICAP ", 2, anti_windup_percent ); sleep(TIME_BETWEEN_COMMANDS);
+		transmit(3, "^KP", 1, p_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Proportional gain for closed-loop control
+		transmit(3, "^KP", 2, p_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
+		transmit(3, "^KI", 1, i_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Integral gain for closed-loop control
+		transmit(3, "^KI", 2, i_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
+		transmit(3, "^KD", 1, d_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Differential gain for closed-loop control
+		transmit(3, "^KD", 2, d_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
+
 	}
 	else
 	{
-		transmit(3, "^MMOD", 1,	0 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
+		transmit(3, "^MMOD", 1,	0 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in open-loop mode
 		transmit(3, "^MMOD", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
 	}
 	transmit(3, "^DFC",	1, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Emergency causes motors to stop
 	transmit(3, "^DFC ", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^ALIM", 1, 750 ); sleep(TIME_BETWEEN_COMMANDS);					// Maximum current is 75A for both channels
-	transmit(3, "^ALIM", 2, 750 ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(3, "^ALIM", 1, 400 ); sleep(TIME_BETWEEN_COMMANDS);					// Maximum current is 40A for both channels
+	transmit(3, "^ALIM", 2, 400 ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^CLERD", 1, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Closed-loop error detection disabled
 	transmit(3, "^CLERD", 2, 0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^ICAP", 1,	anti_windup_percent	); sleep(TIME_BETWEEN_COMMANDS);	// Integral cap anti-windup
-	transmit(3, "^ICAP ", 2, anti_windup_percent ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^KP", 1, p_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Proportional gain for closed-loop control
-	transmit(3, "^KP", 2, p_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^KI", 1, i_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Integral gain for closed-loop control
-	transmit(3, "^KI", 2, i_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^KD", 1, d_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Differential gain for closed-loop control
-	transmit(3, "^KD", 2, d_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MAC",	1, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed acceleration
 	transmit(3, "^MAC",	2, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MDEC", 1,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed deceleration
