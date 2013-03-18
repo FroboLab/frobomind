@@ -6,8 +6,8 @@
 			<param name="status_topic" value="/fmData/status"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
-			<param name="max_linear_velocity" value="0.5"/>
-			<param name="max_angular_velocity" value="1.0"/>
+			<param name="max_linear_velocity" value="1"/>
+			<param name="max_angular_velocity" value="4.0"/>
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="50"/>
 			<param name="publish_frequency" value="10"/>
@@ -51,7 +51,7 @@
         	<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/><!-- Wiimote marked ROBO[LAB] -->
 		</node>
 		
-	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
+	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen"  respawn="true">
 	        <param name="publisher_topic" value="/fmData/rx" />	 
 	        <param name="subscriber_topic" value="/fmData/tx" />	
 	        <param name="device" value="/dev/ttyACM0" />	
@@ -69,7 +69,7 @@
 		<param name="use_nmea_checksum" type="boolean" value="true" />
 	    </node>
 
-	<node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
+	<node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen"  respawn="true">
 		<param name="publisher_topic" value="/fmData/gps_rx" />	 
 		<param name="subscriber_topic" value="/fmData/gps_tx" />
 			<param name="device" value="/dev/ttyUSB1" />	
@@ -95,7 +95,7 @@
 	</group>
 
 	<group ns="fmLib">
-		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" >
+		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">
 			<param name="publisher_topic" value="/fmData/imu_rx" /> 
 			<param name="subscriber_topic" value="/fmData/imu_tx" />
 			<param name="device" value="/dev/ttyUSB0" />	
@@ -103,8 +103,5 @@
 			<param name="termination_character" value="10"/>
 		</node> 	
 	</group>
-
-	<!-- PID trimmer -->
-		<node pkg="sdu_pichi" name="PID_trimmer" type="trimmer.py" output="screen" />
 
 </launch>
