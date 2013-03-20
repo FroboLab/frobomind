@@ -124,8 +124,8 @@ void hbl2350::initController(void)
 	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority
 	transmit(2, "^RWD",	1000 ); sleep(TIME_BETWEEN_COMMANDS);						// One second watchdog
 
-	transmit(3, "^BLFB", 1, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
-	transmit(3, "^BLFB", 2, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
+	transmit(3, "^BLFB", 1, 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
+	transmit(3, "^BLFB", 2, 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
 
 	transmit(3, "^BLSTD", 1, 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
 	transmit(3, "^BLSTD", 2, 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
@@ -150,7 +150,6 @@ void hbl2350::initController(void)
 		transmit(3, "^KI", 2, i_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
 		transmit(3, "^KD", 1, d_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Differential gain for closed-loop control
 		transmit(3, "^KD", 2, d_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-
 	}
 	else
 	{
