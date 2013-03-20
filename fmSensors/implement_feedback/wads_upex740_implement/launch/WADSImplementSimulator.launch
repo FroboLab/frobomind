@@ -1,0 +1,25 @@
+<launch>
+	<node pkg="wads_implement" name="WADSImplementSimulator" type="wads_implement_node" output="screen">
+	      <param name="sensor_width" value="2.0" />
+	      <param name="sensor_length" value="1.0" />
+	      <param name="sensor_offset_x" value="0.6" />
+	      <param name="sensor_offset_y" value="0.0" />
+	      <param name="sensor_gain" value="25" />
+	      <param name="sensor_outerrange" value="0.0" />
+	      <param name="sensor_max" value="5.0" />
+	      <param name="sensor_resolution" value="1024" />
+	      <param name="subscriberTopic" value="/base_scan" />
+	      <param name="publisherTopic" value="/wads" />
+	</node>
+	<node pkg="wads_implement" name="WADSVisualizer" type="wads_implement_visualizer" output="screen">
+	      <param name="sensor_width" value="2.0" />
+	      <param name="sensor_length" value="1.0" />
+	      <param name="sensor_offset_x" value="0.6" />
+	      <param name="sensor_offset_y" value="0.0" />
+	      <param name="sensor_outerrange" value="0.1" />
+	      <param name="sensor_max" value="5.0" />
+	      <param name="subscriberTopic" value="/wads" />
+	      <param name="publisherTopic" value="/marker" />
+	      <param name="frame_id" value="/base_link" />
+	</node>
+</launch>
