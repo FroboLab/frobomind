@@ -75,6 +75,7 @@ class positionGoalActionServer():
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
         self.max_distance_error = rospy.get_param("~max_distance_error",0.1)
         self.straight_line = rospy.get_param("~straight_line",False)
+        self.straight_line_angle_error = rospy.get_param("~straight_line_angle_error", 0.5)
         
         self.odometry_topic = rospy.get_param("~odometry_topic","/base_pose_ground_truth")
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic","/fmSignals/cmd_vel")
@@ -147,7 +148,7 @@ class positionGoalActionServer():
                 self.twist.twist.angular.z = self.angle_error
                 
                 # If straight line driving is true, angle error must be corrected before distance error
-                if self.straight_line and ( self.angle_error > 0.5 or self.angle_error < -0.5 ) :
+                if self.straight_line and ( math.fabs(self.angle_error) > self.straight_line_angle_error) :
                         self.twist.twist.linear.x = self.distance_error * 0.1    
 
                 # Implement maximum linear velocity and maximum angular velocity
