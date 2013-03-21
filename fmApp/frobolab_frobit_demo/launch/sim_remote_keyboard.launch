@@ -1,0 +1,18 @@
+<launch>
+ 	<node pkg="stage" type="stageros" name="simulator" args="$(find frobolab_frobit_demo)/world/frobit.world"/>
+	<node pkg="rqt_rviz" type="rqt_rviz" name="visualization"/>
+	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>	
+	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard"/>
+    	
+	<group ns="fmDecisionMakers">
+		<node pkg="frobolab_frobit_demo" name="frobit_remote" type="remote.py">
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="key_topic" value="/fmHMI/keyboard" />
+			<param name="max_linear_velocity" value="3"/>
+			<param name="max_angular_velocity" value="3"/>
+			<param name="publish_frequency" value="5"/>
+			<param name="step_size" value="0.5"/>
+		</node>
+	</group>
+</launch>
