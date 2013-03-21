@@ -26,11 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-import rospy
-import smach
-import smach_ros
-import actionlib
-import threading
+import rospy, smach, smach_ros
 from generic_smach.behaviours import keyboard_remote_behaviour
 from key_interface import key_interface
            
@@ -43,18 +39,17 @@ class mission():
         self.hmi = key_interface.KeyInterface()
        
     def spin(self):   
-        sm = keyboard_remote_behaviour.build(self.hmi) 
-        sis = smach_ros.IntrospectionServer('StateMachineView', sm, '/SM_ROOT')           
-        sis.start()    
-        sm.execute()
+        self.sm = keyboard_remote_behaviour.build(self.hmi)               
+        self.sm.execute()
         rospy.spin()
-        sm.request_preempt()
-        sis.stop()
+        
+    def quit(self,sig,frame):
+        self.sm.request_preempt()
+        self.sm.close()
     
 if __name__ == '__main__':
     try:
         node = mission()
-        smach_thread = threading.Thread(target = node.spin)
-        smach_thread.start()
+        node.spin()
     except rospy.ROSInterruptException:
-        pass
+        node.quit()

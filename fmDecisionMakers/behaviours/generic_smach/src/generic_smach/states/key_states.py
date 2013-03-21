@@ -46,7 +46,10 @@ class remoteControlState(smach.State):
                 # Publish topics
                 self.hmi.publishCmdVel()
                 # Spin
-                self.r.sleep()
+                try :
+                    self.r.sleep()
+                except rospy.ROSInterruptException:
+                    return 'preempted'
             else :
                 return  'enterAutomode'
         return 'preempted'

@@ -24,15 +24,20 @@
  # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #
+ # Change Log:
+ # 21-Mar 2013 Leon: Fixed SIGTERM issue
  ****************************************************************************/
 #include <stdio.h>
 #include <signal.h>
 #include <termios.h>
 #include <ros/ros.h>
 #include <std_msgs/Char.h>
+#include <ros/callback_queue.h>
 
 int kfd = 0;
 struct termios cooked, raw;
+void quit(int sig);
 
 void listenForKeyEvents()
 {
@@ -52,7 +57,9 @@ void listenForKeyEvents()
 	tcsetattr(kfd, TCSANOW, &raw);
 
 	puts("Listening for keyboard events and publish these events...");
-
+	signal(SIGABRT, quit);
+	signal(SIGINT, quit);
+	signal(SIGTERM, quit);
 	while (ros::ok())
 	{
 		// Get events from keyboard
@@ -66,13 +73,12 @@ void listenForKeyEvents()
 		ROS_DEBUG("%c", key);
 		msg.data = key;
 		keyPublisher.publish(msg);
+		ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0));
 	}
 }
 
 void quit(int sig)
 {
-	puts("Quitting due to Ctrl-C...");
-
 	tcsetattr(kfd, TCSANOW, &cooked);
 	ros::shutdown();
 	exit(0);
@@ -81,9 +87,6 @@ void quit(int sig)
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "keyboardEventListener");
-
-	signal(SIGINT, quit);
-
 	listenForKeyEvents();
 
 	return 0;
