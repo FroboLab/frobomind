@@ -18,7 +18,7 @@
 	</group>
 	
 	<group ns="fmControllers">
-		<node pkg="sdu_armadillo_roboteq" type="roboteq_node" name="roboteq_left">
+		<node pkg="sdu_armadillo3" type="roboteq_node" name="roboteq_left">
 			<param name="cmd_vel_topic" value="/fmControllers/cmd_vel_left" />
 			<param name="serial_rx_topic" value="/fmLib/serial_comm_left_rx" />
 			<param name="serial_tx_topic" value="/fmLib/serial_comm_left_tx" />
@@ -30,7 +30,7 @@
 			<param name="deadman_joy_max_missing" value="30" />
 		</node>
 
-		<node pkg="sdu_armadillo_roboteq" type="roboteq_node" name="roboteq_right">
+		<node pkg="sdu_armadillo3" type="roboteq_node" name="roboteq_right">
 			<param name="cmd_vel_topic" value="/fmControllers/cmd_vel_right" />
 			<param name="serial_rx_topic" value="/fmLib/serial_comm_right_rx" />
 			<param name="serial_tx_topic" value="/fmLib/serial_comm_right_tx" />

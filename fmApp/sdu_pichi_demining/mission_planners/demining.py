@@ -64,11 +64,13 @@ class Mission():
         return mission_control
                        
     def spin(self):    
-        sm = self.build()   
-        sis = smach_ros.IntrospectionServer('StateMachineView', sm, '/SM_ROOT')           
-        sis.start() 
-        sm.execute()
+        self.sm = self.build()   
+        self.sis = smach_ros.IntrospectionServer('StateMachineView', self.sm, '/SM_ROOT')           
+        self.sis.start() 
+        self.sm.execute()
         rospy.spin()
+    
+    def quit(self):
         sis.stop()
         
     def onButtonA(self):
@@ -84,7 +86,6 @@ def onPreempt(outcome_map):
 if __name__ == '__main__':
     try:
         node = Mission()
-        smach_thread = threading.Thread(target = node.spin)
-        smach_thread.start()
+        node.spin()
     except rospy.ROSInterruptException:
-        pass
+        node.quit()

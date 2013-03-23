@@ -8,11 +8,11 @@
 		<param name="straight_line_angle_error" value="0.2" />
 	</node>
 
-<!--	<group ns="fmHMI">
+	<group ns="fmHMI">
 		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
 			<param name="fixed_wiimote_address" value="00:22:4C:8D:6F:5E"/>
 		</node>
-	</group> -->
+	</group> 
     	
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_pichi_demining" name="mission_control" type="demining.py" output="screen">

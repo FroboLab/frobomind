@@ -167,7 +167,10 @@ class positionGoalActionServer():
                     self.twist_pub.publish(self.twist)
                 
                 # Block   
-                self.rate.sleep()
+                try :
+                    self.r.sleep()
+                except rospy.ROSInterruptException:
+                    return 'preempted'
             else:
                 # Succeed the action - position has been reached
                 self._server.set_succeeded()

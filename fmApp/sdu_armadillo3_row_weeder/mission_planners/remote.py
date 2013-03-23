@@ -51,13 +51,15 @@ class mission():
         
     def spin(self): 
         self.client.wait_for_server()  
-        sm = remote_behaviour.build(self.hmi) 
-        sis = smach_ros.IntrospectionServer('StateMachineView', sm, '/SM_ROOT')           
-        sis.start()    
-        sm.execute()
+        self.sm = remote_behaviour.build(self.hmi) 
+        self.sis = smach_ros.IntrospectionServer('StateMachineView', self.sm, '/SM_ROOT')           
+        self.sis.start()    
+        self.sm.execute()
         rospy.spin()
-        sm.request_preempt()
-        sis.stop()
+        
+    def quit(self):
+        self.sm.request_preempt()
+        self.sis.stop()
         
     def onButtonA(self):
         rospy.loginfo("A pressed")
@@ -82,7 +84,6 @@ class mission():
 if __name__ == '__main__':
     try:
         node = mission()
-        smach_thread = threading.Thread(target = node.spin)
-        smach_thread.start()
+        node.spin()
     except rospy.ROSInterruptException:
-        pass
+        node.quit()
