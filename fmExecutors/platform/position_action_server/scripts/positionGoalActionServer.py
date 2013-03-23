@@ -168,7 +168,7 @@ class positionGoalActionServer():
                 
                 # Block   
                 try :
-                    self.r.sleep()
+                    self.rate.sleep()
                 except rospy.ROSInterruptException:
                     return 'preempted'
             else:
