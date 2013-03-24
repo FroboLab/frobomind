@@ -67,7 +67,7 @@ class Updater():
         self.map.info.origin.position.y = 0
 #        self.map.info.origin.orientation = tf.transformations.quaternion_from_euler(0, 0, 0)
         # The map data, in row-major order, starting with (0,0).  Occupancy probabilities are in the range [0,100].  Unknown is -1.
-        self.map.data = [0] * (self.map.info.width * self.map.info.height)
+        self.map.data = [-1] * (self.map.info.width * self.map.info.height)
          
     def publishTransform(self,event):
         self.br.sendTransform((self.tf_offset_x , self.tf_offset_y , 0),
@@ -82,16 +82,16 @@ class Updater():
     def publishMap(self,event):
         try :      
             (trans,rot) = self.listener.lookupTransform('/odom', '/map', rospy.Time(0))
-            self.map.info.origin.position.x = trans[0] 
-            self.map.info.origin.position.y = trans[1]
-            self.map.info.origin.orientation.x = rot[0]
-            self.map.info.origin.orientation.y = rot[1]
-            self.map.info.origin.orientation.z = rot[2]
-            self.map.info.origin.orientation.w = rot[3]
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass
         
         self.map.header.stamp = rospy.Time.now()
+        self.map.info.origin.position.x = trans[0] 
+        self.map.info.origin.position.y = trans[1]
+        self.map.info.origin.orientation.x = rot[0]
+        self.map.info.origin.orientation.y = rot[1]
+        self.map.info.origin.orientation.z = rot[2]
+        self.map.info.origin.orientation.w = rot[3]
         
         for x in range(self.map.info.width) :
             self.map.data[x] = self.sensor_value
@@ -103,9 +103,7 @@ class Updater():
             self.map.data[self.map.info.width*y+1] = self.sensor_value
             self.map.data[self.map.info.width*y+self.map.info.width-1] = self.sensor_value
             self.map.data[self.map.info.width*y+self.map.info.width-2] = self.sensor_value
-#        for i in range(10) :
-#            for j in range(10) :
-#                self.map.data[((i+10)*30)+10+j] = 100
+
         self.map_pub.publish(self.map)
 
 

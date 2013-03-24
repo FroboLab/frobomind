@@ -46,6 +46,7 @@ void onTimer(const ros::TimerEvent&)
 	if(grid_list.size() > 1)
 	{
 		new_grid = occupancy_grid_utils::combineGrids(grid_list);
+		new_grid->header.frame_id = "/odom";
 		grid_list.clear();
 		grid_list.push_back(new_grid);
 		grid_pub.publish(new_grid);
