@@ -21,8 +21,8 @@ define bounds model
 
 define mines model
 (
-   size [50 50 1]
-   bitmap "map1.pgm"
+   size [9.7 5.7 1]
+   bitmap "map2.pgm"
    color "red"
    laser_return 1
    obstacle_return 0

@@ -11,7 +11,7 @@ class getNextPosition(smach.State):
         smach.State.__init__(self, outcomes=['succeeded'], output_keys=['next_x','next_y'])
         self.ptr = 0
         #self.position_list =[[-5,-5],[-5,5],[-4,5],[-4,-5],[-3,-5],[-3,5]]
-        self.generate_coverage([0,0],[20,20],1)
+        self.generate_coverage([0,0],[10,10],1)
 
     def generate_coverage(self, lowerleft, upperright, lanewidth):
         # Start in lower left corner

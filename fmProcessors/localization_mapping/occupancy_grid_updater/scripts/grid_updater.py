@@ -35,10 +35,8 @@ class Updater():
     """
         Converter 
     """
-    def __init__(self):
-        self.map_pub = rospy.Publisher("/fmKnowledge/map", OccupancyGrid)
-        self.sensor_sub = rospy.Subscriber("/wads", Float64, self.onSensor )
-        
+    def __init__(self):       
+        # Init parameters
         self.sensor_width = rospy.get_param("~sensor_width",2.0)
         self.sensor_length = rospy.get_param("~sensor_length",1.0)
         self.sensor_offset_x = rospy.get_param("~sensor_offset_x",0.6)
@@ -48,12 +46,26 @@ class Updater():
         self.period = rospy.get_param("~period",0.1)
         self.tf_offset_x = self.sensor_offset_x - self.sensor_outerrange
         self.tf_offset_y = (self.sensor_width/2) + self.sensor_outerrange
+        self.trans_interval = 0.2
+        self.angle_interval = 0.2
+        self.current_position_x = 0
+        self.current_position_y = 0
+        self.current_angle = 0
+        self.last_position_x = self.current_position_x
+        self.last_position_y = self.current_position_y
+        self.last_angle = self.current_angle
         
+        
+        # Init topics and transforms
+        self.map_pub = rospy.Publisher("/fmKnowledge/map", OccupancyGrid)
+        self.sensor_sub = rospy.Subscriber("/wads", Float64, self.onSensor )
+        self.sensor_sub = rospy.Subscriber("/odom", Odometry, self.onOdom )
         self.br = tf.TransformBroadcaster()
         self.listener = tf.TransformListener()
         
-        self.timer = rospy.Timer(rospy.Duration(self.period), self.publishMap)
+        # Init timers
         self.timer = rospy.Timer(rospy.Duration(self.period), self.publishTransform)
+        self.timer = rospy.Timer(rospy.Duration(self.period), self.onTimer)
         
         self.sensor_value = 0
         self.map = OccupancyGrid()     
@@ -62,14 +74,9 @@ class Updater():
         self.map.info.resolution = self.resolution # The map resolution [m/cell]
         self.map.info.width = int( np.ceil(( self.sensor_width + (2*self.sensor_outerrange) ) / self.resolution )) # Map width [cells]
         self.map.info.height = int( np.ceil(( self.sensor_length + (2*self.sensor_outerrange) ) / self.resolution ))  # Map height [cells]
-        # The origin of the map [m, m, rad].  This is the real-world pose of the cell (0,0) in the map.
-        self.map.info.origin.position.x = 0
-        self.map.info.origin.position.y = 0
-#        self.map.info.origin.orientation = tf.transformations.quaternion_from_euler(0, 0, 0)
-        # The map data, in row-major order, starting with (0,0).  Occupancy probabilities are in the range [0,100].  Unknown is -1.
-        self.map.data = [-1] * (self.map.info.width * self.map.info.height)
          
     def publishTransform(self,event):
+        # Broadcast static transform from baselink to map
         self.br.sendTransform((self.tf_offset_x , self.tf_offset_y , 0),
                      tf.transformations.quaternion_from_euler(0, 0, - np.pi/2),
                      rospy.Time.now(),
@@ -77,22 +84,49 @@ class Updater():
                      "/base_link")
         
     def onSensor(self,msg):
-        self.sensor_value = int( msg.data*100 / 5.0 )
+        # Save sensor value
+        self.sensor_value = int( msg.data*20 )
         
-    def publishMap(self,event):
+    def onOdom(self,msg):
+        self.current_position_x = msg.pose.pose.position.x
+        self.current_position_y = msg.pose.pose.position.y
+        quaternion = np.empty((4, ), dtype=np.float64)
+        quaternion[0] = msg.pose.pose.orientation.x
+        quaternion[1] = msg.pose.pose.orientation.y
+        quaternion[2] = msg.pose.pose.orientation.z
+        quaternion[3] = msg.pose.pose.orientation.w
+        (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(quaternion)
+        self.current_angle = yaw
+    
+    def onTimer(self,event):
+        d_x = np.abs(self.current_position_x - self.last_position_x)
+        d_y = np.abs(self.current_position_y - self.last_position_y)
+        d_distance = np.sqrt(d_x*d_x + d_y*d_y)        
+        d_angle = np.abs(self.current_angle - self.last_angle)
+        if d_distance > self.trans_interval or d_angle > self.angle_interval:
+            self.last_position_x = self.current_position_x
+            self.last_position_y = self.current_position_y
+            self.last_angle = self.current_angle
+            self.publishMap()
+                
+    def publishMap(self):
+        # Time stamp the map
+        self.map.header.stamp = rospy.Time.now() 
+        
+        # Place local map on global map
         try :      
             (trans,rot) = self.listener.lookupTransform('/odom', '/map', rospy.Time(0))
+            self.map.info.origin.position.x = trans[0] 
+            self.map.info.origin.position.y = trans[1]
+            self.map.info.origin.orientation.x = rot[0]
+            self.map.info.origin.orientation.y = rot[1]
+            self.map.info.origin.orientation.z = rot[2]
+            self.map.info.origin.orientation.w = rot[3]
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass
         
-        self.map.header.stamp = rospy.Time.now()
-        self.map.info.origin.position.x = trans[0] 
-        self.map.info.origin.position.y = trans[1]
-        self.map.info.origin.orientation.x = rot[0]
-        self.map.info.origin.orientation.y = rot[1]
-        self.map.info.origin.orientation.z = rot[2]
-        self.map.info.origin.orientation.w = rot[3]
-        
+        # Generate map from sensor model
+        self.map.data = [0] * (self.map.info.width * self.map.info.height)
         for x in range(self.map.info.width) :
             self.map.data[x] = self.sensor_value
             self.map.data[self.map.info.width+x] = self.sensor_value
@@ -103,7 +137,8 @@ class Updater():
             self.map.data[self.map.info.width*y+1] = self.sensor_value
             self.map.data[self.map.info.width*y+self.map.info.width-1] = self.sensor_value
             self.map.data[self.map.info.width*y+self.map.info.width-2] = self.sensor_value
-
+        
+        # Publish local map
         self.map_pub.publish(self.map)
 
 

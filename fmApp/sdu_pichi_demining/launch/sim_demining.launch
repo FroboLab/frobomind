@@ -1,4 +1,5 @@
 <launch>
+	<include file="$(find sdu_pichi_demining)/launch/map.launch"/>
  	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_pichi_demining)/world/pichi_demining.world"/>
 	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_demining)/conf/default.rviz"/>
 	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
@@ -15,7 +16,7 @@
 	</group> 
     	
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_pichi_demining" name="mission_control" type="demining.py" output="screen">
+		<node pkg="sdu_pichi_demining" name="mission_control" type="demining.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="feedback_topic" value="/fmHMI/joy/set_feedback" />
@@ -28,7 +29,7 @@
 			<param name="publish_frequency" value="5"/>
 		</node>
 	</group>
-	<node pkg="wads_implement" name="WADSImplementSimulator" type="wads_implement_node" output="screen">
+	<node pkg="wads_implement" name="WADSImplementSimulator" type="wads_implement_node">
 	      <param name="sensor_width" value="2.0" />
 	      <param name="sensor_length" value="1.0" />
 	      <param name="sensor_offset_x" value="0.6" />
@@ -40,7 +41,7 @@
 	      <param name="subscriberTopic" value="/base_scan" />
 	      <param name="publisherTopic" value="/wads" />
 	</node>
-	<node pkg="wads_implement" name="WADSVisualizer" type="wads_implement_visualizer" output="screen">
+	<node pkg="wads_implement" name="WADSVisualizer" type="wads_implement_visualizer">
 	      <param name="sensor_width" value="2.0" />
 	      <param name="sensor_length" value="1.0" />
 	      <param name="sensor_offset_x" value="0.6" />
