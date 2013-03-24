@@ -42,12 +42,12 @@ class Updater():
         self.sensor_offset_x = rospy.get_param("~sensor_offset_x",0.6)
         self.sensor_offset_y = rospy.get_param("~sensor_offset_y",0)
         self.sensor_outerrange = rospy.get_param("~sensor_outerrange",0.1)
-        self.resolution = rospy.get_param("~resolution",0.1)
+        self.resolution = rospy.get_param("~resolution",0.05)
         self.period = rospy.get_param("~period",0.1)
         self.tf_offset_x = self.sensor_offset_x - self.sensor_outerrange
         self.tf_offset_y = (self.sensor_width/2) + self.sensor_outerrange
-        self.trans_interval = 0.2
-        self.angle_interval = 0.2
+        self.trans_interval = 0.1
+        self.angle_interval = 0.1
         self.current_position_x = 0
         self.current_position_y = 0
         self.current_angle = 0
@@ -126,7 +126,7 @@ class Updater():
             pass
         
         # Generate map from sensor model
-        self.map.data = [0] * (self.map.info.width * self.map.info.height)
+        self.map.data = [-1] * (self.map.info.width * self.map.info.height)
         for x in range(self.map.info.width) :
             self.map.data[x] = self.sensor_value
             self.map.data[self.map.info.width+x] = self.sensor_value

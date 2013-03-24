@@ -59,6 +59,10 @@ nav_msgs::OccupancyGrid::Ptr combineGrids(const std::vector<nav_msgs::OccupancyG
 /// Version of combineGrids that uses the resolution of the first grid.
 nav_msgs::OccupancyGrid::Ptr combineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
 
+nav_msgs::OccupancyGrid::Ptr minCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids, double resolution);
+nav_msgs::OccupancyGrid::Ptr minCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
+nav_msgs::OccupancyGrid::Ptr zeroCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids, double resolution);
+nav_msgs::OccupancyGrid::Ptr zeroCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
 
 
 } // namespace occupancy_grid_utils

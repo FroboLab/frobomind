@@ -31,28 +31,47 @@
 #include <occupancy_grid_utils/combine_grids.h>
 
 nav_msgs::OccupancyGrid initial_map;
-nav_msgs::OccupancyGrid::Ptr new_grid;
-std::vector<nav_msgs::OccupancyGrid::ConstPtr> grid_list;
-ros::Publisher grid_pub;
+nav_msgs::OccupancyGrid::Ptr grid_p;
+std::vector<nav_msgs::OccupancyGrid::ConstPtr> global_list;
+std::vector<nav_msgs::OccupancyGrid::ConstPtr> local_list;
+ros::Publisher grid_pub;//, zero_pub;
 nav_msgs::OccupancyGrid grid_msg;
 
 void onGridMsg(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
-		grid_list.push_back(msg);
+	local_list.push_back(msg);
+	if(local_list.size() > 1)
+	{
+		grid_p = occupancy_grid_utils::zeroCombineGrids(local_list);
+		grid_p->header.frame_id = "/odom";
+		local_list.erase(local_list.begin());
+		global_list.push_back(grid_p);
+//		zero_pub.publish(grid_p);
+//		if(local_list.size() > 1)
+//			ROS_WARN("List has grown...");
+	}
+
 }
 
 void onTimer(const ros::TimerEvent&)
 {
-	if(grid_list.size() > 1)
+	if(global_list.size() > 1)
 	{
-		new_grid = occupancy_grid_utils::combineGrids(grid_list);
-		new_grid->header.frame_id = "/odom";
-		grid_pub.publish(new_grid);
-		if (grid_list.size() > 100)
+		if (global_list.size() > 100)
 		{
-			grid_list.clear();
-			grid_list.push_back(new_grid);
+			grid_p = occupancy_grid_utils::combineGrids(global_list);
+			grid_p->header.frame_id = "/odom";
+			grid_pub.publish(grid_p);
+			global_list.clear();
+			global_list.push_back(grid_p);
 		}
+		else
+		{
+			grid_p = occupancy_grid_utils::minCombineGrids(global_list);
+			grid_p->header.frame_id = "/odom";
+			grid_pub.publish(grid_p);
+		}
+
 	}
 }
 
@@ -61,6 +80,7 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, "combine_grids");
 	ros::NodeHandle globalNodeHandler;
 	grid_pub = globalNodeHandler.advertise<nav_msgs::OccupancyGrid>("/fmKnowledge/map_combined", 100);
+//	zero_pub = globalNodeHandler.advertise<nav_msgs::OccupancyGrid>("/fmKnowledge/map_zeroed", 100);
 	ros::Subscriber grid_sub = globalNodeHandler.subscribe("/fmKnowledge/map", 10, onGridMsg);
 	ros::Timer timer = globalNodeHandler.createTimer(ros::Duration(0.5), onTimer);
 	ros::spin();

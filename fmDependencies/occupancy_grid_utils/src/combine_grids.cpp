@@ -264,6 +264,97 @@ GridPtr combineGrids (const vector<GridConstPtr>& grids)
   return combineGrids(grids, grids[0]->info.resolution);
 }
 
+// Main function
+GridPtr minCombineGrids (const vector<GridConstPtr>& grids, const double resolution)
+{
+  GridPtr combined_grid(new nm::OccupancyGrid());
+  combined_grid->info = getCombinedGridInfo(grids, resolution);
+  combined_grid->data.resize(combined_grid->info.width*combined_grid->info.height);
+  fill(combined_grid->data.begin(), combined_grid->data.end(), -1);
+  ROS_DEBUG_NAMED ("combine_grids", "Combining %zu grids", grids.size());
+
+  BOOST_FOREACH (const GridConstPtr& grid, grids) {
+    for (coord_t x=0; x<(int)grid->info.width; x++) {
+      for (coord_t y=0; y<(int)grid->info.height; y++) {
+        const Cell cell(x, y);
+        const signed char value=grid->data[cellIndex(grid->info, cell)];
+
+        // Only proceed if the value is not unknown
+        if ((value>=0) && (value<=100)) {
+          BOOST_FOREACH (const Cell& intersecting_cell,
+                         intersectingCells(combined_grid->info, grid->info, cell)) {
+            const index_t ind = cellIndex(combined_grid->info, intersecting_cell);
+            if(combined_grid->data[ind] != -1)
+            	combined_grid->data[ind] = min(combined_grid->data[ind], value);
+            else
+            	combined_grid->data[ind] = value;
+          }
+        }
+      }
+    }
+  }
+
+  ROS_DEBUG_NAMED ("combine_grids", "Done combining grids");
+  return combined_grid;
+}
+
+
+GridPtr minCombineGrids (const vector<GridConstPtr>& grids)
+{
+  ROS_ASSERT (grids.size()>0);
+  return minCombineGrids(grids, grids[0]->info.resolution);
+}
+
+// Main function
+GridPtr zeroCombineGrids (const vector<GridConstPtr>& grids, const double resolution)
+{
+  GridPtr combined_grid(new nm::OccupancyGrid());
+  combined_grid->info = getCombinedGridInfo(grids, resolution);
+  combined_grid->data.resize(combined_grid->info.width*combined_grid->info.height);
+  fill(combined_grid->data.begin(), combined_grid->data.end(), -1);
+  ROS_DEBUG_NAMED ("combine_grids", "Combining %zu grids", grids.size());
+
+  BOOST_FOREACH (const GridConstPtr& grid, grids)
+  {
+	  //make list
+	   vector<GridConstPtr> list;
+
+	   //push combined
+	   list.push_back(combined_grid);
+
+	   //push grid
+	   list.push_back(grid);
+
+	   //combine list
+	   combined_grid = combineGrids(list); //TODO:memory leak?
+  }
+  BOOST_FOREACH (const GridConstPtr& grid, grids) {
+    for (coord_t x=0; x<(int)grid->info.width; x++) {
+      for (coord_t y=0; y<(int)grid->info.height; y++) {
+        const Cell cell(x, y);
+        const signed char value=grid->data[cellIndex(grid->info, cell)];
+
+        // Only proceed if the value is not unknown
+        if ((value>=0) && (value<=100)) {
+          BOOST_FOREACH (const Cell& intersecting_cell,
+                         intersectingCells(combined_grid->info, grid->info, cell)) {
+            const index_t ind = cellIndex(combined_grid->info, intersecting_cell);
+            	combined_grid->data[ind] = -1;
+          }
+        }
+      }
+    }
+  }
+
+  return combined_grid;
+}
+
+
+GridPtr zeroCombineGrids (const vector<GridConstPtr>& grids)
+{
+  ROS_ASSERT (grids.size()>0);
+  return zeroCombineGrids(grids, grids[0]->info.resolution);
+}
 
 } // namespace occupancy_grid_utils
 
