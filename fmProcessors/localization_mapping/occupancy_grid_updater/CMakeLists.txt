@@ -4,7 +4,7 @@ project(occupancy_grid_updater)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy)
+find_package(catkin REQUIRED COMPONENTS rospy roscpp occupancy_grid_utils)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -46,7 +46,7 @@ find_package(catkin REQUIRED COMPONENTS rospy)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES twist_stamped_to_twist
+  LIBRARIES occupancy_grid_utils
 #  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
@@ -56,7 +56,8 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+ include_directories(include ${catkin_INCLUDE_DIRS} )
+ #${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
 # add_library(twist_stamped_to_twist
@@ -64,15 +65,15 @@ catkin_package(
 # )
 
 ## Declare a cpp executable
-# add_executable(twist_stamped_to_twist_node src/twist_stamped_to_twist_node.cpp)
+ add_executable(grids_combined_node src/grids_combined.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(twist_stamped_to_twist_node ${PROJECT_NAME})
+ add_dependencies(grids_combined_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(twist_stamped_to_twist_node
-#   ${catkin_LIBRARIES}
-# )
+ target_link_libraries(grids_combined_node
+   ${catkin_LIBRARIES}
+ )
 
 #############
 ## Install ##

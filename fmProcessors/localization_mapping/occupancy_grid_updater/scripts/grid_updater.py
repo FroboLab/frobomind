@@ -45,17 +45,19 @@ class Updater():
         self.sensor_offset_y = rospy.get_param("~sensor_offset_y",0)
         self.sensor_outerrange = rospy.get_param("~sensor_outerrange",0.1)
         self.resolution = rospy.get_param("~resolution",0.1)
+        self.period = rospy.get_param("~period",0.1)
         self.tf_offset_x = self.sensor_offset_x - self.sensor_outerrange
         self.tf_offset_y = (self.sensor_width/2) + self.sensor_outerrange
         
         self.br = tf.TransformBroadcaster()
         self.listener = tf.TransformListener()
         
-        self.timer = rospy.Timer(rospy.Duration(0.2), self.publishMap)
-        self.timer = rospy.Timer(rospy.Duration(0.2), self.publishTransform)
+        self.timer = rospy.Timer(rospy.Duration(self.period), self.publishMap)
+        self.timer = rospy.Timer(rospy.Duration(self.period), self.publishTransform)
         
         self.sensor_value = 0
         self.map = OccupancyGrid()     
+        self.map.header.frame_id = '/odom'
         self.map.info.map_load_time = rospy.Time.now() # The time at which the map was loaded
         self.map.info.resolution = self.resolution # The map resolution [m/cell]
         self.map.info.width = int( np.ceil(( self.sensor_width + (2*self.sensor_outerrange) ) / self.resolution )) # Map width [cells]
@@ -79,13 +81,18 @@ class Updater():
         
     def publishMap(self,event):
         try :      
-            (trans,rot) = self.listener.lookupTransform('/base_link', '/base_link', rospy.Time(0))
+            (trans,rot) = self.listener.lookupTransform('/odom', '/map', rospy.Time(0))
             self.map.info.origin.position.x = trans[0] 
             self.map.info.origin.position.y = trans[1]
+            self.map.info.origin.orientation.x = rot[0]
+            self.map.info.origin.orientation.y = rot[1]
+            self.map.info.origin.orientation.z = rot[2]
+            self.map.info.origin.orientation.w = rot[3]
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             pass
         
         self.map.header.stamp = rospy.Time.now()
+        
         for x in range(self.map.info.width) :
             self.map.data[x] = self.sensor_value
             self.map.data[self.map.info.width+x] = self.sensor_value
