@@ -34,13 +34,14 @@ hbl2350::hbl2350( )
 	last_deadman_received = ros::Time::now();
 	initialised = false;
 	online = false;
+	emergency_stop = true;
 	last_serial_msg = ros::Time::now();
 	cmd_vel_publishing = false;
 	controller_responding = true;
 	velocity_ch1 = velocity_ch2 = 0;
 
 	// Parameters not yet on parameter server
-	max_rpm = 2000;
+	max_rpm = 3000;
 	anti_windup_percent = 50;
 	max_acceleration = 10000; //0.1*rpm per second
 	max_deceleration = 20000; //0.1*rpm per second
@@ -232,10 +233,16 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 					ss << "cmd_vel_publishing ";
 					if(deadman_pressed) /* is set if someone publishes true on deadman topic */
 					{
+						if(emergency_stop)
+						{
+							transmit(1,"!MG");
+							emergency_stop = false;
+						}
+
 						ss << "deadman_pressed ";
 						/* All is good - send speeds */
 						int out_ch1 = (velocity_ch1*velocity_max)/max_rpm,
-								out_ch2 = (velocity_ch2*velocity_max)/max_rpm;
+							out_ch2 = (velocity_ch2*velocity_max)/max_rpm;
 
 						if(out_ch1 < - velocity_max)
 							out_ch1 = -velocity_max;
@@ -254,6 +261,8 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 					{
 //						ROS_INFO("%s: Deadman button is not pressed",ros::this_node::getName().c_str());
 						/* Set speeds to 0 */
+						transmit(1,"!EX");
+						emergency_stop = true;
 						transmit(3,"!G",1,0);
 						transmit(3,"!G",2,0);
 					}
@@ -262,6 +271,8 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 				{
 //					ROS_INFO("%s: Cmd_vel is not publishing",ros::this_node::getName().c_str());
 					/* Set speeds to 0 */
+					transmit(1,"!EX");
+					emergency_stop = true;
 					transmit(3,"!G",1,0);
 					transmit(3,"!G",2,0);
 				}

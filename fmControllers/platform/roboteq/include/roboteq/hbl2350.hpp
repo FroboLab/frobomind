@@ -32,7 +32,8 @@ private:
 	ros::Time 				last_twist_received_ch2;
 
 public:
-	bool 					closed_loop_operation;
+	bool 					closed_loop_operation,
+							emergency_stop;
 
 	int						p_gain_ch1,
 							i_gain_ch1,
