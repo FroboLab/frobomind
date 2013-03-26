@@ -26,11 +26,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-import rospy
-import actionlib
+# Change log:
+# 26-Mar 2013 Leon: Changed to using tf for quaternion calculations
+#                   Turned coordinate system to match odom frame
+#****************************************************************************/
+import rospy, tf, actionlib, math
 import numpy as np
-import math
-
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from position_action_server.msg import positionAction
@@ -59,6 +60,9 @@ class vector():
             return math.acos(-1)
         else :
             return math.acos(tmp)
+    
+    def hat(self):
+        return vector(self.vec[1],-self.vec[0])
     
     def rotate(self,rad):
         new_x = math.cos(rad)*self.vec[0] - math.sin(rad)*self.vec[1]
@@ -90,7 +94,7 @@ class positionGoalActionServer():
         self.twist = TwistStamped()
         self.destination = vector(0,0)
         self.position = vector(0,0)
-        self.quaternion = [0,0,0,0]
+        self.quaternion = np.empty((4, ), dtype=np.float64)
         self.distance_error = 0
         self.angle_error = 0
          
@@ -110,29 +114,29 @@ class positionGoalActionServer():
         self.twist.twist.linear.x = 0
         self.twist.twist.angular.z = 0            
         self.twist_pub.publish(self.twist)
-
         self._server.set_preempted()
    
     def execute(self,goal):
         # Construct a vector from position goal
         self.destination.vec[0] = goal.x
         self.destination.vec[1] = goal.y  
-
+        rospy.loginfo(rospy.get_name() + "Received goal: (%f,%f) ",goal.x,goal.y)
         while not rospy.is_shutdown() :
             # Check for new goal
             if self._server.is_new_goal_available() :
                 break
             
-            # Construct a vector from desired path
-            path = self.destination - self.position
+            # Construct desired path vector and calculate distance error
+            path = self.destination - vector(-self.position[1], self.position[0])
             self.distance_error = path.length()
-            
+                  
             # If position is unreached
             if self.distance_error > self.max_distance_error :
                 # Calculate roll from quaternion and construct a heading vector
-                roll = math.atan2( 2*(self.quaternion[0]*self.quaternion[1] + self.quaternion[2]*self.quaternion[3]), 
-                                   1 - 2*(math.pow(self.quaternion[1], 2) + math.pow(self.quaternion[2],2)))
-                head = vector(math.cos(roll),math.sin(roll))
+                (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
+
+                # Construct heading vector
+                head = vector(- math.sin(yaw),math.cos(yaw))
                 
                 # Calculate angle between heading vector and path vector
                 self.angle_error = head.angle(path)
@@ -143,7 +147,10 @@ class positionGoalActionServer():
                 if path.angle(t1) != 0 :
                     self.angle_error = -self.angle_error
                     
-                # Generate twist from distance and angle errors (For now simple 1:1)
+                rospy.loginfo(rospy.get_name() + "Distance error: %f",self.distance_error)
+                rospy.loginfo(rospy.get_name() + "Angle error: %f",self.angle_error)
+                 
+                # Generate twist from distance and angle errors (For now simply 1:1)
                 self.twist.twist.linear.x = self.distance_error
                 self.twist.twist.angular.z = self.angle_error
                 

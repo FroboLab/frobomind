@@ -26,55 +26,86 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-import rospy
-import smach
-import smach_ros
-import actionlib
-import threading
+# Change log:
+# 25-Mar 2013 Leon: Changed fixed list to recorded list (button A adds point)
+#
+#****************************************************************************/
+import rospy,smach,smach_ros,actionlib,threading
 from wii_interface import wii_interface 
 from surveyor_smach.behaviours import measure_point
 from generic_smach.states import wii_states
-from nav_msgs.msg import Odometry    
+from nav_msgs.msg import Odometry 
+from geometry_msgs.msg import Point   
            
 class Mission():
     """    
-        Top level user interface node implemented as a concurrence between wiimote interface and behaviour updater
+        Top level user interface node implemented as a concurrence between wiimote interface and 
+        the mission behaviour
     """
     def __init__(self):
         rospy.init_node('mission_control')
         rospy.loginfo("mission control initialized")
+        
+        self.odom_topic = rospy.get_param("~odom_topic",'/odom')
+        self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.onOdometry )
+        
         self.hmi = wii_interface.WiiInterface()
-        self.hmi.register_callback_button_A(self.onButtonA)
+        self.hmi.register_callback_button_A(self.savePoint)
+        self.point_list = []
+        self.latest_point = Point()
+        self.save_time = rospy.Time.now()
+        self.min_time_between_point_save = rospy.Duration(3) # No magic numbers...
           
     def build(self):
+        """    
+            Builds the mission behaviour
+        """
          # Build the autonomous state as concurrence between wiimote and measuring behaviour to allow user preemption
-        autonomous = smach.Concurrence(  outcomes = ['exitAutomode'],
+        autonomous = smach.Concurrence(  outcomes = ['exitAutomode','aborted'],
                                                 default_outcome = 'exitAutomode',
-                                                outcome_map = {'exitAutomode':{'HMI':'preempted','MEASURE':'preempted'}},
+                                                outcome_map = {'exitAutomode':{'HMI':'preempted','MEASURE':'preempted'},
+                                                               'aborted':{'HMI':'preempted','MEASURE':'aborted'}},
                                                 child_termination_cb = onPreempt)
         with autonomous:
             smach.Concurrence.add('HMI', wii_states.interfaceState(self.hmi))
-            smach.Concurrence.add('MEASURE', measure_point.build())
+            smach.Concurrence.add('MEASURE', measure_point.build(self.point_list))
         
         # Build the top level mission control from the remote control state and the autonomous state
-        mission_control = smach.StateMachine(outcomes=['preempted'])            
+        mission_control = smach.StateMachine(outcomes=['preempted','aborted'])            
         with mission_control:
             smach.StateMachine.add('REMOTE_CONTROL', wii_states.remoteControlState(self.hmi), transitions={'enterAutomode':'AUTO_MODE','preempted':'preempted'})
-            smach.StateMachine.add('AUTO_MODE', autonomous, transitions={'exitAutomode':'REMOTE_CONTROL'})
+            smach.StateMachine.add('AUTO_MODE', autonomous, transitions={'exitAutomode':'REMOTE_CONTROL','aborted':'REMOTE_CONTROL'})
         return mission_control
                        
-    def spin(self):    
+    def spin(self):
+        """    
+            Method to spin the node
+        """    
         self.sm = self.build()   
         self.sis = smach_ros.IntrospectionServer('StateMachineView', self.sm, '/SM_ROOT')           
         self.sis.start() 
         self.sm.execute()
-        rospy.spin()
+        rospy.spin()       
         
+    def savePoint(self):
+        """    
+            Callback method to save the current position
+        """
+        if self.save_time < rospy.Time.now():
+            rospy.loginfo("Saving point: (%f,%f) ",self.latest_point.x,self.latest_point.y)
+            self.point_list.append(self.latest_point)
+            self.save_time = rospy.Time.now() + self.min_time_between_point_save
         
-    def onButtonA(self):
-        rospy.loginfo("A pressed")
+    def onOdometry(self,msg):
+        """    
+            Callback method to save current position
+        """
+        self.latest_point = msg.pose.pose.position
     
     def quit(self):
+        """    
+            Method to properly turn down and avoid SIGTERM
+        """
         self.sis.stop()
         self.sm.request_preempt()
         self.sm.close()
@@ -82,7 +113,6 @@ class Mission():
 def onPreempt(outcome_map):
     """
         Preempts all other states on child termination. 
-        TODO: Find a way to avoid this being a global function...
     """
     return True
     

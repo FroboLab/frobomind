@@ -49,7 +49,6 @@ class remoteControlState(smach.State):
                 self.hmi.publishDeadman()
                 self.hmi.publishFeedback()
                 self.hmi.publishCmdVel()
-                # Spin
                 try :
                     self.r.sleep()
                 except rospy.ROSInterruptException:
@@ -76,7 +75,10 @@ class interfaceState(smach.State):
                 # Publish topics
                 self.hmi.publishDeadman()
                 self.hmi.publishFeedback()
-                self.r.sleep()
+                try :
+                    self.r.sleep()
+                except rospy.ROSInterruptException:
+                    return 'preempted'
             else :
                 break
         return 'preempted'

@@ -36,7 +36,7 @@ class WaitState(State):
     @return: 'preempted' if preempted and 'succeeded' if duration ends 
 """
     def __init__(self,duration):
-        State.__init__(self,outcomes=['succeeded','preempted'])
+        State.__init__(self,outcomes=['succeeded','preempted','aborted'])
         self.duration = duration
         self.rate = rospy.Rate(5)
         self.exit_time = rospy.Time.now()       
