@@ -53,8 +53,9 @@ class WiiInterface():
         self.next_state_change = rospy.Time.now() + rospy.Duration(1)
         self.rumble_on = False
         self.warning = False
-        self.pitch = [0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0, 0.0 , 0.0 , 0.0]
-        self.roll = [0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0, 0.0 , 0.0 , 0.0]
+        self.filter = rospy.get_param("~filter",10) 
+        self.pitch = [0.0] * self.filter
+        self.roll = [0.0] * self.filter
         self.ptr = 0
         self.twist = TwistStamped()
         self.fb = JoyFeedbackArray( array=[JoyFeedback( type=JoyFeedback.TYPE_LED, intensity=0, id=0 ), 
@@ -75,7 +76,8 @@ class WiiInterface():
         self.deadband = self.deadband / 100.0 # Convert to rati
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",4)
-        self.publish_frequency = rospy.get_param("~publish_frequency",10)    
+        self.publish_frequency = rospy.get_param("~publish_frequency",10) 
+           
         
         # Get topic names
         self.deadman_topic = rospy.get_param("~deadman_topic",'deadman')
@@ -143,7 +145,7 @@ class WiiInterface():
         self.pitch[self.ptr] = math.atan2(msg.axes[1], math.sqrt(math.pow(msg.axes[0], 2) + math.pow(msg.axes[2], 2))) / 1.57;
         self.roll[self.ptr] = math.atan2(msg.axes[0], math.sqrt(math.pow(msg.axes[1], 2) + math.pow(msg.axes[2], 2))) / 1.57;
         self.ptr = self.ptr + 1
-        if self.ptr > 9 :
+        if self.ptr >= self.filter :
             self.ptr = 0
 
     def onStatus(self,msg):

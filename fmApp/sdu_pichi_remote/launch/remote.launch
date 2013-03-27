@@ -11,6 +11,7 @@
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="50"/>
 			<param name="publish_frequency" value="10"/>
+			<param name="filter" value="50"/>
 		</node>
 	</group>
 
@@ -47,16 +48,16 @@
         	<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/>
 		</node> 
 		
-	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true" >
+	    <!--node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true" >
 	        <param name="publisher_topic" value="/fmData/rx" />	 
 	        <param name="subscriber_topic" value="/fmData/tx" />	
 	        <param name="device" value="/dev/ttyUSB0" />	
 	        <param name="baudrate" value="115200" />
 	        <param name="termination_character" value="13"/>
-		</node>	
+		</node-->	
 	</group>
 	
 		<!-- PID trimmer -->
-		<node pkg="sdu_pichi" name="PID_trimmer" type="trimmer.py" output="screen" />
+		<!--node pkg="sdu_pichi" name="PID_trimmer" type="trimmer.py" output="screen" /-->
 	
 </launch>
