@@ -11,7 +11,7 @@
 
 	<group ns="fmHMI">
 		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-			<param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/>
+			<!--param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/-->
 		</node>
 	</group> 
     	
