@@ -143,6 +143,7 @@ public:
 		{
 			case YAW_SOURCE_IMU_ORIENTATION:
 				{
+					imu_time_latest = ros::Time::now();
 					double qx = msg->orientation.x;
 					double qy = msg->orientation.y;
 					double qz = msg->orientation.z;
