@@ -36,7 +36,7 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 {
 	ROS_DEBUG("Message received %s",msg->data.c_str());
-
+	last_serial_msg = ros::Time::now();
 	char dummy[25];
 
 	if(sscanf(msg->data.c_str(),"+%s",dummy)){}
@@ -98,7 +98,7 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 		ROS_WARN("RoboTeQ: %s",msg->data.c_str());
 	}
 
-	last_serial_msg = ros::Time::now();
+
 
 }
 

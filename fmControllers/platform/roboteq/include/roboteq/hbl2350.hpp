@@ -17,10 +17,10 @@ private:
 	ros::NodeHandle 		local_node_handler;
 	ros::NodeHandle 		global_node_handler;
 
-	bool 					deadman_active,
-							cmd_vel_active,
+	bool 					deadman_pressed,
+							cmd_vel_publishing,
 							initialised,
-							idle;
+							controller_responding;
 
 	int 					velocity_ch1,
 							velocity_ch2;
@@ -32,7 +32,8 @@ private:
 	ros::Time 				last_twist_received_ch2;
 
 public:
-	bool 					closed_loop_operation;
+	bool 					closed_loop_operation,
+							emergency_stop;
 
 	int						p_gain_ch1,
 							i_gain_ch1,

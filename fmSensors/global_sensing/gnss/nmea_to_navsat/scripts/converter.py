@@ -38,16 +38,25 @@ class converter():
         Converter class
     """
     def __init__(self):
-        rospy.init_node('nmea_to_navsat_converter')     
-        self.gpspub = rospy.Publisher('fix', NavSatFix)
-        self.gpsVelPub = rospy.Publisher('vel',TwistStamped)
-        self.gpstimePub = rospy.Publisher('time_reference', TimeReference)
-        self.nmea_topic = rospy.get_param("~nmea_topic",'/fmLib/nmea_from_gps')
-        self.status_sub = rospy.Subscriber(self.nmea_topic, nmea , self.onNmea)
+        rospy.init_node('nmea_to_navsat_converter')
         
+        # Get parameters
+        self.nmea_sub = rospy.get_param("~nmea_sub",'/fmLib/nmea_from_gps')
+        self.fix_pub = rospy.get_param("~fix_pub",'fix')
+        self.vel_pub = rospy.get_param("~vel_pub",'vel')
+        self.time_pub = rospy.get_param("~time_pub",'time_reference')
+        
+        # Set up topics     
+        self.gpspub = rospy.Publisher(self.fix_pub, NavSatFix)
+        self.gpsVelPub = rospy.Publisher(self.vel_pub,TwistStamped)
+        self.gpstimePub = rospy.Publisher(self.time_pub, TimeReference)  
+        self.status_sub = rospy.Subscriber(self.nmea_sub, nmea , self.onNmea)
+        
+        # Set up frame
         self.frame_id = rospy.get_param('~frame_id','gps')
         if self.frame_id[0] != "/":
             self.frame_id = self.addTFPrefix(self.frame_id)
+            
         self.time_ref_source = rospy.get_param('~time_ref_source', self.frame_id)
         self.useRMC = rospy.get_param('~useRMC', False)
         #useRMC == True -> generate info from RMC+GSA

@@ -1,0 +1,10 @@
+<robot name="pichi">
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.15 0 0.35"/>
+      <geometry>
+        <mesh filename="package://sdu_pichi_demining/description/pichi.stl"/>
+      </geometry>
+    </visual>
+  </link>
+</robot>

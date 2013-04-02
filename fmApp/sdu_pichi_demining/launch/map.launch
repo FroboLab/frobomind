@@ -1,0 +1,12 @@
+<launch>
+ 	<node pkg="occupancy_grid_updater" type="grid_updater.py" name="map" output="screen">
+ 		  <param name="sensor_width" value="2.0" />
+	      <param name="sensor_length" value="1.0" />
+	      <param name="sensor_offset_x" value="0.6" />
+	      <param name="sensor_offset_y" value="0.0" />
+	      <param name="sensor_outerrange" value="0.1" />
+	      <param name="resolution" value="0.1" /> <!-- Size of cell in [m] -->
+	      <param name="perios" value="0.1" /> <!-- Frequency of node in [Hz] -->
+	</node>
+	<node pkg="occupancy_grid_updater" type="grids_combined_node" name="combiner" output="screen"/>
+</launch>
