@@ -1,4 +1,20 @@
 <launch>
+<!-- 
+	You can configure the VectorNav VN-100 IMU using the
+	"VectorNav Sensor Explorer" utility available at www.vectornav.com
+
+	The following settings are required/recommended for the VN-100 in
+	field robot applications. See the VN-100 User Manual for more information:
+		Communication -> Async Data Output Type:
+			YawPitchRoll, Magnetic, Acceleration and Angular rate ($VNQMR)
+		Communication -> COM Baudrate:
+			115200
+		Filter -> VPE Basic Control -> Heading Mode:
+			Relative
+		Filter -> Magnetic Mode:
+			TwoD
+->>
+
 	<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args=""/>
 
 	<group ns="transforms">
