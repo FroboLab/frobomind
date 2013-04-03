@@ -5,7 +5,7 @@ project(action_primitives)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 #find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs dynamic_reconfigure msgs nav_msgs rospy tf visualization_msgs)
-find_package(catkin REQUIRED COMPONENTS msgs rospy)
+find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs msgs rospy tf geometry_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -32,11 +32,13 @@ find_package(catkin REQUIRED COMPONENTS msgs rospy)
 #   Service2.srv
 # )
 
+add_action_files(DIRECTORY action FILES make_turn.action)
+
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   actionlib_msgs#   nav_msgs#   visualization_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   actionlib_msgs#   nav_msgs#   visualization_msgs
+ )
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -81,10 +83,10 @@ catkin_package(
 
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+ install(PROGRAMS
+   src/action_primitives/make_turn
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS action_primitives action_primitives_node

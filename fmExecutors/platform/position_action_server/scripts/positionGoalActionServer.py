@@ -35,6 +35,7 @@ import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from position_action_server.msg import positionAction
+from tf import TransformListener
 
 class vector():
     """
@@ -81,10 +82,13 @@ class positionGoalActionServer():
         self.straight_line = rospy.get_param("~straight_line",False)
         self.straight_line_angle_error = rospy.get_param("~straight_line_angle_error", 0.5)
         
-        self.odometry_topic = rospy.get_param("~odometry_topic","/base_pose_ground_truth")
+        #self.odometry_topic = rospy.get_param("~odometry_topic","/base_pose_ground_truth")
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic","/fmSignals/cmd_vel")
+
+        self.odom_frame = rospy.get_param("~odom_frame","/odom")
+        self.base_frame = rospy.get_param("~base_frame","/base_footprint")
         
-        self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
+        #self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         
         # Set parameters not yet on server
@@ -100,6 +104,9 @@ class positionGoalActionServer():
          
         self.z = 0
         self.w = 0
+
+        # Setup TF listener
+        self.__listen = TransformListener()
         
         # Setup and start simple action server      
         self._action_name = name
@@ -114,8 +121,17 @@ class positionGoalActionServer():
         self.twist.twist.linear.x = 0
         self.twist.twist.angular.z = 0            
         self.twist_pub.publish(self.twist)
-        self._server.set_preempted()
+        #self._server.set_preempted()
    
+    def get_current_position(self):
+        ret = False
+        try:
+            (self.position,self.heading) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
+            ret = True
+        except (tf.LookupException, tf.ConnectivityException),err:
+            rospy.loginfo("could not locate vehicle")
+        return ret
+
     def execute(self,goal):
         # Construct a vector from position goal
         self.destination.vec[0] = goal.x
@@ -125,18 +141,26 @@ class positionGoalActionServer():
             # Check for new goal
             if self._server.is_new_goal_available() :
                 break
+
+            # Preemption check
+            if self._server.is_preempt_requested():
+                break
             
+            # Get current position
+            self.get_current_position()
+
             # Construct desired path vector and calculate distance error
-            path = self.destination - vector(-self.position[1], self.position[0])
+            path = self.destination - vector(self.position[0], self.position[1])
+            
             self.distance_error = path.length()
                   
             # If position is unreached
             if self.distance_error > self.max_distance_error :
                 # Calculate roll from quaternion and construct a heading vector
-                (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
+                (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.heading)
 
                 # Construct heading vector
-                head = vector(- math.sin(yaw),math.cos(yaw))
+                head = vector(math.cos(yaw), math.sin(yaw))
                 
                 # Calculate angle between heading vector and path vector
                 self.angle_error = head.angle(path)
@@ -147,8 +171,8 @@ class positionGoalActionServer():
                 if path.angle(t1) != 0 :
                     self.angle_error = -self.angle_error
                     
-                rospy.loginfo(rospy.get_name() + "Distance error: %f",self.distance_error)
-                rospy.loginfo(rospy.get_name() + "Angle error: %f",self.angle_error)
+                #rospy.loginfo(rospy.get_name() + "Distance error: %f",self.distance_error)
+                #rospy.loginfo(rospy.get_name() + "Angle error: %f",self.angle_error)
                  
                 # Generate twist from distance and angle errors (For now simply 1:1)
                 self.twist.twist.linear.x = self.distance_error
@@ -190,6 +214,7 @@ class positionGoalActionServer():
                 break
         # Return statement
         if self._server.is_preempt_requested() :
+            self._server.set_preempted()
             return 'preempted' 
         elif rospy.is_shutdown() :
             return 'aborted'

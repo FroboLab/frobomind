@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind survey.py
+# FroboMind demiming.py
 # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
 # All rights reserved.
 #
@@ -33,9 +33,19 @@ import actionlib
 import threading
 from wii_interface import wii_interface 
 from demining_smach.behaviours import follow_route
+from demining_smach.behaviours import mine_simple_avoidance
 from generic_smach.states import wii_states
 from nav_msgs.msg import Odometry    
-           
+from std_msgs.msg import Float64
+
+# Simple test to delay the wads moitor and avoid looping
+#class wadsPenalty(smach.State):
+#     def __init__(self, outcomes=['done']):
+#         
+#     def execute(self, userdata):
+#         rospy.sleep(1)
+#         return 'done'
+
 class Mission():
     """    
         Top level user interface node implemented as a concurrence between wiimote interface and behaviour updater
@@ -47,14 +57,34 @@ class Mission():
         self.hmi.register_callback_button_A(self.onButtonA)
           
     def build(self):
-         # Build the autonomous state as concurrence between wiimote and measuring behaviour to allow user preemption
+        # Build concurrent route following and mine detection
+        mine_search = smach.Concurrence ( outcomes = ['mineDetected','preempted'], 
+                                       default_outcome = 'preempted',
+                                       outcome_map = {'preempted':{'follow_route':'preempted'}, 'mineDetected':{'mine_detect':'invalid'}},
+                                       output_keys=['next_x','next_y'],
+                                       child_termination_cb = onPreempt)
+
+        with mine_search:
+            smach.Concurrence.add('follow_route', follow_route.build())
+            smach.Concurrence.add('mine_detect', smach_ros.MonitorState("/wads", Float64, mine_detect_cb))
+
+        # Build the demining task        
+        demining = smach.StateMachine(outcomes=['success', 'preempted', 'aborted'])
+        with demining:
+            smach.StateMachine.add('mine_search', mine_search, transitions={'mineDetected':'mine_inspection'})
+            smach.StateMachine.add('mine_inspection', mine_simple_avoidance.build() , transitions={'inspectionDone':'mine_search'})
+
+        # Build the autonomous state as concurrence between wiimote and measuring behaviour to allow user preemption
         autonomous = smach.Concurrence(  outcomes = ['exitAutomode'],
                                                 default_outcome = 'exitAutomode',
-                                                outcome_map = {'exitAutomode':{'HMI':'preempted','FOLLOW_ROUTE':'preempted'}},
+                                                outcome_map = {'exitAutomode':{'HMI':'preempted','demining':'preempted'}},
                                                 child_termination_cb = onPreempt)
+
         with autonomous:
             smach.Concurrence.add('HMI', wii_states.interfaceState(self.hmi))
-            smach.Concurrence.add('FOLLOW_ROUTE', follow_route.build())
+            smach.Concurrence.add('demining', demining)
+
+
         
         # Build the top level mission control from the remote control state and the autonomous state
         mission_control = smach.StateMachine(outcomes=['preempted'])            
@@ -69,12 +99,18 @@ class Mission():
         self.sis.start() 
         self.sm.execute()
         rospy.spin()
-    
+
     def quit(self):
-        sis.stop()
-        
+        sis.stop()        
+
     def onButtonA(self):
         rospy.loginfo("A pressed")
+
+def mine_detect_cb(userdata, msg):
+    if (msg.data > 4):
+        return False # terminate
+    else:
+        return True # Continue searching for mines
 
 def onPreempt(outcome_map):
     """
