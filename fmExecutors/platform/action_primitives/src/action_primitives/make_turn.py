@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #/****************************************************************************
 # FroboMind template_cpp_node
 # Copyright (c) 2011-2013, author Kent Stark Olsen kent.stark.olsen@gmail.com
@@ -26,9 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 
-#!/usr/bin/env python
-import roslib; 
-roslib.load_manifest("fmExecutors")
+#import roslib; 
+#roslib.load_manifest("action_primitives")
 import rospy
 
 import actionlib
@@ -36,10 +36,8 @@ import math
 import tf
 
 from tf import TransformListener, TransformBroadcaster
-from geometry_msgs.msg import Twist
-
-
-from fmExecutors.msg import *
+from geometry_msgs.msg import TwistStamped
+from action_primitives.msg import *
 
 
 
@@ -48,7 +46,7 @@ class TurnAction():
         Performs a X degree turn either to the left or right 
         depending on the given goal.
     """
-    def __init__(self,name,odom_frame,base_frame):
+    def __init__(self,name,odom_frame,base_frame,cmd_vel_topic):
         """
         
         @param name: the name of the action
@@ -69,7 +67,7 @@ class TurnAction():
         self.__feedback = make_turnFeedback()
         
         self.__listen = TransformListener()
-        self.vel_pub = rospy.Publisher("/fmControllers/cmd_vel_auto",Twist)
+        self.vel_pub = rospy.Publisher(cmd_vel_topic,TwistStamped)
         
         self.__turn_timeout = 200
         self.__start_time = rospy.Time.now()
@@ -89,7 +87,10 @@ class TurnAction():
             the goal contains a desired radius and a success radius in which we check if the turn succeeded or not
             the message also contains if we should turn left or right
         """
+
         g = self.__server.accept_new_goal()
+        rospy.loginfo("New goal, vel %d amount %d forward_vel %d", g.vel, g.amount, g.forward_vel) 
+
         self.__desired_amount= g.amount
         self.turn_vel = g.vel
         self.forward_vel = g.forward_vel
@@ -195,30 +196,34 @@ class TurnAction():
         """
             place the rabbit to either the right or left of a circle with desired radius.
         """
-        vel = Twist()
-        vel.linear.x = 0
+        vel = TwistStamped()
+        vel.header.stamp = rospy.Time.now()   
+        vel.twist.linear.x = 0
         if self.__desired_amount > 0:
-            vel.angular.z = self.turn_vel
+            vel.twist.angular.z = self.turn_vel
         else: 
-            vel.angular.z = -self.turn_vel
+            vel.twist.angular.z = -self.turn_vel
         
-        vel.linear.x = self.forward_vel    
+        vel.twist.linear.x = self.forward_vel    
         
         if stop == 0:
-            vel.angular.z = 0
-            vel.linear.x = 0
+            vel.twist.angular.z = 0
+            vel.twist.linear.x = 0
         
         self.vel_pub.publish(vel)
     
             
 
 if __name__ == "__main__":
-    
-    rospy.init_node("make_turn")
-    
-    action_server = TurnAction("make_turn","odom_combined","base_footprint")
-    
-    t = rospy.Timer(rospy.Duration(0.05),action_server.on_timer)
-    
-    rospy.spin()
+    try:
+        rospy.init_node("make_turn")
+        name = rospy.get_param("~name","make_turn")
+        odom_frame = rospy.get_param("~odom_frame","odom_combined")
+        base_frame = rospy.get_param("~base_frame","base_footprint")
+        cmd_vel_topic = "/fmSignals/cmd_vel"
+        action_server = TurnAction(name,odom_frame,base_frame, cmd_vel_topic)
+        t = rospy.Timer(rospy.Duration(0.05),action_server.on_timer)
+        rospy.spin()
+    except rospy.exceptions.ROSInterruptException:
+        pass
     
