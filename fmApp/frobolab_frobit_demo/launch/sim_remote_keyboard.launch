@@ -1,6 +1,6 @@
 <launch>
  	<node pkg="stage" type="stageros" name="simulator" args="$(find frobolab_frobit_demo)/world/frobit.world"/>
-	<node pkg="rqt_rviz" type="rqt_rviz" name="visualization"/>
+	<node pkg="rviz" type="rviz" name="visualization"/>
 	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>	
 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard"/>
     	

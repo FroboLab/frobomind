@@ -22,8 +22,8 @@ define bounds model
 define obstacles model
 (
    size [55 95 1]
-   bitmap "smiley.pgm"
-   color "red"
+   bitmap "frobomind.pgm"
+   color "black"
    laser_return 1
    gui_move 0
 )
