@@ -39,6 +39,7 @@ int main(int argc, char **argv){
 
   ros::init(argc, argv, "armadillo_ifk");
   ros::NodeHandle nh("~"); //local nh
+  ros::NodeHandle n; //global nodehandler
 
   std::string hl_subscriber_topic;
   std::string ll_publisher_topic_left;
@@ -46,7 +47,13 @@ int main(int argc, char **argv){
   nh.param<std::string>("hl_subscriber_topic", hl_subscriber_topic, "hl_subscriber_topic");
   nh.param<std::string>("ll_publisher_topic_left", ll_publisher_topic_left, "ll_publisher_topic_left");
   nh.param<std::string>("ll_publisher_topic_right", ll_publisher_topic_right, "ll_publisher_topic_right");
-  nh.param<double>("distance_center_to_wheel",W,0.755);
+  n.param<double>("diff_steer_wheel_distance",W,0);
+
+  if(! W) //if global parameter was not found, look for local
+  {
+	  nh.param<double>("distance_center_to_wheel",W,0.755);
+	  ROS_WARN("%s: Global parameter 'diff_steer_wheel_distance' was not found - using local instead",ros::this_node::getName().c_str());
+  }
 
   hl_subscriber = nh.subscribe<geometry_msgs::TwistStamped> (hl_subscriber_topic.c_str(), 1, &callbackHandlerHlSubscriber); //seneste msg ligger klar i topic'en til fremtidige sucscribers
   ll_publisher_left = nh.advertise<geometry_msgs::TwistStamped> (ll_publisher_topic_left.c_str(), 1);
