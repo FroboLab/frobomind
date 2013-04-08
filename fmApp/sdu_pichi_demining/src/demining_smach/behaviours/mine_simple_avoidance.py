@@ -16,10 +16,10 @@ def build():
 
     with behaviour:
          smach.StateMachine.add('get_next_search_point', get_step_towards_point.getStepTowardsPoint(),transitions={'succeeded':'wriggle_left'})
-         smach.StateMachine.add('wriggle_left', smach_ros.SimpleActionState('/make_turn', make_turnAction, wriggle_left_goal), transitions={'succeeded':'wriggle_right','preempted':'preempted','aborted':'aborted'})
-         smach.StateMachine.add('wriggle_right', smach_ros.SimpleActionState('/make_turn', make_turnAction, wriggle_right_goal), transitions={'succeeded':'wriggle_center','preempted':'preempted','aborted':'aborted'})
-         smach.StateMachine.add('wriggle_center', smach_ros.SimpleActionState('/make_turn', make_turnAction, wriggle_center_goal), transitions={'succeeded':'go_to_next_search_point','preempted':'preempted','aborted':'aborted'})
-         smach.StateMachine.add('go_to_next_search_point', smach_ros.SimpleActionState('/positionActionServer',positionAction, goal_slots=['x','y']),
+         smach.StateMachine.add('wriggle_left', smach_ros.SimpleActionState('/platform_executors/make_turn', make_turnAction, wriggle_left_goal), transitions={'succeeded':'wriggle_right','preempted':'preempted','aborted':'aborted'})
+         smach.StateMachine.add('wriggle_right', smach_ros.SimpleActionState('/platform_executors/make_turn', make_turnAction, wriggle_right_goal), transitions={'succeeded':'wriggle_center','preempted':'preempted','aborted':'aborted'})
+         smach.StateMachine.add('wriggle_center', smach_ros.SimpleActionState('/platform_executors/make_turn', make_turnAction, wriggle_center_goal), transitions={'succeeded':'go_to_next_search_point','preempted':'preempted','aborted':'aborted'})
+         smach.StateMachine.add('go_to_next_search_point', smach_ros.SimpleActionState('/platform_executors/position_planner',positionAction, goal_slots=['x','y']),
                                transitions={'succeeded':'check_no_mines','preempted':'preempted','aborted':'aborted'},
                                remapping={'x':'step_next_x','y':'step_next_y'})
          smach.StateMachine.add('check_no_mines', smach_ros.MonitorState("/wads", Float64, mine_detect_cb, 1), transitions={'valid':'inspectionDone', 'invalid':'get_next_search_point', 'preempted':'preempted'})

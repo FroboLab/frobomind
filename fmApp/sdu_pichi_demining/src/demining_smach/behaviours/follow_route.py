@@ -14,7 +14,7 @@ def build():
     behaviour.userdata.next_y = 0
     with behaviour :
         smach.StateMachine.add('GO_TO_POINT', 
-                               smach_ros.SimpleActionState('/positionActionServer',positionAction, goal_slots=['x','y']),
+                               smach_ros.SimpleActionState('/platform_executors/position_planner',positionAction, goal_slots=['x','y']),
                                transitions={'succeeded':'GET_NEXT','preempted':'preempted','aborted':'aborted'},
                                remapping={'x':'next_x','y':'next_y'})        
         smach.StateMachine.add('GET_NEXT', get_next_point.getNextPosition(), 

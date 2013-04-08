@@ -1,0 +1,6 @@
+<launch>
+	<include file="$(find sdu_pichi_demining)/launch/includes/action.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/includes/perception.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/includes/decision_making.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/includes/robot.launch"/>
+</launch>

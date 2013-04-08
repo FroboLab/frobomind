@@ -46,8 +46,8 @@ class Updater():
         self.period = rospy.get_param("~period",0.1)
         self.tf_offset_x = self.sensor_offset_x - self.sensor_outerrange
         self.tf_offset_y = (self.sensor_width/2) + self.sensor_outerrange
-        self.trans_interval = 0.1
-        self.angle_interval = 0.1
+        self.trans_interval = 0.05 # 5cm
+        self.angle_interval = 0.087 # 5 deg
         self.current_position_x = 0
         self.current_position_y = 0
         self.current_angle = 0
@@ -126,17 +126,17 @@ class Updater():
             pass
         
         # Generate map from sensor model
-        self.map.data = [-1] * (self.map.info.width * self.map.info.height)
-        for x in range(self.map.info.width) :
-            self.map.data[x] = self.sensor_value
-            self.map.data[self.map.info.width+x] = self.sensor_value
-            self.map.data[self.map.info.width*(self.map.info.height-1)+x] = self.sensor_value
-            self.map.data[self.map.info.width*(self.map.info.height-2)+x] = self.sensor_value
-        for y in range(self.map.info.height) :
-            self.map.data[self.map.info.width*y] = self.sensor_value
-            self.map.data[self.map.info.width*y+1] = self.sensor_value
-            self.map.data[self.map.info.width*y+self.map.info.width-1] = self.sensor_value
-            self.map.data[self.map.info.width*y+self.map.info.width-2] = self.sensor_value
+        self.map.data = [self.sensor_value] * (self.map.info.width * self.map.info.height)
+#        for x in range(self.map.info.width) :
+#            self.map.data[x] = self.sensor_value
+#            self.map.data[self.map.info.width+x] = self.sensor_value
+#            self.map.data[self.map.info.width*(self.map.info.height-1)+x] = self.sensor_value
+#            self.map.data[self.map.info.width*(self.map.info.height-2)+x] = self.sensor_value
+#        for y in range(self.map.info.height) :
+#            self.map.data[self.map.info.width*y] = self.sensor_value
+#            self.map.data[self.map.info.width*y+1] = self.sensor_value
+#            self.map.data[self.map.info.width*y+self.map.info.width-1] = self.sensor_value
+#            self.map.data[self.map.info.width*y+self.map.info.width-2] = self.sensor_value
         
         # Publish local map
         self.map_pub.publish(self.map)

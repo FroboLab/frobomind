@@ -39,17 +39,18 @@ nav_msgs::OccupancyGrid grid_msg;
 
 void onGridMsg(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
-	local_list.push_back(msg);
-	if(local_list.size() > 1)
-	{
-		grid_p = occupancy_grid_utils::zeroCombineGrids(local_list);
-		grid_p->header.frame_id = "/odom";
-		local_list.erase(local_list.begin());
-		global_list.push_back(grid_p);
+//	local_list.push_back(msg);
+//	if(local_list.size() > 1)
+//	{
+//		grid_p = occupancy_grid_utils::zeroCombineGrids(local_list);
+//		grid_p = msg;
+//		grid_p->header.frame_id = "/odom";
+//		local_list.erase(local_list.begin());
+		global_list.push_back(msg);
 //		zero_pub.publish(grid_p);
 //		if(local_list.size() > 1)
 //			ROS_WARN("List has grown...");
-	}
+//	}
 
 }
 
@@ -59,7 +60,7 @@ void onTimer(const ros::TimerEvent&)
 	{
 		if (global_list.size() > 100)
 		{
-			grid_p = occupancy_grid_utils::combineGrids(global_list);
+			grid_p = occupancy_grid_utils::minCombineGrids(global_list);
 			grid_p->header.frame_id = "/odom";
 			grid_pub.publish(grid_p);
 			global_list.clear();
@@ -82,7 +83,7 @@ int main(int argc, char** argv)
 	grid_pub = globalNodeHandler.advertise<nav_msgs::OccupancyGrid>("/fmKnowledge/map_combined", 100);
 //	zero_pub = globalNodeHandler.advertise<nav_msgs::OccupancyGrid>("/fmKnowledge/map_zeroed", 100);
 	ros::Subscriber grid_sub = globalNodeHandler.subscribe("/fmKnowledge/map", 10, onGridMsg);
-	ros::Timer timer = globalNodeHandler.createTimer(ros::Duration(0.5), onTimer);
+	ros::Timer timer = globalNodeHandler.createTimer(ros::Duration(1), onTimer);
 	ros::spin();
 	return 0;
 }

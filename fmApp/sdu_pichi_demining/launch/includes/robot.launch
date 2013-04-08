@@ -1,0 +1,44 @@
+<launch>
+	<!-- Global parameters-->
+	<param name="robot_max_velocity" value="1.0"/>
+	<param name="diff_steer_wheel_radius" value="0.1"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="960"/>
+	<param name="diff_steer_wheel_distance" value="0.42"/>
+	
+	<group ns="transforms">
+		<node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0.0 0 0 0 0 base_footprint imu_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="gps_link_broadcaster" args="0 0.0 0 0 0 0 base_footprint gps_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="utm_link_broadcaster" args="588618.587034 6137287.69068 61.1023 0 0 0 utm odom_combined 100"/>	
+	</group>
+	
+	<!-- Robot interface -->
+	<group ns="robot">
+		<!-- Roboteq controller -->
+	    <node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen"  respawn="true">
+	        <param name="publisher_topic" value="/fmData/robot_rx" />	 
+	        <param name="subscriber_topic" value="/fmData/robot_tx" />	
+	        <param name="device" value="/dev/ttyUSB0" />	
+	        <param name="baudrate" value="115200" />
+	        <param name="termination_character" value="13"/>
+		</node>	
+		
+		<!-- GPS -->
+		<node pkg="serial_nmea" name="nmea_converter" type="nmea_node" output="screen">
+			<param name="str_to_msg_sub" value="/fmData/gps_rx" />   
+			<param name="str_to_msg_pub" value="/fmData/nmea_from_gps" />
+			<param name="msg_to_str_sub" value="/fmData/nmea_to_gps" />   
+			<param name="msg_to_str_pub" value="/fmData/gps_tx" />           
+			<param name="use_nmea_checksum" type="boolean" value="true" />
+	    </node>
+	    
+	    <!-- IMU -->
+	    <node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/imu_rx" /> 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/ttyUSB2" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 
+	</group>
+</launch>

@@ -284,10 +284,24 @@ GridPtr minCombineGrids (const vector<GridConstPtr>& grids, const double resolut
           BOOST_FOREACH (const Cell& intersecting_cell,
                          intersectingCells(combined_grid->info, grid->info, cell)) {
             const index_t ind = cellIndex(combined_grid->info, intersecting_cell);
-            if(combined_grid->data[ind] != -1)
-            	combined_grid->data[ind] = min(combined_grid->data[ind], value);
+//            if(combined_grid->data[ind] != -1)
+//            	combined_grid->data[ind] = min(combined_grid->data[ind], value);
+//            else
+//            	combined_grid->data[ind] = value;
+
+            if(combined_grid->data[ind] == -1)
+            	combined_grid->data[ind] = 50;
+
+            if(value > 50)
+            	combined_grid->data[ind] += (value - 50);
             else
-            	combined_grid->data[ind] = value;
+            	combined_grid->data[ind] -= (50 - value);
+
+            if(combined_grid->data[ind] > 100)
+            	combined_grid->data[ind] = 100;
+            if(combined_grid->data[ind] < 0)
+            	combined_grid->data[ind] = 0;
+
           }
         }
       }
