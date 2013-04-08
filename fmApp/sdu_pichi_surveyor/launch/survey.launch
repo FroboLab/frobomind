@@ -1,5 +1,9 @@
 <launch>
-<!--
+	<include file="$(find sdu_pichi_surveyor)/launch/robot.launch"/>
+	<include file="$(find sdu_pichi_surveyor)/launch/action.launch"/>
+	<include file="$(find sdu_pichi_surveyor)/launch/perception.launch"/>
+		
+	<!-- Mission control -->
 	<group ns="fmDecisionMakers">
         <node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
         	<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/>
@@ -18,15 +22,9 @@
 		</node>
 	</group>
 	
-	<include file="$(find sdu_pichi_surveyor)/launch/action.launch"/>
--->
-	<include file="$(find sdu_pichi_surveyor)/launch/perception.launch"/>
-
-	
 	<group ns="fmTools">
-		<node pkg="rosbag" name="sensors" type="play" args="$(find sdu_pichi_remote)/bags/sensors_only.bag" />
-<!--	<node pkg="rqt_rviz" type="rqt_rviz" name="visualization" /> -->
+<!--	<node pkg="rosbag" name="sensors" type="play" args="$(find sdu_pichi_remote)/bags/sensors_only.bag" />
+		<node pkg="rqt_rviz" type="rqt_rviz" name="visualization" /> -->
 		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
-		<node pkg="tf" type="static_transform_publisher" name="utm_link_broadcaster" args="588618.587034 6137287.69068 61.1023 0 0 0 base_footprint base_link 100"/>
 	</group>
 </launch>

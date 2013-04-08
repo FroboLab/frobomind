@@ -16,30 +16,15 @@
 			<param name="msg_to_str_pub" value="/fmData/gps_tx" />           
 			<param name="use_nmea_checksum" type="boolean" value="true" />
 	    </node>
-		
-		<node pkg="nmea_to_navsat" name="navsat_converter" type="converter.py" output="screen" >
-			<param name="nmea_sub" value="/fmData/nmea_from_gps"/>
-			<param name="fix_pub" value="/fmInformation/gps_fix"/>
-			<param name="vel_pub" value="/fmInformation/gps_vel"/>
-			<param name="time_pub" value="/fmInformation/gps_time"/>
-			<param name="frame_id" value="/gps"/>
-		</node>
-		
-		<node name="gps_odometry" pkg="gps_common" type="utm_odometry_node">
-  			<remap from="fix" to="/fmInformation/gps_fix" />
-  			<remap from="odom" to="/fmKnowledge/gps_odom" />
-  			<param name="rot_covariance" value="99999" />
-  			<param name="frame_id" value="base_footprint" />
-		</node>
 
 		<!-- IMU -->
-		<!--node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen" respawn="true">
+		<node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen" respawn="true">
 			<param name="publisher_topic" value="/fmData/imu_rx" /> 
 			<param name="subscriber_topic" value="/fmData/imu_tx" />
 			<param name="device" value="/dev/ttyUSB2" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
-		</node--> 
+		</node> 
 		
 		<node pkg="vectornav_vn100" name="imu_converter"  type="vectornav_vn100_node" output="screen" >
 			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
@@ -63,28 +48,15 @@
 			<param name="vehicle_frame" value="base_footprint" />      
 			<param name="odom_estimate_frame" value="/wheel_odom" />      
 		</node>
-<!--		
-		<node pkg="utm_to_odom" name="gps_odometry" type="utm_to_odom_node" output="screen"> 
+		
+		<!--node pkg="utm_to_odom" name="gps_odometry" type="utm_to_odom_node" output="screen"> 
 	    	<param name="subscribe_topic_id" value="/fmInformation/gpgga" />
 			<param name="publish_topic_id" value="/fmKnowledge/gps_odom" />
 			<param name="odom_frame_id" value="odom_combined" />
 			<param name="child_odom_frame_id" value="gps_link" />
 			<param name="receive_n_before_publish" value="10"/>
 			<param name="gps_variance" value="1"/>
-		</node>
--->		
-  		<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="kalman_filter">
-  			<remap from="vo" to="/fmKnowledge/gps_odom" />
-  			<remap from="odom" to="/fmKnowledge/encoder_odom" />
-  			<remap from="imu_data" to="/fmInformation/imu"/>
-    		<param name="output_frame" value="/odom_combined"/>
-    		<param name="freq" value="30.0"/>
-    		<param name="sensor_timeout" value="1.0"/>
-    		<param name="odom_used" value="true"/>
-    		<param name="imu_used" value="true"/>
-    		<param name="vo_used" value="true"/>
-    		<param name="debug" value="false"/>
-    		<param name="self_diagnose" value="false"/>
-  		</node>
+		</node-->
+	
 	</group>
 </launch>
