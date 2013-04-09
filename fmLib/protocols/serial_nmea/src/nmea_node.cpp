@@ -155,13 +155,12 @@ void str_to_msg_callback(const msgs::serial::ConstPtr& msg)
 		// Validate checksum if appended
 		if(checksum_appended)
 			nmea_msg.valid = get_checksum( nmea_split.at(0) ) == atox( nmea_split.at(1).c_str() );
+
+		//publish message
+		str_to_msg_pub.publish(nmea_msg);
 	}
 	else
-		ROS_WARN("Unreadable NMEA string discarded");
-
-	//publish message
-	str_to_msg_pub.publish(nmea_msg);
-
+		ROS_WARN("%s: Unreadable NMEA string discarded",ros::this_node::getName().c_str());
 }
 
 /* Parses from  nmea message to serial message */
