@@ -33,7 +33,7 @@ Revision
 2013-04-05 KJ First version
 """
 # import utmconv class
-from utm import utmconv
+from transverse_mercator.utm import utmconv
 from math import pi, cos
 
 # define test position

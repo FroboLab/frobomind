@@ -34,7 +34,7 @@ Revision
 2013-04-05 KJ First version
 """
 # import kp2000conv class
-from kp2000 import kp2000conv
+from transverse_mercator.kp2000 import kp2000conv
 from math import pi, cos
 
 # define test position
