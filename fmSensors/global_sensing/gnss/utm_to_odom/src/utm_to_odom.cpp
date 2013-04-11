@@ -172,9 +172,9 @@ int main(int argc, char **argv)
 	std::string publish_topic_id;
 
 	n.param<std::string>("subscribe_topic_id", subscribe_topic_id,
-			"/fmExtractors/utm");
+			"/fmInformation/utm");
 	n.param<std::string>("publish_topic_id", publish_topic_id,
-			"/fmExtractors/gps_odom");
+			"/fmInformation/gps_odom");
 	n.param<std::string>("odom_frame_id",frame_id,"odom_combined");
 	n.param<std::string>("child_odom_frame_id",child_frame_id,"gps_link");
 	n.param<bool>("publish_relative_coordinates",publish_relative,false);
