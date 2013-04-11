@@ -1,18 +1,13 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 89
+    Help Height: 78
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Grid1
-        - /Map1/Status1
-        - /Map1/Position1
-        - /Map1/Orientation1
-        - /Map2/Status1
-        - /TF1
+        - /Status1
       Splitter Ratio: 0.5
-    Tree Height: 832
+    Tree Height: 843
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -34,6 +29,20 @@ Panels:
 Visualization Manager:
   Class: ""
   Displays:
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.1
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.3
+      Head Radius: 0.1
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05
+      Shape: Arrow
+      Topic: /odom/orientation
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -49,16 +58,49 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 50
-      Reference Frame: <Fixed Frame>
+      Plane Cell Count: 20
+      Reference Frame: /odom_combined
       Value: true
-    - Class: rviz/Axes
-      Enabled: false
+    - Angle Tolerance: 0.5
+      Class: rviz/Odometry
+      Color: 255; 25; 0
+      Enabled: true
+      Keep: 30
       Length: 1
-      Name: Axes
-      Radius: 0.1
-      Reference Frame: <Fixed Frame>
-      Value: false
+      Name: Odometry
+      Position Tolerance: 0.2
+      Topic: /fmKnowledge/odom
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        /base_footprint:
+          Value: true
+        /base_link:
+          Value: true
+        /imu_link:
+          Value: true
+        /laser_link:
+          Value: true
+        /odom_combined:
+          Value: true
+        All Enabled: false
+      Marker Scale: 3
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        /odom_combined:
+          /base_footprint:
+            /base_link:
+              /imu_link:
+                {}
+            /laser_link:
+              {}
+      Update Interval: 0
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -73,105 +115,50 @@ Visualization Manager:
       Decay Time: 0
       Enabled: true
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 1
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 1
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.01
-      Style: Flat Squares
+      Style: Points
       Topic: /base_scan
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /marker
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Angle Tolerance: 0.1
-      Class: rviz/Odometry
-      Color: 255; 25; 0
-      Enabled: true
-      Keep: 4000
-      Length: 1
-      Name: Odometry
-      Position Tolerance: 0.1
-      Topic: /odom
-      Value: true
-    - Alpha: 0.7
-      Class: rviz/Map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /fmKnowledge/map
-      Value: true
-    - Alpha: 0.7
-      Class: rviz/Map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /fmKnowledge/map_combined
-      Value: true
-    - Class: rviz/TF
-      Enabled: true
-      Frame Timeout: 15
-      Frames:
-        /base_footprint:
-          Value: true
-        /base_laser_link:
-          Value: true
-        /base_link:
-          Value: true
-        /odom:
-          Value: true
-        All Enabled: true
-      Marker Scale: 5
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        /odom:
-          /base_footprint:
-            /base_link:
-              /base_laser_link:
-                {}
-      Update Interval: 0
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: /odom
+    Fixed Frame: /odom_combined
   Name: root
   Tools:
-    - Class: rviz/MoveCamera
     - Class: rviz/Interact
       Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
     - Class: rviz/Select
+    - Class: rviz/Measure
     - Class: rviz/SetInitialPose
       Topic: /initialpose
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
-    - Class: rviz/Measure
   Value: true
   Views:
     Current:
-      Angle: -0.0149999
-      Class: rviz/TopDownOrtho
+      Class: rviz/XYOrbit
+      Distance: 29.5499
+      Focal Point:
+        X: 0.256571
+        Y: -7.15413
+        Z: -5.72205e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 26.1372
+      Pitch: 1.5648
       Target Frame: <Fixed Frame>
-      Value: TopDownOrtho (rviz)
-      X: 7.07541
-      Y: 4.99502
+      Value: XYOrbit (rviz)
+      Yaw: 4.70861
     Saved: ~
 Window Geometry:
   Displays:
@@ -189,5 +176,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1887
-  X: -28
-  Y: -172
+  X: -29
+  Y: -200

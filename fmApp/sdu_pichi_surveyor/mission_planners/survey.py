@@ -50,6 +50,7 @@ class Mission():
         self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.onOdometry )
         
         self.hmi = wii_interface.WiiInterface()
+        rospy.loginfo("Registering save point callback")
         self.hmi.register_callback_button_A(self.savePoint)
         self.point_list = []
         self.latest_point = Point()

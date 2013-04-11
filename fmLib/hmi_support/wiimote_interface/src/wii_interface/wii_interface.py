@@ -97,12 +97,15 @@ class WiiInterface():
         rospy.loginfo("Button pressed but no corresponding callback was registered")
         
     def register_callback_button_A(self,cb):
+        rospy.loginfo("Callback registered on button A")
         self.button_A_cb = cb
         
     def register_callback_button_up(self,cb):
+        rospy.loginfo("Callback registered on button Up")
         self.button_up_cb = cb
         
     def register_callback_button_down(self,cb):
+        rospy.loginfo("Callback registered on button Down")
         self.button_down_cb = cb
         
     def onJoy(self,msg):

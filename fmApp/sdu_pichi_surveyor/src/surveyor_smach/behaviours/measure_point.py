@@ -13,7 +13,7 @@ def build(point_list):
         smach.StateMachine.add('GET_NEXT', get_next_point.getNextPosition(point_list), 
                                transitions={'succeeded':'GO_TO_POINT', 'aborted':'aborted'})                    
         smach.StateMachine.add('GO_TO_POINT', 
-                               smach_ros.SimpleActionState('/positionActionServer',positionAction, goal_slots=['x','y']),
+                               smach_ros.SimpleActionState('/platform_executors/positionActionServer',positionAction, goal_slots=['x','y']),
                                transitions={'succeeded':'MEASURE','preempted':'preempted','aborted':'aborted'},
                                remapping={'x':'next_x','y':'next_y'})
         smach.StateMachine.add('MEASURE' , wait_state.WaitState(3),

@@ -1,17 +1,24 @@
 <launch>
  	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_pichi_surveyor)/world/frobit.world"/>
-	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_surveyor)/conf/default.rviz"/>
-	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
+<!--	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_surveyor)/conf/default.rviz"/>
+	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/> -->
 	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
-	<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py" output="screen">
-		<param name="straight_line" value="True"/>
-	</node>
-
-	<group ns="fmHMI">
-		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-			<!--param name="fixed_wiimote_address" value="00:22:4C:8D:6F:5E"/-->
+	
+	<group ns="platform_executors">
+		<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py" output="screen">
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="odometry_topic" value="/odom" />
+			<param name="max_linear_velocity" value="1"/>
+			<param name="max_angular_velocity" value="4.0"/>
+			<param name="straight_line" value="True"/>
+			<param name="straight_line_angle_error" value="0.5"/>
 		</node>
-    </group>
+	</group>	
+
+	<!--group ns="fmHMI">
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+		</node>
+    </group-->
     	
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_pichi_surveyor" name="mission_control" type="survey.py" output="screen">
