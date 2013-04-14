@@ -39,23 +39,25 @@ from tf import TransformListener
 
 class PositionPlanner():
     """
-        Action server taking position goals and generating twist messages accordingly
+        Control class taking position goals and generating twist messages accordingly
     """
     def __init__(self):
         # Init control methods
         self.isNewGoalAvailable = self.empty_method()
         self.isPreemptRequested = self.empty_method()
-        self.setSucceeded = self.empty_method()
         self.setPreempted = self.empty_method()
         
         # Get topics and transforms
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic","/fmSignals/cmd_vel")
         self.odom_frame = rospy.get_param("~odom_frame","/odom")
+        self.odometry_topic = rospy.get_param("~odometry_topic","/fmKnowledge/odom")
         self.base_frame = rospy.get_param("~base_frame","/base_footprint")
+        self.use_tf = rospy.get_param("~use_tf",False)
         
-        # Get parameters
+        # Get general parameters
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
+<<<<<<< HEAD
         self.max_distance_error = rospy.get_param("~max_distance_error",0.2)
         self.use_tf = rospy.get_param("~use_tf",False)        
         self.max_angle_error = rospy.get_param("~max_angle_error", math.pi/4)
@@ -81,6 +83,23 @@ class PositionPlanner():
         self.period = 0.1
         self.retarder_point = 0.3 #distance to target when speed should start declining
         
+=======
+        self.max_distance_error = rospy.get_param("~max_distance_error",0.05)
+               
+        # Get parameters for action server
+        self.period = rospy.get_param("~period",0.1)
+        self.lin_p = rospy.get_param("~lin_p",0.4)
+        self.lin_i = rospy.get_param("~lin_i",0.6)
+        self.lin_d = rospy.get_param("~lin_d",0.0)
+        self.ang_p = rospy.get_param("~ang_p",0.8)
+        self.ang_i = rospy.get_param("~ang_i",0.1)
+        self.ang_d = rospy.get_param("~ang_d",0.05)
+        self.int_max = rospy.get_param("~integrator_max",0.1)
+        self.retarder = rospy.get_param("~retarder",0.8)
+        self.max_angle_error = rospy.get_param("~max_angle_error",math.pi/4)     
+        self.max_initial_error = rospy.get_param("~max_initial_error",math.pi/18)
+
+>>>>>>> Developing line_action_server
         # Init control loop
         self.lin_err = 0.0
         self.ang_err = 0.0
@@ -97,34 +116,43 @@ class PositionPlanner():
         self.sp_linear = 0.0
         self.sp_angular = 0.0
         
-        # Init action server
+        # Init TF listener
+        self.__listen = TransformListener()    
+        
+        # Init controller
+        self.corrected = False
         self.rate = rospy.Rate(1/self.period)
         self.twist = TwistStamped()
         self.destination = Vector(0,0)
         self.position = Vector(0,0)
+        self.heading = Vector(0,0)
         self.quaternion = np.empty((4, ), dtype=np.float64)
+          
+        # Setup Publishers and subscribers
+        self.use_tf = False 
+        if not self.use_tf :
+            self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
+        self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         
-        # Init TF listener
-        self.__listen = TransformListener()
-    
-    def empty_method(self):
-        return False
-       
-    def get_current_position(self):
-        if self.use_tf :
-            ret = False
-            try:
-                (self.position,self.heading) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
-                ret = True
-            except (tf.LookupException, tf.ConnectivityException),err:
-                rospy.loginfo("could not locate vehicle")
-            return ret       
-
+        rospy.loginfo(rospy.get_name() + ": Initialised position control with parameters:")
+        rospy.loginfo("Period : %.2f s" % (self.period))
+        rospy.loginfo("Linear velocity p-gain : %.2f" % (self.lin_p))
+        rospy.loginfo("Linear velocity i-gain : %.2f" % (self.lin_i))
+        rospy.loginfo("Linear velocity d-gain : %.2f" % (self.lin_d))
+        rospy.loginfo("Angular velocity p-gain : %.2f" % (self.ang_p))
+        rospy.loginfo("Angular velocity i-gain : %.2f" % (self.ang_i))
+        rospy.loginfo("Angular velocity d-gain : %.2f" % (self.ang_d))
+        rospy.loginfo("Integrator maximum : %.2f" % (self.int_max))
+        rospy.loginfo("Retarder : %.2f" % (self.retarder))
+        rospy.loginfo("Max angle error : %.2f rad" % (self.max_angle_error))
+        rospy.loginfo("Max initial error : %.2f rad" % (self.max_initial_error))
+        
     def execute(self,goal):
         # Construct a vector from position goal
         self.destination[0] = goal.x
         self.destination[1] = goal.y  
         rospy.loginfo(rospy.get_name() + "Received goal: (%f,%f) ",goal.x,goal.y)
+        self.corrected = False
         
         while not rospy.is_shutdown() :
             # Check for new goal
@@ -133,88 +161,10 @@ class PositionPlanner():
 
             # Preemption check
             if self.isPreemptRequested():
-                break
-            
-            # Get current position
-            self.get_current_position()
-
-            # Construct desired path vector and calculate distance error
-            path = self.destination - Vector(self.position[0], self.position[1])
-            self.distance_error = path.length()
-                  
-            # If position is unreached
-            if self.distance_error > self.max_distance_error :
-                
-                # Calculate yaw and construct a heading vector
-                if self.use_tf :
-                    (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.heading)
-                else :
-                    (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
-
-                # Construct heading vector
-                head = Vector(math.cos(yaw), math.sin(yaw))
-                
-                # Calculate angle between heading vector and path vector
-                self.angle_error = head.angle(path)
-
-                # Rotate the heading vector according to the calculated angle and test correspondence
-                # with the path vector. If not zero sign must be flipped. This is to avoid the sine trap.
-                t1 = head.rotate(self.angle_error)
-                if path.angle(t1) != 0 :
-                    self.angle_error = -self.angle_error
-                 
-                # Generate setpoints from distance and angle errors (For now simply 1:1)
-                self.sp_linear = self.distance_error 
-                self.sp_angular = self.angle_error  
-                
-                # Calculate control error
-                self.lin_err = self.sp_linear - self.fb_linear
-                self.ang_err = self.sp_angular - self.fb_angular
-                
-                # Calculate integrators and implement max
-                self.lin_int += self.lin_err * self.period
-                if self.lin_int > self.int_max :
-                    self.lin_int = self.int_max
-                if self.lin_int < -self.int_max :
-                    self.lin_int = -self.int_max                
-                self.ang_int += self.ang_err * self.period    
-                if self.ang_int > self.int_max :
-                    self.ang_int = self.int_max
-                if self.ang_int < -self.int_max :
-                    self.ang_int = -self.int_max
-                    
-                # Calculate differentiators and save value
-                self.lin_diff = (self.lin_prev_err - self.lin_err) / self.period
-                self.ang_diff = (self.ang_prev_err - self.ang_err) / self.period
-                self.lin_prev_err = self.lin_err
-                self.ang_prev_err = self.ang_err
-                
-                # Update twist
-                self.twist.twist.linear.x = (self.lin_err * self.lin_p) + (self.lin_int * self.lin_i) + (self.lin_diff * self.lin_d)
-                self.twist.twist.angular.z = (self.ang_err * self.ang_p) + (self.ang_int * self.ang_i) + (self.ang_diff * self.ang_d)
-                
-                # Implement retarders
-                if self.distance_error < self.retarder_point :
-                    self.twist.twist.linear.x *=  self.retarder
-        
-                if math.fabs(self.angle_error) > self.max_angle_error :
-                    self.twist.twist.linear.x *= self.retarder
-               
-                # Implement maximum linear velocity and maximum angular velocity
-                if self.twist.twist.linear.x > self.max_linear_velocity:
-                    self.twist.twist.linear.x = self.max_linear_velocity
-                if self.twist.twist.linear.x < -self.max_linear_velocity:
-                    self.twist.twist.linear.x = -self.max_linear_velocity
-                if self.twist.twist.angular.z > self.max_angular_velocity:
-                    self.twist.twist.angular.z = self.max_angular_velocity
-                if self.twist.twist.angular.z < -self.max_angular_velocity:
-                    self.twist.twist.angular.z = -self.max_angular_velocity
-                
-                # If not preempted, add a time stamp and publish the twist
-                if not self.isPreemptRequested() :     
-                    self.twist.header.stamp = rospy.Time.now()               
-                    self.twist_pub.publish(self.twist)
-                
+                break  
+                              
+            # If position is unreached, publish twist
+            if self.publish_twist(self.destination, self.destination) :    
                 # Block   
                 try :
                     self.rate.sleep()
@@ -223,14 +173,10 @@ class PositionPlanner():
             else:
                 # Succeed the action - position has been reached
                 self.setSucceeded()
-                
-                # Publish a zero twist to stop the robot
-                self.twist.header.stamp = rospy.Time.now()
-                self.twist.twist.linear.x = 0
-                self.twist.twist.angular.z = 0
-                self.twist_pub.publish(self.twist)                
+                self.stop()           
                 break
-        # Return statement
+            
+        # Return state
         if self.isPreemptRequested() :
             self.setPreempted()
             return 'preempted' 
@@ -238,8 +184,128 @@ class PositionPlanner():
             return 'aborted'
         else :               
             return 'succeeded'
+            
+    def stop(self):
+        # Publish a zero twist to stop the robot
+        self.twist.header.stamp = rospy.Time.now()
+        self.twist.twist.linear.x = 0
+        self.twist.twist.angular.z = 0
+        self.twist_pub.publish(self.twist)
+    
+    def publish_twist(self,target,goal):
+        """
+            Method running the control loop. Distinguishes between target and goal to 
+            adapt to other planners. For position planning the two will be the same.
+        """
+        # Get current position
+        self.get_current_position()
+
+        # Construct goal path vector
+        goal_path = goal - Vector(self.position[0], self.position[1])
         
+        # Calculate distance to goal
+        self.distance_error = goal_path.length()
+        
+        # If the goal is unreached
+        if self.distance_error > self.max_distance_error :
+            # Construct target path vector
+            target_path = target - Vector(self.position[0], self.position[1])
+                
+            # Calculate yaw
+            if self.use_tf :
+                (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.heading)
+            else :
+                (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
+
+            # Construct heading vector
+            head = Vector(math.cos(yaw), math.sin(yaw))
+            
+            # Calculate angle between heading vector and target path vector
+            self.angle_error = head.angle(target_path)
+    
+            # Rotate the heading vector according to the calculated angle and test correspondence
+            # with the path vector. If not zero sign must be flipped. This is to avoid the sine trap.
+            t1 = head.rotate(self.angle_error)
+            if target_path.angle(t1) != 0 :
+                self.angle_error = -self.angle_error
+                    
+            # Calculate angle between heading vector and goal path vector
+            goal_angle_error = head.angle(goal_path)
+    
+            # Avoid the sine trap.
+            t1 = head.rotate(goal_angle_error)
+            if goal_path.angle(t1) != 0 :
+                goal_angle_error = -goal_angle_error
+             
+            # Check if large initial errors have been corrected
+            if math.fabs(self.angle_error) < self.max_initial_error :
+                self.corrected = True   
+             
+            # Generate velocity setpoints from distance and angle errors
+            self.sp_linear = self.distance_error 
+            self.sp_angular = self.angle_error  
+            
+            # Calculate velocity errors for control loop
+            self.lin_err = self.sp_linear - self.fb_linear
+            self.ang_err = self.sp_angular - self.fb_angular
+            
+            # Calculate integrators and implement max
+            self.lin_int += self.lin_err * self.period
+            if self.lin_int > self.int_max :
+                self.lin_int = self.int_max
+            if self.lin_int < -self.int_max :
+                self.lin_int = -self.int_max                
+            self.ang_int += self.ang_err * self.period    
+            if self.ang_int > self.int_max :
+                self.ang_int = self.int_max
+            if self.ang_int < -self.int_max :
+                self.ang_int = -self.int_max
+                
+            # Calculate differentiators and save value
+            self.lin_diff = (self.lin_prev_err - self.lin_err) / self.period
+            self.ang_diff = (self.ang_prev_err - self.ang_err) / self.period
+            self.lin_prev_err = self.lin_err
+            self.ang_prev_err = self.ang_err
+            
+            # Update twist message with control velocities
+            self.twist.twist.linear.x = (self.lin_err * self.lin_p) + (self.lin_int * self.lin_i) + (self.lin_diff * self.lin_d)
+            self.twist.twist.angular.z = (self.ang_err * self.ang_p) + (self.ang_int * self.ang_i) + (self.ang_diff * self.ang_d)
+            
+            # Implement retarder to reduce linear velocity if angle error is too big
+            if math.fabs(goal_angle_error) > self.max_angle_error :
+                self.twist.twist.linear.x *= self.retarder
+           
+            # Implement initial correction speed for large angle errors
+            if not self.corrected :
+                self.twist.twist.linear.x *= self.retarder**2
+                
+            # Implement maximum linear velocity and maximum angular velocity
+            if self.twist.twist.linear.x > self.max_linear_velocity:
+                self.twist.twist.linear.x = self.max_linear_velocity
+            if self.twist.twist.linear.x < -self.max_linear_velocity:
+                self.twist.twist.linear.x = -self.max_linear_velocity
+            if self.twist.twist.angular.z > self.max_angular_velocity:
+                self.twist.twist.angular.z = self.max_angular_velocity
+            if self.twist.twist.angular.z < -self.max_angular_velocity:
+                self.twist.twist.angular.z = -self.max_angular_velocity
+            
+            # Prohibit reverse driving
+            if self.twist.twist.linear.x < 0:
+                self.twist.twist.linear.x = 0
+                
+            # If not preempted, add a time stamp and publish the twist
+            if not self.isPreemptRequested() :     
+                self.twist.header.stamp = rospy.Time.now()               
+                self.twist_pub.publish(self.twist)
+                        
+            return True
+        else :
+            return False
+
     def onOdometry(self, msg):
+        """
+            Callback method for handling odometry messages
+        """
         # Extract the orientation quaternion
         self.quaternion[0] = msg.pose.pose.orientation.x
         self.quaternion[1] = msg.pose.pose.orientation.y
@@ -253,4 +319,22 @@ class PositionPlanner():
         # Extract twist
         self.fb_linear = msg.twist.twist.linear.x
         self.fb_angular = msg.twist.twist.angular.z       
-             
+    
+    def empty_method(self):
+        """
+            Empty method pointer
+        """
+        return False
+       
+    def get_current_position(self):
+        """
+            Get current position from tf
+        """
+        if self.use_tf :
+            ret = False
+            try:
+                (self.position,self.heading) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
+                ret = True
+            except (tf.LookupException, tf.ConnectivityException),err:
+                rospy.loginfo("could not locate vehicle")
+            return ret          

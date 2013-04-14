@@ -1,0 +1,10 @@
+# Define the goal
+float64 a_x
+float64 a_y
+float64 b_x
+float64 b_y
+---
+# Define the result
+
+---
+# Define a feedback message

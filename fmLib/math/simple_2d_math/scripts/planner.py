@@ -160,6 +160,10 @@ class Planner():
     def linePlanner(self):
         # Project position vector on line vector
         proj = (self.position - self.line_begin).projectedOn(self.line)
+        
+        perp = proj - self.position
+        if perp.length() :
+            self.rabbit_factor = 1/perp.length()
            
         # Construct rabbit point
         rabbit = self.line - proj
