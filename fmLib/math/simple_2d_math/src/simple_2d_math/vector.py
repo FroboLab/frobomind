@@ -99,7 +99,6 @@ class Vector():
             else :
                 return math.acos(tmp)
         else:
-            print("Angle called on zero vector")
             return 0.0
     
     def hat(self):

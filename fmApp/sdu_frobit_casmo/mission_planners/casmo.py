@@ -52,7 +52,7 @@ class Mission():
         self.hmi = wii_interface.WiiInterface()
         rospy.loginfo("Registering save point callback")
         self.hmi.register_callback_button_A(self.savePoint)
-        self.point_list = [ Point(2,-2,0) , Point(2,2,0) , Point(-2,2,0) , Point(-2,-2,0)]
+        self.point_list = [Point(0,0,0),Point(0,0,0)]
         self.latest_point = Point()
         self.save_time = rospy.Time.now()
         self.min_time_between_point_save = rospy.Duration(3) # No magic numbers...
