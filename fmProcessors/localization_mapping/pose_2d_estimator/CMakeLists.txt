@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pose_2d_ekf)
+project(pose_2d_estimator)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -49,7 +49,7 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES pose_2d_ekf
+#  LIBRARIES pose_2d_estimator
 #  CATKIN_DEPENDS msgs roscpp rospy
 #  DEPENDS system_lib
 )
@@ -65,19 +65,19 @@ include_directories(include
 )
 
 ## Declare a cpp library
-# add_library(pose_2d_ekf
-#   src/${PROJECT_NAME}/pose_2d_ekf.cpp
+# add_library(pose_2d_estimator
+#   src/${PROJECT_NAME}/pose_2d_estimator.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(pose_2d_ekf_node src/pose_2d_ekf_node.cpp)
+# add_executable(pose_2d_estimator_node src/pose_2d_estimator_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(pose_2d_ekf_node pose_2d_ekf_generate_messages_cpp)
+# add_dependencies(pose_2d_estimator_node pose_2d_estimator_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(pose_2d_ekf_node
+# target_link_libraries(pose_2d_estimator_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -96,7 +96,7 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS pose_2d_ekf pose_2d_ekf_node
+# install(TARGETS pose_2d_estimator pose_2d_estimator_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -121,7 +121,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_pose_2d_ekf.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_pose_2d_estimator.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
