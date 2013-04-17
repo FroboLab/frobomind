@@ -46,14 +46,11 @@ class LinePlanner():
     """
     def __init__(self):
         # Init line
-        self.odom_topic = rospy.get_param("~odom_frame",'/odom')
-        self.point_marker = MarkerUtility("/point_marker" , self.odom_topic)
-        self.line_marker = MarkerUtility("/line_marker" , self.odom_topic)
         self.rabbit_factor = 0.2
         self.line_begin = Vector(0,0)
         self.line_end = Vector(0,5)
         self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
-        
+        self.yaw = 0.0
         # Init control methods
         self.isNewGoalAvailable = self.empty_method()
         self.isPreemptRequested = self.empty_method()
@@ -61,6 +58,10 @@ class LinePlanner():
         
         # Get parameters from parameter server
         self.getParameters()
+        
+        self.point_marker = MarkerUtility("/point_marker" , self.odom_frame)
+        self.line_marker = MarkerUtility("/line_marker" , self.odom_frame)
+        self.pos_marker = MarkerUtility("/pos_marker" , self.odom_frame)
         
         # Init control loop
         self.controller = Controller()    
@@ -92,33 +93,32 @@ class LinePlanner():
         # Zone 1 : close to line, poor heading
         # Zone 3 : far from line
         # Zone 4 : Close to target
-        self.target_area = 0.3
+        self.target_area = 0.4
         self.z1_value = 1
-        self.z1_lin_vel = 0.25
+        self.z1_lin_vel = 0.1
         self.z1_ang_vel = 0.2
         self.z1_rabbit = 0.8
         self.z1_max_distance = 0.05
         self.z1_max_angle = math.pi/36
         
-        self.z2_value = 10
-        self.z2_lin_vel = 0.2
-        self.z2_ang_vel = 0.6
-        self.z2_rabbit = 0.6
+        self.z2_value = 5
+        self.z2_lin_vel = 0.1
+        self.z2_ang_vel = 0.8
+        self.z2_rabbit = 0.7
         self.z2_max_distance = 0.25
         self.z2_max_angle = math.pi/6
         
-        self.z3_value = 100
-        self.z3_lin_vel = 0.15
+        self.z3_value = 10
+        self.z3_lin_vel = 0.1
         self.z3_ang_vel = 1.2
-        self.z3_rabbit = 0.4
+        self.z3_rabbit = 0.6
         
         self.z_filter_size = 10
         self.zone_filter = [self.z3_value]*self.z_filter_size
         self.zone = 2
         self.z_ptr = 0
         
-        # Setup Publishers and subscribers
-        self.use_tf = False 
+        # Setup Publishers and subscribers 
         if not self.use_tf :
             self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
@@ -129,7 +129,7 @@ class LinePlanner():
         self.odom_frame = rospy.get_param("~odom_frame","/odom")
         self.odometry_topic = rospy.get_param("~odometry_topic","/fmKnowledge/odom")
         self.base_frame = rospy.get_param("~base_frame","/base_footprint")
-        self.use_tf = rospy.get_param("~use_tf",False)
+        self.use_tf = rospy.get_param("~use_tf",True)
         
         # Get general parameters
         self.period = rospy.get_param("~period",0.1)
@@ -156,11 +156,12 @@ class LinePlanner():
         self.line_begin[1] = goal.a_y  
         self.line_end[0] = goal.b_x
         self.line_end[1] = goal.b_y 
-#        self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
-        self.update()
-        self.line_begin = Vector(self.position[0]+0.3,self.position[1]+0.3)
-        self.line_end = self.position.projectedOn(self.heading).unit().scale(3.0)
         self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
+        # Temporary hack
+#        self.update()
+#        self.line_begin = Vector(self.position[0]+0.3,self.position[1]+0.3)
+#        self.line_end = self.position.projectedOn(self.heading).unit().scale(3.0)
+#        self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
         
         rospy.loginfo(rospy.get_name() + " Received goal: (%f,%f) to (%f,%f) ",goal.a_x,goal.a_y,goal.b_x,goal.b_y)
         self.zone_filter = [self.z3_value]*self.z_filter_size
@@ -187,6 +188,7 @@ class LinePlanner():
             # Publish markers
             self.line_marker.updateLine( [ Point(self.line_begin[0],self.line_begin[1],0) , Point(self.line_end[0],self.line_end[1],0) ] )
             self.point_marker.updatePoint( [ Point(self.rabbit[0],self.rabbit[1],0) ] )
+            self.pos_marker.updatePoint( [ Point(self.position[0],self.position[1],0) ] )
             
             # If the goal is unreached
             if self.distance_to_goal > self.max_distance_error :
@@ -336,6 +338,7 @@ class LinePlanner():
         """
             Callback method for handling odometry messages
         """
+        print("Oh noooooo!")
         # Extract the orientation quaternion
         self.quaternion[0] = msg.pose.pose.orientation.x
         self.quaternion[1] = msg.pose.pose.orientation.y
@@ -359,7 +362,9 @@ class LinePlanner():
         """
         if self.use_tf :     
             try:
-                (self.position,head) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
+                (position,head) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
+                self.position[0] = position[0]
+                self.position[1] = position[1]
                 (roll,pitch,self.yaw) = tf.transformations.euler_from_quaternion(head)
             except (tf.LookupException, tf.ConnectivityException),err:
                 rospy.loginfo("could not locate vehicle")             
