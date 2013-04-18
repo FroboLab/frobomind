@@ -58,6 +58,18 @@ class PositionPlanner():
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
         self.max_distance_error = rospy.get_param("~max_distance_error",0.2)
         self.use_tf = rospy.get_param("~use_tf",False)        
+        self.max_angle_error = rospy.get_param("~max_angle_error", math.pi/4)
+        self.retarder = rospy.get_param("~retarder", 0.8)
+        
+        # Control loop
+        self.lin_p = rospy.get_param("~lin_p", 0.4)
+        self.lin_i = rospy.get_param("~lin_i", 0.6)
+        self.lin_d = rospy.get_param("~lin_d", 0.0)
+        self.ang_p = rospy.get_param("~ang_p", 0.8)
+        self.ang_i = rospy.get_param("~ang_i", 0.1)
+        self.ang_d = rospy.get_param("~ang_d", 0.05)
+        self.int_max = rospy.get_param("~int_max", 0.1)
+
 
         # Setup Publishers and subscribers
         if not self.use_tf :
@@ -68,17 +80,6 @@ class PositionPlanner():
         # Parameters for action server
         self.period = 0.1
         self.retarder_point = 0.3 #distance to target when speed should start declining
-        
-        # Parameters for control loop (TODO: Move to parameter server)
-        self.lin_p = 0.4
-        self.lin_i = 0.6
-        self.lin_d = 0.0
-        self.ang_p = 0.8
-        self.ang_i = 0.1
-        self.ang_d = 0.05
-        self.int_max = 0.1
-        self.retarder = 0.8
-        self.max_angle_error = math.pi/4
         
         # Init control loop
         self.lin_err = 0.0
