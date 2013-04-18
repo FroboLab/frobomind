@@ -13,13 +13,14 @@
 			Relative
 		Filter -> Magnetic Mode:
 			TwoD
-->>
+-->
 
 	<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args=""/>
 
 	<group ns="transforms">
 		<node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 100"/>
 		<node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0.0 0 0.0 0 0 0 base_footprint imu_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="odom_broadcaster" args="0.0 0 0.0 0 0 0 odom_combined imu_link 100"/>
 	</group>
 
 	<group ns="fmSensors">
