@@ -1,9 +1,10 @@
 <launch>
 	<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args=""/>
 	<node name="gps_test" pkg="sdu_pichi_surveyor" type="gps_test.py" output="screen" args="$(find sdu_pichi_surveyor)/data/deviations.txt"/>
-	
+	<node name="rosbag_player" pkg="rosbag" type="play" args="$(find sdu_pichi_surveyor)/bags/input_only.bag" respawn="true"/>
 	<node pkg="tf" type="static_transform_publisher" name="base_broadcaster" args="0 0 0 0 0 0 base_link base_footprint 10"/>
-	<node pkg="tf" type="static_transform_publisher" name="rod_link_broadcaster" args="0.95 0 0 0 0 0 rod_base imu_link 10"/>
+	<node pkg="tf" type="static_transform_publisher" name="rod_link_broadcaster" args="1.23 0 0 0 0 0 rod_base imu_link 10"/>
+	<node pkg="tf" type="static_transform_publisher" name="map_link_broadcaster" args="588599.0922487933 6137322.245287642 0 0 0 0 odom_combined map_link 10"/>
 
 	<!-- IMU -->
 	<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen" respawn="True" >
@@ -16,22 +17,22 @@
 		<param name="covariance_z" value="0.001"/>
 	 </node>
 
-	<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" >
+	<!--node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" >
 		<param name="publisher_topic" value="/fmData/imu_rx" />	 
 		<param name="subscriber_topic" value="/fmData/imu_tx" />
 		<param name="device" value="/dev/gps" />	
 		<param name="baudrate" value="115200" />
 		<param name="termination_character" value="10"/>
-	</node> 
+	</node--> 
 	
 	<!-- GPS -->
-	<node pkg="serial_string" name="gps_serial" type="serial_string_node" output="screen"  respawn="true">
+	<!--node pkg="serial_string" name="gps_serial" type="serial_string_node" output="screen" >
 		<param name="publisher_topic" value="/fmData/gps_rx" />	 
 		<param name="subscriber_topic" value="/fmData/gps_tx" />
 		<param name="device" value="/dev/imu" />	
 		<param name="baudrate" value="115200" />
 		<param name="termination_character" value="10"/>
-	</node>
+	</node-->
 	
     <!--node pkg="serial_nmea" name="nmea_receiver" type="nmea_node" output="screen">
 		<param name="str_to_msg_sub" value="/fmData/gps_rx" />   
@@ -55,6 +56,10 @@
     	<param name="subscribe_topic_id" value="/fmInformation/utm" />
 		<param name="publish_topic_id" value="/fmKnowledge/gps_odom" />
 		<param name="odom_frame_id" value="odom_combined" />
+		
+		<param name="vehicle_frame" value="base_link" />
+		<param name="odom_estimate_frame" value="odom_combined" />
+		
 		<param name="child_odom_frame_id" value="imu_link" />
 		<param name="receive_n_before_publish" value="10"/>
 		<param name="gps_variance" value="1"/>

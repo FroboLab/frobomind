@@ -63,8 +63,9 @@ class GPStest():
         # Init subscriber
         self.imu_sub = rospy.Subscriber('/fmInformation/imu', Imu, self.onImu )
         
-        # Init csv
+        # Init stat
         self.file = file
+        self.deviations = []    
             
     def initPlot(self):
         pyplot.axis('equal')
@@ -73,7 +74,7 @@ class GPStest():
         
         
     def spin(self):
-        rospy.sleep(5)
+        rospy.sleep(1)
         self.update()
         self.origin = self.current
         while self.running:
@@ -96,7 +97,7 @@ class GPStest():
         try:
             now = rospy.Time.now() - rospy.Duration(0.5)
             (position,orientation) = self.tf.lookupTransform("base_link", "rod_base", rospy.Time(0))  
-            self.current = Vector(position[0],position[1])        
+            self.current = Vector(position[0],position[1])               
         except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
             rospy.loginfo("Transform error: %s",err)     
         
@@ -105,6 +106,9 @@ class GPStest():
         pyplot.plot(self.current[0],self.current[1], 'ro')
         pyplot.draw()  
         self.position_list.append( [self.current[0] , self.current[1]] )
+        deviation_vector = self.current - self.origin
+        deviation = deviation_vector.length
+        self.deviations.append(deviation)
         
     def onImu(self,msg):
         self.quaternion[0] = msg.orientation.x
@@ -123,6 +127,11 @@ class GPStest():
             writer.writerow([self.origin[0],self.origin[1]])
             writer.writerows(self.position_list)
             print("Data saved to " + self.file)
+#        summa = sum(self.deviations)
+#        length = len(self.deviations)
+#        avg = summa/len    
+        #avg = sum(self.deviations)/len(self.deviations)
+#        print("Average deviation: " + avg + " m")
     
 if __name__ == '__main__':
     rospy.init_node('gps_test')

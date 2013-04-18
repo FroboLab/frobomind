@@ -52,7 +52,9 @@ boost::circular_buffer<gps_points_t> gps_points_buffer(25);
 
 double gps_variance;
 
+
 geometry_msgs::TransformStamped odom_trans;
+tf::TransformBroadcaster *odom_broadcaster;
 std::string frame_id,child_frame_id,tf_child_frame_id,tf_frame_id;
 
 
@@ -144,6 +146,16 @@ void utmCallback(const msgs::gpgga_utm::ConstPtr& msg)
 
 		}
 
+		// publish the transform message
+		odom_trans.header.stamp = ros::Time::now();
+		odom_trans.header.frame_id = tf_frame_id;
+		odom_trans.child_frame_id = tf_child_frame_id;
+		odom_trans.transform.translation.x = odom.pose.pose.position.x;
+		odom_trans.transform.translation.y = odom.pose.pose.position.y;
+		odom_trans.transform.translation.z = 0.0;
+		odom_trans.transform.rotation = tf::createQuaternionMsgFromYaw(yaw);
+		odom_broadcaster.sendTransform(odom_trans);
+
 		odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
 		odom.pose.covariance[0] = msg->hdop * gps_variance;
 
@@ -171,6 +183,9 @@ int main(int argc, char **argv)
 	std::string subscribe_topic_id;
 	std::string publish_topic_id;
 
+	tf::TransformBroadcaster odom;
+	odom_broadcaster = &odom;
+
 	n.param<std::string>("subscribe_topic_id", subscribe_topic_id,
 			"/fmInformation/utm");
 	n.param<std::string>("publish_topic_id", publish_topic_id,
@@ -183,6 +198,10 @@ int main(int argc, char **argv)
 
 	n.param<double>("gps_heading_threshold",heading_threshold,1);
 	n.param<double>("gps_heading_variance",heading_variance,0.01);
+
+	n.param<std::string>("vehicle_frame",tf_child_frame_id,"base_footprint");
+	n.param<std::string>("odom_estimate_frame",tf_frame_id,"/odom_combined");
+
 	ros::Subscriber sub = n.subscribe(subscribe_topic_id, 10, utmCallback);
 	odom_pub = n.advertise<nav_msgs::Odometry>(publish_topic_id, 1);
 
