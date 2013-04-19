@@ -31,13 +31,13 @@ find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generat
 #   Service2.srv
 # )
 
-add_action_files(DIRECTORY action FILES line.action)
+#add_action_files(DIRECTORY action FILES line.action)
 
-## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   actionlib_msgs nav_msgs std_msgs
- )
+3## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   actionlib_msgs nav_msgs std_msgs
+# )
 
 ###################################################
 ## Declare things to be passed to other projects ##
