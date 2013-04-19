@@ -117,15 +117,17 @@ void WADSImplementSimulator::sensorEstimation(const sensor_msgs::PointCloud& sca
       dx = std::abs(scan_center_.x - mass_center.x);
       dy = std::abs(scan_center_.y - mass_center.y);
 
+
+
       // Relative interted distance from center
-      px = 1 - (2*dx)/scan_x_total_;
-      py = 1 - (2*dy)/scan_y_total_;
+      //px = 1 - (2*dx)/scan_x_total_;
+      //py = 1 - (2*dy)/scan_y_total_;
 
       // Manhattan distance
-      distance_center = (px+py)/2;
+      //distance_center = (px+py)/2;
 
       // SUM values
-      sensor_value_ += distance_center;
+      //sensor_value_ += distance_center;
 
       // Mass function
       //sensor_value_ *= std::sqrt(found_points);
@@ -134,6 +136,8 @@ void WADSImplementSimulator::sensorEstimation(const sensor_msgs::PointCloud& sca
       //sensor_value_ /= found_points;
 
       // Gain
+      // Sensor model: 43.6719 - 4.5 x - 50.625 x^2 - 11.25 y + 3.825 x y - 20.3906 y^2
+      sensor_value_ = std::abs(43.6719 - 4.5*dx - 50.625*dx*dx - 11.25*dy + 3.825*dx*dy - 20.3906*dy*dy);
       sensor_value_ *= sensor_gain_;
 
       // Clipping

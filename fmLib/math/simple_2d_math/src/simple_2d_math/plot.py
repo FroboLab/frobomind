@@ -43,23 +43,43 @@ class Vectorplot():
         self.poses_x = []
         self.poses_y = []        
         self.plotrange = [x_min,x_max,y_min,y_max]
+        self.plot = pyplot.figure()
         
-    def show(self):
-        pyplot.figure()
+    def show(self):  
         if len(self.vectors) > 0 :
-            pyplot.quiver(*zip(*map(lambda l: chain(*l), self.vectors)), 
+            self.plot.quiver(*zip(*map(lambda l: chain(*l), self.vectors)), 
                       angles='xy', scale_units='xy', scale=1)
         if len(self.points) > 0 :
             x,y = zip(*map(lambda l: l,self.points))
-            pyplot.plot(list(x),list(y), 'ro')
+            self.plot.plot(list(x),list(y), 'ro')
         if len(self.lines_x) > 0 :
-            pyplot.plot(self.lines_x,self.lines_y, '-')
+            self.plot.plot(self.lines_x,self.lines_y, '-')
         if len(self.poses_x) > 0 :
-            pyplot.plot(self.poses_x,self.poses_y, color='red')
-        pyplot.axis('equal')
-        pyplot.axis(self.plotrange)
-        pyplot.grid()
-        pyplot.show()
+            self.plot.plot(self.poses_x,self.poses_y, color='red')
+        self.plot.axis('equal')
+        self.plot.axis(self.plotrange)
+        self.plot.grid()
+        #plot.show()
+        
+#    def show(self):
+#        pyplot.figure()
+#        if len(self.vectors) > 0 :
+#            pyplot.quiver(*zip(*map(lambda l: chain(*l), self.vectors)), 
+#                      angles='xy', scale_units='xy', scale=1)
+#        if len(self.points) > 0 :
+#            x,y = zip(*map(lambda l: l,self.points))
+#            pyplot.plot(list(x),list(y), 'ro')
+#        if len(self.lines_x) > 0 :
+#            pyplot.plot(self.lines_x,self.lines_y, '-')
+#        if len(self.poses_x) > 0 :
+#            pyplot.plot(self.poses_x,self.poses_y, color='red')
+#        pyplot.axis('equal')
+#        pyplot.axis(self.plotrange)
+#        pyplot.grid()
+#        pyplot.show()
+        
+    def draw(self):
+        self.plot.draw()
         
     def addVector(self,origin,direction):
         self.vectors.append(copy.deepcopy( (origin,direction) ))

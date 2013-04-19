@@ -50,6 +50,13 @@ class Vector():
         """        
         return Vector(self.vec[0] - other[0] , self.vec[1] - other[1])
     
+    def __neg__(self):
+        """
+            Method to handle negation of a vector vectors.
+            Usage: result = -vector_a
+        """        
+        return Vector(-self[0],-self[1])
+    
     def __add__(self,other):
         """
             Method to handle addition of two vectors
@@ -99,7 +106,6 @@ class Vector():
             else :
                 return math.acos(tmp)
         else:
-            print("Angle called on zero vector")
             return 0.0
     
     def hat(self):

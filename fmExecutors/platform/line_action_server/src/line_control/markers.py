@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #/****************************************************************************
 # FroboMind positionGoalActionServer.py
 # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
@@ -26,37 +25,54 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-"""
-    Action server interface for position planner
-"""
-import rospy,actionlib
-from position_action_server.msg import positionAction
-from position_control.planner import PositionPlanner
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
+import rospy,math
 
-class PositionGoalActionServer():
-    def __init__(self,name):
-        # Init action server      
-        self._action_name = name
-        self._server = actionlib.SimpleActionServer(self._action_name, positionAction, auto_start=False, execute_cb=self.execute)
-        self._server.register_preempt_callback(self.preempt_cb);
-        self._planner = PositionPlanner()
-        self._planner.isNewGoalAvailable = self._server.is_new_goal_available
-        self._planner.isPreemptRequested = self._server.is_preempt_requested
-        self._planner.setSucceeded = self._server.set_succeeded
-        self._planner.setPreempted = self._server.set_preempted
-        self._server.start()
-    
-    def preempt_cb(self):                   
-        self._planner.stop()
-        #self._server.set_preempted()
-    
-    def execute(self,goal):
-        self._planner.execute(goal)    
+class MarkerUtility():
+    """
+        Simple utility class to implement different debugging markers
+    """
+    def __init__(self,topic,frame):
+        self.publisher = rospy.Publisher(topic, Marker)
+        self.frame = frame
         
-if __name__ == '__main__':
-    try:
-        rospy.init_node('positionAction')
-        action_server = PositionGoalActionServer(rospy.get_name())
-        rospy.spin()
-    except rospy.exceptions.ROSInterruptException:
-        pass        
+    def updateLine(self, point_list):
+        marker = Marker()
+        marker.points = point_list 
+        marker.header.frame_id = self.frame
+        marker.type = marker.LINE_STRIP
+        marker.action = marker.ADD
+        marker.scale.x = 0.1
+        marker.color.a = 0.8
+        marker.color.r = 1.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+       
+        marker.pose.orientation.w = 1.0
+        marker.pose.position.x = 0
+        marker.pose.position.y = 0 
+        marker.pose.position.z = 0
+        self.publisher.publish(marker)
+    
+    def updatePoint(self, point_list):
+        marker = Marker()
+        marker.points = point_list
+        marker.header.frame_id = self.frame
+        marker.type = marker.POINTS
+        marker.action = marker.ADD
+        marker.scale.x = 0.1
+        marker.scale.y = 0.1
+        marker.color.a = 0.8
+        marker.color.r = 1.0
+        marker.color.g = 1.0
+        marker.color.b = 1.0
+       
+        marker.pose.orientation.w = 1.0
+        marker.pose.position.x = 0
+        marker.pose.position.y = 0 
+        marker.pose.position.z = 0
+        self.publisher.publish(marker)
+        
+        
+    

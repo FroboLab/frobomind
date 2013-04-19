@@ -76,9 +76,9 @@ class Planner():
         
         # init plot
         self.plot = Vectorplot(-10, 10, -10, 10)
-        self.plot.addPoint(self.line_begin)
-        self.plot.addPoint(self.line_end)
-        self.plot.addLine(self.line_begin,self.line_end)
+#        self.plot.addPoint(self.line_begin)
+#        self.plot.addPoint(self.line_end)
+#        self.plot.addLine(self.line_begin,self.line_end)
         
         # init position planner
         self.destination = Vector(self.line_end[0],self.line_end[1])
@@ -160,6 +160,10 @@ class Planner():
     def linePlanner(self):
         # Project position vector on line vector
         proj = (self.position - self.line_begin).projectedOn(self.line)
+        
+        perp = proj - self.position
+        if perp.length() :
+            self.rabbit_factor = 1/perp.length()
            
         # Construct rabbit point
         rabbit = self.line - proj
@@ -170,10 +174,94 @@ class Planner():
         # Call positionPlanner
 #        self.plot.addPoint(rabbit)
         self.positionPlanner(rabbit)
+    
+    def test(self):
+        self.position = Vector(-8,4)
+        self.heading = Vector(0,1)
+        self.plot.addPoint(self.position)
+        
+        for i in range(8) :
+            (next,next_next) = self.addRightTurn(self.position,self.heading)
+            self.plot.addLine(self.position,next)
+            self.plot.addLine(next,next_next)
+            self.plot.addPoint(next)
+            self.plot.addPoint(next_next)
+            
+            self.heading = -self.heading
+            self.position = next_next
+            
+            (next,next_next) = self.addLeftTurn(self.position,self.heading)
+            self.plot.addLine(self.position,next)
+            self.plot.addLine(next,next_next)
+            self.plot.addPoint(next)
+            self.plot.addPoint(next_next)
+            
+            self.heading = -self.heading
+            self.position = next_next
+      
+    
+#        self.plot.addVector(next_point,next_heading)
+    
+        
+        self.plot.show()
+        
+    def addRightTurn(self,position,heading):
+        next_point = position + heading.hat().unit().scale(1)
+        next_heading = -heading
+        next_next_point = next_point + next_heading.unit().scale(8)
+        return(next_point,next_next_point)
+    
+    def addLeftTurn(self,position,heading):
+        next_point = position - heading.hat().unit().scale(1)
+        next_heading = -heading
+        next_next_point = next_point + next_heading.unit().scale(8)
+        return(next_point,next_next_point)
+        
             
 if __name__ == '__main__':
     planner = Planner()
-    planner.spin()
-    planner.show()
+    planner.test()
+    #planner.spin()
+    #planner.show()
 
-
+class CasmoPlanner():
+    def __init__(self):
+        self.odom_frame = rospy.get_param("~odom_frame","/odom")
+        
+        self.position = Vector(0,0)
+        self.heading = Vector(0,0)
+        self.next_turn = 'none'
+        
+        self.first_endpoint_undefined = True
+        self.second_endpoint_undefined = True
+        self.first_endpoint = Vector(0,0)
+        self.second_endpoint = Vector(0,0)
+    
+    def getTransform(self):     
+        try:
+            (self.position,head) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
+            (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(head)
+            self.heading = Vector(math.cos(self.yaw), math.sin(yaw))            
+        except (tf.LookupException, tf.ConnectivityException),err:
+            rospy.loginfo("could not locate vehicle")
+            
+    def update(self,point_list,direction):
+        self.getTransform()
+        if self.first_endpoint_undefined :
+            self.first_endpoint = self.position.projectedOn(self.heading).unit().scale(100.0)
+            point_list.append( self.first_endpoint )
+            self.first_endpoint_undefined = False
+            if 'left' in direction :
+                self.insertLeftTurn()
+                self.next_turn = 'right'
+            elif 'right' in direction :
+                self.insertLeftTurn()
+                self.next_turn = 'right'
+            else:
+                print("Casmo update called without indication of side")
+        elif self.second_endpoint_undefined :
+            self.second_endpoint = 
+            self.insertRightTurn()
+    
+    def leftPerpendicular(self,vector):
+        v1 = vector.hat()

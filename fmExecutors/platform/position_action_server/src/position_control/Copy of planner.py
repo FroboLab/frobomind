@@ -57,7 +57,7 @@ class PositionPlanner():
         # Get general parameters
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
-<<<<<<< HEAD
+
         self.max_distance_error = rospy.get_param("~max_distance_error",0.2)
         self.use_tf = rospy.get_param("~use_tf",False)        
         self.max_angle_error = rospy.get_param("~max_angle_error", math.pi/4)
@@ -83,23 +83,6 @@ class PositionPlanner():
         self.period = 0.1
         self.retarder_point = 0.3 #distance to target when speed should start declining
         
-=======
-        self.max_distance_error = rospy.get_param("~max_distance_error",0.05)
-               
-        # Get parameters for action server
-        self.period = rospy.get_param("~period",0.1)
-        self.lin_p = rospy.get_param("~lin_p",0.4)
-        self.lin_i = rospy.get_param("~lin_i",0.6)
-        self.lin_d = rospy.get_param("~lin_d",0.0)
-        self.ang_p = rospy.get_param("~ang_p",0.8)
-        self.ang_i = rospy.get_param("~ang_i",0.1)
-        self.ang_d = rospy.get_param("~ang_d",0.05)
-        self.int_max = rospy.get_param("~integrator_max",0.1)
-        self.retarder = rospy.get_param("~retarder",0.8)
-        self.max_angle_error = rospy.get_param("~max_angle_error",math.pi/4)     
-        self.max_initial_error = rospy.get_param("~max_initial_error",math.pi/18)
-
->>>>>>> Developing line_action_server
         # Init control loop
         self.lin_err = 0.0
         self.ang_err = 0.0

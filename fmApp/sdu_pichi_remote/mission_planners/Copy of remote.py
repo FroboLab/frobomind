@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind positionGoalActionServer.py
+# FroboMind remote.py
 # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
 # All rights reserved.
 #
@@ -26,37 +26,36 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-"""
-    Action server interface for position planner
-"""
-import rospy,actionlib
-from position_action_server.msg import positionAction
-from position_control.planner import PositionPlanner
-
-class PositionGoalActionServer():
-    def __init__(self,name):
-        # Init action server      
-        self._action_name = name
-        self._server = actionlib.SimpleActionServer(self._action_name, positionAction, auto_start=False, execute_cb=self.execute)
-        self._server.register_preempt_callback(self.preempt_cb);
-        self._planner = PositionPlanner()
-        self._planner.isNewGoalAvailable = self._server.is_new_goal_available
-        self._planner.isPreemptRequested = self._server.is_preempt_requested
-        self._planner.setSucceeded = self._server.set_succeeded
-        self._planner.setPreempted = self._server.set_preempted
-        self._server.start()
-    
-    def preempt_cb(self):                   
-        self._planner.stop()
-        #self._server.set_preempted()
-    
-    def execute(self,goal):
-        self._planner.execute(goal)    
+import rospy
+import smach
+import smach_ros
+import actionlib
+import threading
+from generic_smach.behaviours import remote_behaviour
+from wii_interface import wii_interface
+           
+class mission():
+    """    
+        Top level user interface node implemented as a concurrence between wiimote interface and behaviour updater
+    """
+    def __init__(self):
+        rospy.init_node('mission_control')
+        self.hmi = wii_interface.WiiInterface()
+       
+    def spin(self):   
+        self.sm = remote_behaviour.build(self.hmi) 
+        self.sis = smach_ros.IntrospectionServer('StateMachineView', self.sm, '/SM_ROOT')           
+        self.sis.start()    
+        self.sm.execute()
+        rospy.spin()
         
+    def quit(self):
+        self.sm.request_preempt()
+        self.sis.stop()
+    
 if __name__ == '__main__':
     try:
-        rospy.init_node('positionAction')
-        action_server = PositionGoalActionServer(rospy.get_name())
-        rospy.spin()
-    except rospy.exceptions.ROSInterruptException:
-        pass        
+        node = mission()
+        node.spin()
+    except rospy.ROSInterruptException:
+        node.quit()

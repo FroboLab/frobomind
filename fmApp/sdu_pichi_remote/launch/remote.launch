@@ -2,7 +2,7 @@
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_pichi_remote" name="mission_control" type="remote.py" output="screen">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
-			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel_sp" />
 			<param name="status_topic" value="/fmData/status"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
@@ -14,8 +14,26 @@
 			<param name="filter" value="50"/>
 		</node>
 	</group>
-
+	
 	<group ns="fmControllers">
+		<node pkg="velocity_control" name="velocity_controller" type="cmd_vel_control.py" output="screen">
+			<param name="cmd_vel_sub" value="/fmSignals/cmd_vel_sp" />
+			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" /> 
+			<param name="frame_id" value="base_link"/> 
+			<param name="world_frame" value="map"/> 
+			<param name="max_linear_velocity" value="2"/> 
+			<param name="max_angular_velocity" value="2"/>
+			<param name="period" value="0.1"/> 
+			<param name="lin_p" value="0.4"/>
+			<param name="lin_i" value="0.2"/> 
+			<param name="lin_d" value="0.0"/> 
+			<param name="ang_p" value="0.4"/> 
+			<param name="ang_i" value="0.0"/> 
+			<param name="ang_d" value="0.0"/> 
+			<param name="integrator_max" value="0.1"/>
+			<param name="filter_size" value="10"/>  
+		</node>
+
 		<node pkg="differential_ifk" name="diff" type="differential_ifk_node" output="screen" >
 			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
 			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left"/>
@@ -45,16 +63,16 @@
 
 		
         <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
-        	<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/>
+        	<!--param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/-->
 		</node> 
 		
-	    <!--node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true" >
+	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true" >
 	        <param name="publisher_topic" value="/fmData/rx" />	 
 	        <param name="subscriber_topic" value="/fmData/tx" />	
 	        <param name="device" value="/dev/ttyUSB0" />	
 	        <param name="baudrate" value="115200" />
 	        <param name="termination_character" value="13"/>
-		</node-->	
+		</node>	
 	</group>
 	
 		<!-- PID trimmer -->

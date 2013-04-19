@@ -30,16 +30,16 @@
     Action server interface for position planner
 """
 import rospy,actionlib
-from position_action_server.msg import positionAction
-from position_control.planner import PositionPlanner
+from line_action_server.msg import lineAction
+from line_control.planner import LinePlanner
 
-class PositionGoalActionServer():
+class LineGoalActionServer():
     def __init__(self,name):
         # Init action server      
         self._action_name = name
-        self._server = actionlib.SimpleActionServer(self._action_name, positionAction, auto_start=False, execute_cb=self.execute)
+        self._server = actionlib.SimpleActionServer(self._action_name, lineAction, auto_start=False, execute_cb=self.execute)
         self._server.register_preempt_callback(self.preempt_cb);
-        self._planner = PositionPlanner()
+        self._planner = LinePlanner()
         self._planner.isNewGoalAvailable = self._server.is_new_goal_available
         self._planner.isPreemptRequested = self._server.is_preempt_requested
         self._planner.setSucceeded = self._server.set_succeeded
@@ -56,7 +56,7 @@ class PositionGoalActionServer():
 if __name__ == '__main__':
     try:
         rospy.init_node('positionAction')
-        action_server = PositionGoalActionServer(rospy.get_name())
+        action_server = LineGoalActionServer(rospy.get_name())
         rospy.spin()
     except rospy.exceptions.ROSInterruptException:
         pass        

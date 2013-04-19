@@ -1,0 +1,16 @@
+<launch>
+	<!-- HMI -->
+	<group ns="HMI">
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<!--param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/-->
+		</node>
+		
+		<!-- visualization -->
+		<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
+		<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_demining)/conf/default.rviz"/>
+		<param name="robot_description" textfile="$(find sdu_pichi_demining)/description/pichi.urdf" />
+		<param name="use_gui" value="true" />
+  		<node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" />
+  		<node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+	</group>
+</launch>
