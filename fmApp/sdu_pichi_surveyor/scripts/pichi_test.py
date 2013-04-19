@@ -37,7 +37,7 @@ from pylab import ion
 import matplotlib.pyplot as pyplot
 from sensor_msgs.msg import Imu
 
-class GPStest():
+class Test():
     def __init__(self,file):
         # Task parameters
         self.running = True
@@ -96,7 +96,8 @@ class GPStest():
     def update(self):  
         try:
             now = rospy.Time.now() - rospy.Duration(0.5)
-            #(position,orientation) = self.tf.lookupTransform("mast_bottom", "map",rospy.Time(0)) 
+#            (position,orientation) = self.tf.lookupTransform("mast_bottom", "map",rospy.Time(0)) 
+            (position,orientation) = self.tf.lookupTransform("mast_top", "map",rospy.Time(0))
             self.current = Vector(position[0],position[1])               
         except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
             rospy.loginfo("Transform error: %s",err)     
@@ -138,9 +139,9 @@ class GPStest():
         self.quaternion[2] = msg.orientation.z
         self.quaternion[3] = msg.orientation.w
         
-        (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
-        print((roll,pitch,yaw))
-        self.quaternion = tf.transformations.quaternion_from_euler(roll,pitch,0)
+#        (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
+#        print((roll,pitch,yaw))
+#        self.quaternion = tf.transformations.quaternion_from_euler(roll,pitch,0)
         
         rot = self.quat(0,1,0,-math.pi/2)
         self.quaternion = self.multiply(self.quaternion, rot)
@@ -171,6 +172,6 @@ class GPStest():
     
 if __name__ == '__main__':
     rospy.init_node('gps_test')
-    test = GPStest( str(sys.argv[1]) )
+    test = Test( str(sys.argv[1]) )
     test.spin()
 

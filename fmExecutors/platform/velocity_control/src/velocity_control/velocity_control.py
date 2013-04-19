@@ -30,12 +30,7 @@ from geometry_msgs.msg import TwistStamped
 from simple_2d_math.vector import Vector
 
 class Controller():
-    def __init__(self):
-        self.sp_linear = 0
-        self.sp_angular = 0
-        self.sp_linear = 0
-        self.sp_angular = 0
-        
+    def __init__(self):      
         # Init control loop
         self.twist = TwistStamped()
         self.lin_err = 0.0
@@ -47,9 +42,7 @@ class Controller():
         self.lin_diff = 0.0
         self.ang_diff = 0.0
         self.fb_linear = 0.0
-        self.fb_angular = 0.0
-        self.sp_linear = 0.0
-        self.sp_angular = 0.0    
+        self.fb_angular = 0.0   
         
         # Get parameters
         self.period = rospy.get_param("~period",0.1)
@@ -61,6 +54,8 @@ class Controller():
         self.ang_d = rospy.get_param("~ang_d",0.05)
         self.int_max = rospy.get_param("~integrator_max",0.1)   
         self.filter_size = rospy.get_param("~filter_size",10) 
+        self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
+        self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
         self.linear_vel = [0.0] * self.filter_size
         self.angular_vel = [0.0] * self.filter_size
         self.time = 0.0
@@ -72,7 +67,7 @@ class Controller():
         self.last_heading = Vector(1,0)
         self.ptr = 0
         
-    def generateTwist(self,linear,angular):
+    def generateTwist(self,sp_linear,sp_angular):
         # Calculate time since last entry
         self.period = (rospy.Time.now() - self.last_cl_entry).to_sec()
         self.last_cl_entry = rospy.Time.now()
@@ -81,13 +76,9 @@ class Controller():
         self.fb_linear = (sum(self.linear_vel)/len(self.linear_vel))
         self.fb_angular = -(sum(self.angular_vel)/len(self.angular_vel))
         
-        # Generate velocity setpoints from distance and angle errors
-        self.sp_linear = linear
-        self.sp_angular = angular 
-        
         # Calculate velocity errors for control loop
-        self.lin_err = self.sp_linear - self.fb_linear
-        self.ang_err = self.sp_angular - self.fb_angular
+        self.lin_err = sp_linear - self.fb_linear
+        self.ang_err = sp_angular - self.fb_angular
         
         # Calculate integrators and implement max
         self.lin_int += self.lin_err * self.period
@@ -110,11 +101,20 @@ class Controller():
         
         # Update twist message with control velocities
         self.twist.header.stamp = rospy.Time.now() 
-        self.twist.twist.linear.x = self.sp_linear + (self.lin_err * self.lin_p) + (self.lin_int * self.lin_i) + (self.lin_diff * self.lin_d)
-        self.twist.twist.angular.z = self.sp_angular + (self.ang_err * self.ang_p) + (self.ang_int * self.ang_i) + (self.ang_diff * self.ang_d)
-
-#        print("Fb:",(self.fb_linear,self.fb_angular)," Sp:",(self.sp_linear,self.sp_angular)," New:",(self.twist.twist.linear.x,self.twist.twist.angular.z))
-
+        self.twist.twist.linear.x = sp_linear + (self.lin_err * self.lin_p) + (self.lin_int * self.lin_i) + (self.lin_diff * self.lin_d)
+        self.twist.twist.angular.z = sp_angular + (self.ang_err * self.ang_p) + (self.ang_int * self.ang_i) + (self.ang_diff * self.ang_d)
+#        print("Fb:",(self.fb_linear,self.fb_angular)," Sp:",(sp_linear,sp_angular)," New:",(self.twist.twist.linear.x,self.twist.twist.angular.z))
+        
+        # Implement maximum linear velocity and maximum angular velocity
+        if self.twist.twist.linear.x > self.max_linear_velocity:
+            self.twist.twist.linear.x = self.max_linear_velocity
+        if self.twist.twist.linear.x < -self.max_linear_velocity:
+            self.twist.twist.linear.x = -self.max_linear_velocity
+        if self.twist.twist.angular.z > self.max_angular_velocity:
+            self.twist.twist.angular.z = self.max_angular_velocity
+        if self.twist.twist.angular.z < -self.max_angular_velocity:
+            self.twist.twist.angular.z = -self.max_angular_velocity
+            
         return self.twist
 
     def setFeedback(self,position,heading):

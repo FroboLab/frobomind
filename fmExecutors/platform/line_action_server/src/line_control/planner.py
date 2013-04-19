@@ -37,7 +37,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped, Point
 from position_control.planner import PositionPlanner
 from line_control.markers import MarkerUtility
-from line_control.velocity_control import Controller
+from velocity_control.velocity_control import Controller
 from tf import TransformListener
 
 class LinePlanner():
