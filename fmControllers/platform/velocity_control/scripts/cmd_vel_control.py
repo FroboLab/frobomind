@@ -69,7 +69,7 @@ class CmdVelController():
 
 if __name__ == '__main__':
     rospy.init_node('cmd_vel_controller')
-    node = CmdVelController()
+    node = Controller()
     rospy.spin()
     
 
