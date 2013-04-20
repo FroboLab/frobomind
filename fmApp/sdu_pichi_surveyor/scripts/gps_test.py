@@ -27,7 +27,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 """
-
+    This test implements a transform tree and plots the transformed position of a
+    point in the map frame on the ground directly below the mast.
+    
+    Transform tree:
+    world_frame -> gps_frame -> map -> mast_top -> mast_bottom
 """
 import rospy,math,tf,csv,sys
 import numpy as np
@@ -44,7 +48,7 @@ class GPStest():
         
         # Class variables
         self.origin = Vector(0,0)
-        self.current = Vector(0,0)
+        self.position = Vector(0,0)
         self.position_list = []
         
         # init plot
@@ -67,6 +71,8 @@ class GPStest():
         self.file = file
         self.deviations = []    
             
+            
+            
     def initPlot(self):
         pyplot.axis('equal')
         pyplot.axis([self.origin[0]-self.area/2,self.origin[0]+self.area/2,self.origin[1]-self.area/2,self.origin[1]+self.area/2])
@@ -76,7 +82,11 @@ class GPStest():
     def spin(self):
         rospy.sleep(1)
         self.update()
-        self.origin = self.current
+        rospy.sleep(1)
+        self.update()
+        self.origin = self.position
+        pyplot.plot(self.position[0],self.position[1], 'bo')
+        pyplot.draw()
         while self.running:
             
             self.update()
@@ -95,18 +105,20 @@ class GPStest():
 
     def update(self):  
         try:
-            now = rospy.Time.now() - rospy.Duration(0.5)
-            #(position,orientation) = self.tf.lookupTransform("mast_bottom", "map",rospy.Time(0)) 
-            self.current = Vector(position[0],position[1])               
+            (position,orientation) = self.tf.lookupTransform("world_frame" , "mast_bottom",rospy.Time(0)) 
+            self.position = Vector(position[0],position[1])               
         except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
             rospy.loginfo("Transform error: %s",err)     
         
         
     def draw(self):
-        pyplot.plot(self.current[0],self.current[1], 'ro')
-        pyplot.draw()  
-        self.position_list.append( [self.current[0] , self.current[1]] )
-        self.deviations.append((self.current - self.origin).length())
+        pyplot.plot(self.position[0],self.position[1], 'ro')
+        pyplot.draw() 
+         
+        self.position_list.append( [self.position[0] , self.position[1]] )
+        deviation = (self.position - self.origin).length()
+        self.deviations.append(deviation)
+        print(deviation)
             
 
     def multiply(self,q1,q2):
@@ -138,27 +150,14 @@ class GPStest():
         self.quaternion[2] = msg.orientation.z
         self.quaternion[3] = msg.orientation.w
         
-        (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
-        print((roll,pitch,yaw))
-        self.quaternion = tf.transformations.quaternion_from_euler(roll,pitch,0)
-        
-        rot = self.quat(0,1,0,-math.pi/2)
+        rot = self.quat(0,0,1,math.pi/3)
         self.quaternion = self.multiply(self.quaternion, rot)
-        
-        rot = self.quat(0,0,1,-math.pi/2)
-        self.quaternion = self.multiply(self.quaternion, rot)
-        
-#        self.quaternion[0] = msg.orientation.w * 0 + msg.orientation.x * math.pi/2 + msg.orientation.y * 1 - msg.orientation.z * 1
-#        self.quaternion[1] = msg.orientation.w * 1 + msg.orientation.y * math.pi/2 + msg.orientation.z * 0 - msg.orientation.x * 1
-#        self.quaternion[2] = msg.orientation.w * 1 + msg.orientation.z * math.pi/2 + msg.orientation.x * 1 - msg.orientation.y * 0
-#        self.quaternion[3] = msg.orientation.w * math.pi/2 - msg.orientation.x * 0 - msg.orientation.y * 1 - msg.orientation.z * 1
-
 
         self.br.sendTransform((0,0,0),
                      self.quaternion,
                      rospy.Time.now(),
                      "mast_top",
-                     "imu_link")
+                     "map")
         
     def saveList(self):
         with open(self.file, 'wb') as csvfile:
