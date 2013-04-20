@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Grid1
         - /Marker2/Status1
+        - /Odometry1
         - /TF1/Tree1
       Splitter Ratio: 0.5
     Tree Height: 802
@@ -78,10 +79,10 @@ Visualization Manager:
       Color: 255; 25; 0
       Enabled: true
       Keep: 4000
-      Length: 0.1
+      Length: 0.5
       Name: Odometry
       Position Tolerance: 0.1
-      Topic: /fmKnowledge/odom
+      Topic: /odom
       Value: true
     - Class: rviz/TF
       Enabled: true
@@ -131,7 +132,7 @@ Visualization Manager:
       Class: rviz/TopDownOrtho
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 49.5751
+      Scale: 64.7771
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
       X: 0.0875201

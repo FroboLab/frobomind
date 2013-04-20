@@ -46,7 +46,8 @@
   <run_depend>msgs</run_depend>
   <run_depend>actionlib</run_depend>
   <run_depend>rospy</run_depend>
-
+  <build_depend>velocity_control</build_depend>
+  <run_depend>velocity_control</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

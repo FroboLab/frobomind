@@ -4,7 +4,7 @@ project(line_action_server)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generation msgs rospy nav_msgs)
+find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generation msgs rospy nav_msgs velocity_control)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -82,10 +82,10 @@ catkin_package(
 
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
- install(PROGRAMS
-   scripts/positionGoalActionServer
-   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+# install(PROGRAMS
+#   scripts/positionGoalActionServer
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS position_action_server position_action_server_node

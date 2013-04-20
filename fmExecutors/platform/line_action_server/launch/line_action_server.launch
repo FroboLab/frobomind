@@ -10,7 +10,6 @@
 			<param name="max_distance_error" value="0.05"/> <!-- radius of the target in [m] -->
 
 			<param name="retarder" value="0.3"/> <!-- Factor for reducing speed in difficult situations -->
-			 <!--<param name="max_angle_error" value="0.78"/> Maximum allowed angle error (Adaptive for line controller) [rad]-->
 			<param name="max_linear_velocity" value="0.4"/> <!-- maximum linear velocity in autonomous mode in [m/s]-->
 			<param name="max_angular_velocity" value="1.8"/> <!-- maximum angular velocity in autonomous mode in [rad/s]-->
 					
@@ -43,8 +42,8 @@
 	        <param name="zone3_angular_velocity" value="1.2"/> <!-- Angular velocity of the robot when it is in zone 3 [rad/s] -->
 	        <param name="zone3_rabbit_factor" value="0.6"/> <!-- Placement of the aiming point on the line between robot and target -->
 	        
-	        <param name="zone4_distance_to_target",0.4"/> <!-- Max distance to target before changing to zone 4 -->
-	        <param name="transition_filter_size",10"/> <!-- How many measurements to average over when determining zone -->
+	        <param name="zone4_distance_to_target" value="0.4"/> <!-- Max distance to target before changing to zone 4 -->
+	        <param name="transition_filter_size" value="10"/> <!-- How many measurements to average over when determining zone -->
         
 		</node>
 	</group>	

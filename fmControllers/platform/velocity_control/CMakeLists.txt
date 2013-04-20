@@ -4,7 +4,7 @@ project(velocity_control)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generation msgs rospy nav_msgs)
+find_package(catkin REQUIRED COMPONENTS  msgs rospy)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -30,8 +30,6 @@ find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generat
 #   Service1.srv
 #   Service2.srv
 # )
-
-#add_action_files(DIRECTORY action FILES line.action)
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(

@@ -30,9 +30,8 @@ import numpy as np
 from simple_2d_math.vector import Vector
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped, Point
-from position_control.planner import PositionPlanner
 from line_control.markers import MarkerUtility
-from velocity_control.velocity_control import Controller
+from velocity_control import Controller
 from tf import TransformListener
 
 class LinePlanner():
@@ -46,7 +45,7 @@ class LinePlanner():
 
         zone 1:    Low distance to line and low angle error
                    Everything is good so high linear velocity, low angular velocity and a rabbit far away
-        zone 2:    Low distance to line, but higher angle error
+        zone 2:    Low distance to line, but higher angle error or low angle error but higher distance to line
                    Trying to correct heading so low linear velocity, normal angular velocity and medium rabbit
         zone 3:    High distance to line
                    This is going bad so low linear velocity, high angular velocity and a close rabbit
@@ -139,8 +138,7 @@ class LinePlanner():
         self.max_distance_error = rospy.get_param("~max_distance_error",0.05)
                
         # Get control parameters
-        self.retarder = rospy.get_param("~retarder",0.8)
-        self.max_angle_error = rospy.get_param("~max_angle_error",math.pi/4)     
+        self.retarder = rospy.get_param("~retarder",0.8)    
         
         # Get zone parameters       
         self.z1_value = rospy.get_param("~zone1_value",1)
@@ -184,6 +182,7 @@ class LinePlanner():
         # Clear filter
         self.zone_filter = [self.z3_value]*self.z_filter_size
         self.corrected = False
+        self.target_area = False
         
         while not rospy.is_shutdown() :
             
@@ -285,16 +284,12 @@ class LinePlanner():
             self.z_ptr = 0  
         
         self.zone = (sum(self.zone_filter)/len(self.zone_filter))
-        if self.distance_to_goal < self.z4_distance_to_target :
-            self.rabbit_factor = 1
-            self.max_linear_velocity = self.z3_lin_vel
-            self.max_angular_velocity = self.z3_ang_vel  
-        elif self.zone < (self.z1_value + (self.z2_value/2) ) :
+        if self.zone < (self.z1_value + ( (self.z2_value - self.z1_value) /2) ) :
             self.corrected = True
             self.rabbit_factor = self.z1_rabbit
             self.max_linear_velocity = self.z1_lin_vel
             self.max_angular_velocity = self.z1_ang_vel
-        elif self.zone < (self.z2_value + (self.z3_value/2) ) :
+        elif self.zone < (self.z2_value + ( (self.z3_value - self.z2_value )/2) ) :
             self.rabbit_factor = self.z2_rabbit
             self.max_linear_velocity = self.z2_lin_vel
             self.max_angular_velocity = self.z2_ang_vel
@@ -302,6 +297,16 @@ class LinePlanner():
             self.rabbit_factor = self.z3_rabbit
             self.max_linear_velocity = self.z3_lin_vel
             self.max_angular_velocity = self.z3_ang_vel
+        
+        if self.distance_to_goal < 3*self.max_distance_error :
+            self.max_linear_velocity *= self.distance_to_goal
+        elif self.distance_to_goal < self.z4_distance_to_target :
+            self.rabbit_factor = 1
+            self.max_linear_velocity = self.max_linear_velocity / ( self.max_linear_velocity + (self.z4_distance_to_target - self.distance_to_goal)**2)
+            self.max_angular_velocity = self.z3_ang_vel 
+        elif not self.corrected:
+            self.max_linear_velocity *=  self.retarder
+            self.rabbit_factor = self.z3_rabbit
              
     def control_loop(self):
         """
@@ -310,14 +315,6 @@ class LinePlanner():
         """
         self.sp_linear = self.max_linear_velocity
         self.sp_angular = self.angle_error
-                       
-#        # Implement retarder to reduce linear velocity if angle error is too big
-#        if math.fabs(self.goal_angle_error) > self.max_angle_error :
-#            self.sp_linear *= self.retarder
-       
-        # Implement initial correction speed for large angle errors
-        if not self.corrected :
-            self.sp_linear *= self.retarder
             
         # Implement maximum linear velocity and maximum angular velocity
         if self.sp_linear > self.max_linear_velocity:
@@ -342,7 +339,6 @@ class LinePlanner():
         """
             Callback method for handling odometry messages
         """
-        print("Oh noooooo!")
         # Extract the orientation quaternion
         self.quaternion[0] = msg.pose.pose.orientation.x
         self.quaternion[1] = msg.pose.pose.orientation.y
