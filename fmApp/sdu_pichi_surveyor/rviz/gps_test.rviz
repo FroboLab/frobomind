@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1
-        - /TF1/Status1
+        - /TF1/Frames1
         - /TF1/Tree1
       Splitter Ratio: 0.5
     Tree Height: 802
@@ -53,30 +53,35 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        /imu_link:
+        /gps_frame:
           Value: true
         /map:
           Value: true
+        /mast_bottom:
+          Value: true
         /mast_top:
           Value: true
-        /odom_combined:
+        /world_frame:
           Value: true
         All Enabled: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
-      Show Names: false
+      Show Names: true
       Tree:
-        /odom_combined:
-          /map:
-            {}
+        /world_frame:
+          /gps_frame:
+            /map:
+              /mast_top:
+                /mast_bottom:
+                  {}
       Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: /map
+    Fixed Frame: /world_frame
   Name: root
   Tools:
     - Class: rviz/MoveCamera
@@ -95,11 +100,11 @@ Visualization Manager:
       Class: rviz/TopDownOrtho
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 662.319
+      Scale: 680.623
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 0.122678
-      Y: 0.198922
+      X: -0.89309
+      Y: -2.73354
     Saved: ~
 Window Geometry:
   Displays:
@@ -117,5 +122,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1647
-  X: -347
+  X: -354
   Y: -1866
