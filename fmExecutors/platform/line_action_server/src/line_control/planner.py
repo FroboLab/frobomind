@@ -25,11 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-# Change log:
-# 26-Mar 2013 Leon: Changed to using tf for quaternion calculations
-#                   Turned coordinate system to match odom frame
-# 11-Apr 2013 Leon: Moved planner to library to make clean cut to action
-#****************************************************************************/
 import rospy, tf, math
 import numpy as np
 from simple_2d_math.vector import Vector
@@ -42,8 +37,35 @@ from tf import TransformListener
 
 class LinePlanner():
     """
-        Control class taking line goals and generating twist messages accordingly
-    """
+        Controller class taking line goals and generating twist messages.
+        The planner is based on the concept of a rabbit, an aiming point on the line between the robot and the target. 
+        If the rabbit is close to the robot, it will follow the line close, but regulate much and if the rabbit is far 
+        away the robot will drive steady, but might be off the line. 
+        
+        The planner sets up the following zones and acts accordingly:
+
+        zone 1:    Low distance to line and low angle error
+                   Everything is good so high linear velocity, low angular velocity and a rabbit far away
+        zone 2:    Low distance to line, but higher angle error
+                   Trying to correct heading so low linear velocity, normal angular velocity and medium rabbit
+        zone 3:    High distance to line
+                   This is going bad so low linear velocity, high angular velocity and a close rabbit
+        zone 4:    Close to target
+                   The line matters no more. Low linear velocity, high angular velocity and rabbit fixed on target.
+
+        The filter controls when to change between the zones. The value assigned to each zone is not important, but the
+        ratios between them is a measure of how conservative the planner is. Think of it as a measure of the transition states.
+        Small transitions happens faster and large transitions happens slower.
+        
+        Examples:
+        1,2,3 :    The planner will change quickly between zones making it very dynamic but less accurate
+        1,5,25 :   The planner will change slowly between zones making it more accurate, but slow 
+        1,15,25 :  The planner will be even more accurate and even slower
+        1,2,25 :   The planner will be faster, but if the robot is slow, it will go slalom
+        1,10,100 : Slower transitions is good for a slowly reacting robot
+        
+        The filter size acts as a low pass filter so higher filter size means slower reaction, but more robust to noisy sensors
+        """
     def __init__(self):
         # Init line
         self.rabbit_factor = 0.2
@@ -51,6 +73,7 @@ class LinePlanner():
         self.line_end = Vector(0,5)
         self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
         self.yaw = 0.0
+        
         # Init control methods
         self.isNewGoalAvailable = self.empty_method()
         self.isPreemptRequested = self.empty_method()
@@ -59,11 +82,12 @@ class LinePlanner():
         # Get parameters from parameter server
         self.getParameters()
         
+        # Set up markers for rviz
         self.point_marker = MarkerUtility("/point_marker" , self.odom_frame)
         self.line_marker = MarkerUtility("/line_marker" , self.odom_frame)
         self.pos_marker = MarkerUtility("/pos_marker" , self.odom_frame)
         
-        # Init control loop
+        # Init velocity control
         self.controller = Controller()    
         self.distance_to_goal = 0
         self.angle_error = 0
@@ -75,45 +99,22 @@ class LinePlanner():
         # Init TF listener
         self.__listen = TransformListener()    
         
-        # Init controller
+        # Init planner
         self.corrected = False
         self.rate = rospy.Rate(1/self.period)
         self.twist = TwistStamped()
+        self.quaternion = np.empty((4, ), dtype=np.float64)
+        
+        # Init vectors
         self.destination = Vector(1,0)
         self.position = Vector(1,0) # Vector from origo to current position of the robot
         self.heading = Vector(1,0) # Vector in the current direction of the robot 
         self.rabbit = Vector(1,0) # Vector from origo to the aiming point on the line
         self.rabbit_path = Vector(1,0) # Vector from current position to aiming point on the line
-        self.perpendicular = Vector(1,0) # Vector from current position perpendicular to the line
+        self.perpendicular = Vector(1,0) # Vector from current position to the line perpendicular to the line
         self.projection = Vector(1,0) # Projection of the position vector on the line
-        self.quaternion = np.empty((4, ), dtype=np.float64)
-
-        # Setup zone strategies
-        # Zone 0 : close to line, good heading
-        # Zone 1 : close to line, poor heading
-        # Zone 3 : far from line
-        # Zone 4 : Close to target
-        self.target_area = 0.4
-        self.z1_value = 1
-        self.z1_lin_vel = 0.1
-        self.z1_ang_vel = 0.2
-        self.z1_rabbit = 0.8
-        self.z1_max_distance = 0.05
-        self.z1_max_angle = math.pi/36
         
-        self.z2_value = 5
-        self.z2_lin_vel = 0.1
-        self.z2_ang_vel = 0.8
-        self.z2_rabbit = 0.7
-        self.z2_max_distance = 0.25
-        self.z2_max_angle = math.pi/6
-        
-        self.z3_value = 10
-        self.z3_lin_vel = 0.1
-        self.z3_ang_vel = 1.2
-        self.z3_rabbit = 0.6
-        
-        self.z_filter_size = 10
+        # Set up circular buffer for filter
         self.zone_filter = [self.z3_value]*self.z_filter_size
         self.zone = 2
         self.z_ptr = 0
@@ -136,12 +137,33 @@ class LinePlanner():
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
         self.max_distance_error = rospy.get_param("~max_distance_error",0.05)
-        self.max_distance_from_line = rospy.get_param("~max_distance_from_line",0.3)
                
-#        # Get parameters for action server
+        # Get control parameters
         self.retarder = rospy.get_param("~retarder",0.8)
         self.max_angle_error = rospy.get_param("~max_angle_error",math.pi/4)     
-        self.max_initial_error = rospy.get_param("~max_initial_error",math.pi/18)
+        
+        # Get zone parameters       
+        self.z1_value = rospy.get_param("~zone1_value",1)
+        self.z1_lin_vel = rospy.get_param("~zone1_linear_velocity",0.1)
+        self.z1_ang_vel = rospy.get_param("~zone1_angular_velocity",0.2)
+        self.z1_rabbit = rospy.get_param("~zone1_rabbit_factor",0.8)
+        self.z1_max_distance = rospy.get_param("~zone1_max_distance_to_line",0.05)
+        self.z1_max_angle = rospy.get_param("~zone1_max_angle_error",math.pi/36)
+        
+        self.z2_value = rospy.get_param("~zone2_value",5)
+        self.z2_lin_vel = rospy.get_param("~zone2_linear_velocity",0.1)
+        self.z2_ang_vel = rospy.get_param("~zone2_angular_velocity",0.8)
+        self.z2_rabbit = rospy.get_param("~zone2_rabbit_factor",0.7)
+        self.z2_max_distance = rospy.get_param("~zone2_max_distance_to_line",0.25)
+        self.z2_max_angle = rospy.get_param("~zone2_max_angle_error",math.pi/6)
+        
+        self.z3_value = rospy.get_param("~zone3_value",10)
+        self.z3_lin_vel = rospy.get_param("~zone3_linear_velocity",0.1)
+        self.z3_ang_vel = rospy.get_param("~zone3_angular_velocity",1.2)
+        self.z3_rabbit = rospy.get_param("~zone3_rabbit_factor",0.6)
+        
+        self.z4_distance_to_target = rospy.get_param("~zone4_distance_to_target",0.4)
+        self.z_filter_size = rospy.get_param("~transition_filter_size",10)
 
     def stop(self):
         # Publish a zero twist to stop the robot
@@ -151,19 +173,15 @@ class LinePlanner():
         self.twist_pub.publish(self.twist)
                 
     def execute(self,goal):
-        # Construct a vector from position goal
+        # Construct a vector from line goal
         self.line_begin[0] = goal.a_x
         self.line_begin[1] = goal.a_y  
         self.line_end[0] = goal.b_x
         self.line_end[1] = goal.b_y 
-        self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
-        # Temporary hack
-#        self.update()
-#        self.line_begin = Vector(self.position[0]+0.3,self.position[1]+0.3)
-#        self.line_end = self.position.projectedOn(self.heading).unit().scale(3.0)
-#        self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])
-        
+        self.line = Vector(self.line_end[0]-self.line_begin[0],self.line_end[1]-self.line_begin[1])      
         rospy.loginfo(rospy.get_name() + " Received goal: (%f,%f) to (%f,%f) ",goal.a_x,goal.a_y,goal.b_x,goal.b_y)
+        
+        # Clear filter
         self.zone_filter = [self.z3_value]*self.z_filter_size
         self.corrected = False
         
@@ -179,20 +197,16 @@ class LinePlanner():
                 rospy.loginfo(rospy.get_name() + "Preempt requested")
                 break
             
-            # Update
+            # Update vectors
             self.update()
             
-            # Construct rabbit vector
-            self.constructRabbit()
-            
-            # Publish markers
+            # Publish markers for rviz
             self.line_marker.updateLine( [ Point(self.line_begin[0],self.line_begin[1],0) , Point(self.line_end[0],self.line_end[1],0) ] )
             self.point_marker.updatePoint( [ Point(self.rabbit[0],self.rabbit[1],0) ] )
             self.pos_marker.updatePoint( [ Point(self.position[0],self.position[1],0) ] )
             
             # If the goal is unreached
-            if self.distance_to_goal > self.max_distance_error :
-                
+            if self.distance_to_goal > self.max_distance_error :             
                 # Spin the loop
                 self.control_loop()
                 
@@ -203,7 +217,7 @@ class LinePlanner():
                     print("Interrupted during sleep")
                     return 'preempted'
             else:
-                # Succeed the action - position has been reached
+                # Success - position has been reached
                 rospy.loginfo(rospy.get_name() + " Goal reached in distance: %f m",self.distance_to_goal)
                 self.stop()            
                 break
@@ -223,35 +237,36 @@ class LinePlanner():
             return 'succeeded'     
 
     def update(self):
-        # Get current position
+        # Get current pose and send it to controller
         self.get_current_position()
-        
-        # Construct heading vector
         self.heading = Vector(math.cos(self.yaw), math.sin(self.yaw))
         self.controller.setFeedback(self.position,self.heading) 
         
+        # Construct projection vector, perpendicular vector path vectors and rabbit vector
         self.projection = (self.position - self.line_begin).projectedOn(self.line)
         if self.projection.angle(self.line) > 0.1 or self.projection.angle(self.line) < -0.1 :
             self.projection = self.projection.scale(-1)
-        
         self.perpendicular = self.projection - self.position + self.line_begin
         self.goal_path = self.line_end - self.position
+        self.rabbit = self.line - self.projection
+        self.rabbit = self.rabbit.scale(self.rabbit_factor)
+        self.rabbit += self.line_begin
+        self.rabbit += self.projection  
+        self.rabbit_path = self.rabbit - Vector(self.position[0], self.position[1])
         
-        # Calculate distance to goal
+        # Calculate distances
         self.distance_to_goal = self.goal_path.length()
         self.distance_to_line = self.perpendicular.length()
         
-        # Calculate angle between heading vector and target path vector
+        # Calculate angle between heading vector and goal/rabbit path vector
         self.angle_error = self.heading.angle(self.rabbit_path)
-
         # Rotate the heading vector according to the calculated angle and test correspondence
         # with the path vector. If not zero sign must be flipped. This is to avoid the sine trap.
         t1 = self.heading.rotate(self.angle_error)
         if self.rabbit_path.angle(t1) != 0 :
             self.angle_error = -self.angle_error
-                
+                        
         self.goal_angle_error = self.heading.angle(self.goal_path)
-
         # Avoid the sine trap.
         t1 = self.heading.rotate(self.goal_angle_error)
         if self.goal_path.angle(t1) != 0 :
@@ -270,7 +285,7 @@ class LinePlanner():
             self.z_ptr = 0  
         
         self.zone = (sum(self.zone_filter)/len(self.zone_filter))
-        if self.distance_to_goal < self.target_area :
+        if self.distance_to_goal < self.z4_distance_to_target :
             self.rabbit_factor = 1
             self.max_linear_velocity = self.z3_lin_vel
             self.max_angular_velocity = self.z3_ang_vel  
@@ -287,16 +302,6 @@ class LinePlanner():
             self.rabbit_factor = self.z3_rabbit
             self.max_linear_velocity = self.z3_lin_vel
             self.max_angular_velocity = self.z3_ang_vel
-            
-    def constructRabbit(self):      
-           
-        # Construct rabbit point
-        self.rabbit = self.line - self.projection
-        self.rabbit = self.rabbit.scale(self.rabbit_factor)
-        self.rabbit += self.line_begin
-        self.rabbit += self.projection
-        
-        self.rabbit_path = self.rabbit - Vector(self.position[0], self.position[1])
              
     def control_loop(self):
         """
@@ -306,10 +311,9 @@ class LinePlanner():
         self.sp_linear = self.max_linear_velocity
         self.sp_angular = self.angle_error
                        
-        
-        # Implement retarder to reduce linear velocity if angle error is too big
-        if math.fabs(self.goal_angle_error) > self.max_angle_error :
-            self.sp_linear *= self.retarder
+#        # Implement retarder to reduce linear velocity if angle error is too big
+#        if math.fabs(self.goal_angle_error) > self.max_angle_error :
+#            self.sp_linear *= self.retarder
        
         # Implement initial correction speed for large angle errors
         if not self.corrected :
