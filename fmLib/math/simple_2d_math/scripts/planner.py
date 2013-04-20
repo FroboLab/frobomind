@@ -224,44 +224,44 @@ if __name__ == '__main__':
     #planner.spin()
     #planner.show()
 
-class CasmoPlanner():
-    def __init__(self):
-        self.odom_frame = rospy.get_param("~odom_frame","/odom")
-        
-        self.position = Vector(0,0)
-        self.heading = Vector(0,0)
-        self.next_turn = 'none'
-        
-        self.first_endpoint_undefined = True
-        self.second_endpoint_undefined = True
-        self.first_endpoint = Vector(0,0)
-        self.second_endpoint = Vector(0,0)
-    
-    def getTransform(self):     
-        try:
-            (self.position,head) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
-            (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(head)
-            self.heading = Vector(math.cos(self.yaw), math.sin(yaw))            
-        except (tf.LookupException, tf.ConnectivityException),err:
-            rospy.loginfo("could not locate vehicle")
-            
-    def update(self,point_list,direction):
-        self.getTransform()
-        if self.first_endpoint_undefined :
-            self.first_endpoint = self.position.projectedOn(self.heading).unit().scale(100.0)
-            point_list.append( self.first_endpoint )
-            self.first_endpoint_undefined = False
-            if 'left' in direction :
-                self.insertLeftTurn()
-                self.next_turn = 'right'
-            elif 'right' in direction :
-                self.insertLeftTurn()
-                self.next_turn = 'right'
-            else:
-                print("Casmo update called without indication of side")
-        elif self.second_endpoint_undefined :
-            self.second_endpoint = 
-            self.insertRightTurn()
-    
-    def leftPerpendicular(self,vector):
-        v1 = vector.hat()
+#class CasmoPlanner():
+#    def __init__(self):
+#        self.odom_frame = rospy.get_param("~odom_frame","/odom")
+#        
+#        self.position = Vector(0,0)
+#        self.heading = Vector(0,0)
+#        self.next_turn = 'none'
+#        
+#        self.first_endpoint_undefined = True
+#        self.second_endpoint_undefined = True
+#        self.first_endpoint = Vector(0,0)
+#        self.second_endpoint = Vector(0,0)
+#    
+#    def getTransform(self):     
+#        try:
+#            (self.position,head) = self.__listen.lookupTransform( self.odom_frame,self.base_frame,rospy.Time(0)) # The transform is returned as position (x,y,z) and an orientation quaternion (x,y,z,w).
+#            (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(head)
+#            self.heading = Vector(math.cos(self.yaw), math.sin(yaw))            
+#        except (tf.LookupException, tf.ConnectivityException),err:
+#            rospy.loginfo("could not locate vehicle")
+#            
+#    def update(self,point_list,direction):
+#        self.getTransform()
+#        if self.first_endpoint_undefined :
+#            self.first_endpoint = self.position.projectedOn(self.heading).unit().scale(100.0)
+#            point_list.append( self.first_endpoint )
+#            self.first_endpoint_undefined = False
+#            if 'left' in direction :
+#                self.insertLeftTurn()
+#                self.next_turn = 'right'
+#            elif 'right' in direction :
+#                self.insertLeftTurn()
+#                self.next_turn = 'right'
+#            else:
+#                print("Casmo update called without indication of side")
+#        elif self.second_endpoint_undefined :
+#            self.second_endpoint = 
+#            self.insertRightTurn()
+#    
+#    def leftPerpendicular(self,vector):
+#        v1 = vector.hat()
