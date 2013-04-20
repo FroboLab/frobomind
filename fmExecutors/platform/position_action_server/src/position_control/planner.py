@@ -57,6 +57,7 @@ class PositionPlanner():
         # Get general parameters
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
+        self.max_initial_error = rospy.get_param("~max_initial_angle_error",1)
 
         self.max_distance_error = rospy.get_param("~max_distance_error",0.2)
         self.use_tf = rospy.get_param("~use_tf",False)        
@@ -116,19 +117,6 @@ class PositionPlanner():
         if not self.use_tf :
             self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
-        
-        rospy.loginfo(rospy.get_name() + ": Initialised position control with parameters:")
-        rospy.loginfo("Period : %.2f s" % (self.period))
-        rospy.loginfo("Linear velocity p-gain : %.2f" % (self.lin_p))
-        rospy.loginfo("Linear velocity i-gain : %.2f" % (self.lin_i))
-        rospy.loginfo("Linear velocity d-gain : %.2f" % (self.lin_d))
-        rospy.loginfo("Angular velocity p-gain : %.2f" % (self.ang_p))
-        rospy.loginfo("Angular velocity i-gain : %.2f" % (self.ang_i))
-        rospy.loginfo("Angular velocity d-gain : %.2f" % (self.ang_d))
-        rospy.loginfo("Integrator maximum : %.2f" % (self.int_max))
-        rospy.loginfo("Retarder : %.2f" % (self.retarder))
-        rospy.loginfo("Max angle error : %.2f rad" % (self.max_angle_error))
-        rospy.loginfo("Max initial error : %.2f rad" % (self.max_initial_error))
         
     def execute(self,goal):
         # Construct a vector from position goal
