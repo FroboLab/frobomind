@@ -1,9 +1,17 @@
 <launch>
+	<!-- Monitors -->
+	<node name="rosbag_recorder" pkg="rosbag" type="record" args="-a -e fmData|usageMonitor -O $(find sdu_pichi_remote)/bags/test.bag" />
+	<node name="usageMonitor" pkg="usage_monitor" type="usage_monitor_node">
+		<param name="rate" value="4" />
+  	</node>
+  	
+	<!-- Transforms -->
 	<node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 gps_frame map 100"/>
-	<node pkg="tf" type="static_transform_publisher" name="mast_broadcaster" args="-1.20 0 0 0 0 0 mast_top mast_bottom 100"/>
-	
+	<node pkg="tf" type="static_transform_publisher" name="mast_broadcaster" args="-1.20 0 0 0 0 0 mast_top mast_bottom 100"/>	
 	<node pkg="sdu_pichi_remote" type="imu_tf_publisher.py" name="imu_broadcaster"/>
 	
+
+	<!-- Controllers -->
 	<group ns="fmControllers">
 		<node pkg="differential_ifk" name="diff" type="differential_ifk_node" output="screen" >
 			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
@@ -46,6 +54,7 @@
 		</node>	
 	</group>
 	
+	<!-- Sensors -->
 	<group ns="platform_feedback">
 		<!-- GPS -->
 		<node pkg="serial_string" name="gps_serial" type="serial_string_node" output="screen"  respawn="true">
@@ -76,6 +85,7 @@
 		 </node>	
 	</group>
 	
+	<!-- Processors -->
 	<group ns="platform_processing">
 		<!-- Vehicle odometry -->
 		<!--node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >

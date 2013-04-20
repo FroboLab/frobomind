@@ -19,7 +19,9 @@
         	<!--param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/-->
 		</node> 
 		
-		<!-- PID trimmer -->
 		<node pkg="sdu_pichi" name="PID_trimmer" type="trimmer.py" output="screen" />
-	</group>
+		</group>
+		
+		<node name="Plotting" pkg="rqt_plot" type="rqt_plot" args="/usageMonitor/cpu/data /usageMonitor/memory/data" respawn="false" output="screen"/>
+		
 </launch>
