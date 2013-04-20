@@ -1,6 +1,9 @@
 <launch>
-	<node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 mast_top gps_frame 100"/>
-
+	<node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 gps_frame map 100"/>
+	<node pkg="tf" type="static_transform_publisher" name="mast_broadcaster" args="-1.20 0 0 0 0 0 mast_top mast_bottom 100"/>
+	
+	<node pkg="sdu_pichi_remote" type="imu_tf_publisher.py" name="imu_broadcaster"/>
+	
 	<group ns="fmControllers">
 		<node pkg="differential_ifk" name="diff" type="differential_ifk_node" output="screen" >
 			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
@@ -25,6 +28,10 @@
 			<param name="status_topic" value="/fmData/status"/>	
 			<param name="mps_to_rpm" value="1432"/>
 			<param name="closed_loop_operation" value="true"/>
+			<param name="max_acceleration" value="20000"/>
+			<param name="max_deceleration" value="20000"/>
+			<param name="max_rpm" value="4000"/>
+			<param name="anti_windup_percent" value="50"/>
 			<param name="p_gain" value="0"/>
 			<param name="i_gain" value="0"/>
 			<param name="d_gain" value="0"/>         
@@ -58,20 +65,20 @@
 			<param name="termination_character" value="10"/>
 		</node> 
 		
-		<node pkg="vectornav_vn100" name="imu_converter"  type="vectornav_vn100_node" output="screen" >
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen" respawn="True" >
 			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
 			<param name="imu_pub" value="/fmInformation/imu"/>
-			<param name="frame_id" value="imu_link"/>
+			<param name="frame_id" value="mast_top"/>
 			<param name="use_enu" value="true"/>
 			<param name="covariance_x" value="0.001"/>
 			<param name="covariance_y" value="0.001"/>
 			<param name="covariance_z" value="0.001"/>
-		</node>	
+		 </node>	
 	</group>
 	
 	<group ns="platform_processing">
 		<!-- Vehicle odometry -->
-		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+		<!--node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />
 			<param name="enc_right_sub" value="/fmInformation/enc_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
@@ -80,7 +87,7 @@
 			<param name="imu_angular_velocity_yaw_axis" value="-d" /> 
 			<param name="vehicle_frame" value="base_footprint" />      
 			<param name="odom_estimate_frame" value="/wheel_odom" />      
-		</node>
+		</node-->
 		
 		<!-- GPS odometry -->
 		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen">
@@ -97,8 +104,8 @@
     		<param name="subscribe_topic_id" value="/fmInformation/utm" />
 			<param name="publish_topic_id" value="/fmKnowledge/gps_odom" />
 			<param name="odom_frame_id" value="gps_frame" />
-			<param name="vehicle_frame" value="map" />
-			<param name="odom_estimate_frame" value="odom_combined" />
+			<param name="vehicle_frame" value="gps_frame" />
+			<param name="odom_estimate_frame" value="world_frame" />
 			<param name="child_odom_frame_id" value="world_frame" />
 			<param name="receive_n_before_publish" value="10"/>
 			<param name="gps_variance" value="1"/>

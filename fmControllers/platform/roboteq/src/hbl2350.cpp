@@ -40,13 +40,6 @@ hbl2350::hbl2350( )
 	controller_responding = true;
 	velocity_ch1 = velocity_ch2 = 0;
 
-	// Parameters not yet on parameter server
-	max_rpm = 3000;
-	anti_windup_percent = 50;
-	max_acceleration = 10000; //0.1*rpm per second
-	max_deceleration = 20000; //0.1*rpm per second
-	velocity_max = 1000; // +/- maximum value sent to controller max 1000
-
 	// Parse from parameter server
 	local_node_handler.param<std::string>("cmd_vel_ch1_topic",	cmd_vel_ch1_topic,		"/fmActuators/cmd_vel_ch1");
 	local_node_handler.param<std::string>("cmd_vel_ch2_topic",	cmd_vel_ch2_topic,		"/fmActuators/cmd_vel_ch2");
@@ -72,6 +65,12 @@ hbl2350::hbl2350( )
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
 	max_time_diff = ros::Duration(max_time_diff_input);
 	local_node_handler.param<double>("mps_to_rpm",mps_to_rpm,5);
+
+	local_node_handler.param<int>("max_acceleration",max_acceleration,20000);
+	local_node_handler.param<int>("max_deceleration",max_deceleration,20000);
+	local_node_handler.param<int>("max_rpm",max_rpm,4000);
+	local_node_handler.param<int>("anti_windup_percent",anti_windup_percent,50);
+	velocity_max = 1000; //Motor controller constant
 
 	// Set publisher topics
 	setSerialPub( 		local_node_handler.advertise<msgs::serial>(		serial_tx_topic,	10) );
@@ -168,6 +167,10 @@ void hbl2350::initController(void)
 	transmit(3, "^MAC",	2, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MDEC", 1,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed deceleration
 	transmit(3, "^MDEC", 2,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(3, "!AC",	1, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed acceleration
+	transmit(3, "!AC",	2, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(3, "!DC", 1,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed deceleration
+	transmit(3, "!DC", 2,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MXPF", 1, 95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors forward
 	transmit(3, "^MXPF", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MXPR", 1,	95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors reverse
