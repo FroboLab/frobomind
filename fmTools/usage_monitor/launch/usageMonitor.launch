@@ -1,0 +1,9 @@
+<launch>
+
+	<node name="usageMonitor" 	pkg="usage_monitor" type="usage_monitor_node">
+		<param name="/usageMonitor/rate" value="4" />
+  	</node>
+	
+  	<node name="Plotting" 		pkg="rqt_plot" type="rqt_plot" args="/usageMonitor/cpu/data /usageMonitor/memory/data" respawn="false" output="screen"/>
+  	
+</launch>
