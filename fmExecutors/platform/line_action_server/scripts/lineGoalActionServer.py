@@ -27,7 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-    Action server interface for position planner
+    Action server interface for line planner.
+    Takes a line goal defining begin point and end point
 """
 import rospy,actionlib
 from line_action_server.msg import lineAction
@@ -39,23 +40,26 @@ class LineGoalActionServer():
         self._action_name = name
         self._server = actionlib.SimpleActionServer(self._action_name, lineAction, auto_start=False, execute_cb=self.execute)
         self._server.register_preempt_callback(self.preempt_cb);
+        
+        # Init planner
         self._planner = LinePlanner()
         self._planner.isNewGoalAvailable = self._server.is_new_goal_available
         self._planner.isPreemptRequested = self._server.is_preempt_requested
         self._planner.setSucceeded = self._server.set_succeeded
         self._planner.setPreempted = self._server.set_preempted
+        
+        # Start the action server
         self._server.start()
     
     def preempt_cb(self):                   
         self._planner.stop()
-        #self._server.set_preempted()
     
     def execute(self,goal):
         self._planner.execute(goal)    
         
 if __name__ == '__main__':
     try:
-        rospy.init_node('positionAction')
+        rospy.init_node('lineAction')
         action_server = LineGoalActionServer(rospy.get_name())
         rospy.spin()
     except rospy.exceptions.ROSInterruptException:
