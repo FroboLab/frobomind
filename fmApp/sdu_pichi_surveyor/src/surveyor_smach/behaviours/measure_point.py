@@ -2,20 +2,20 @@ import rospy
 import smach
 import smach_ros
 import actionlib
-from surveyor_smach.states import get_next_point
+from line_smach.states import get_next_line
 from generic_smach.states import wait_state
-from position_action_server import *
-from position_action_server.msg import *
+from line_action_server import *
+from line_action_server.msg import *
 
 def build(point_list):
     behaviour = smach.StateMachine(outcomes=['success','preempted','aborted'])
     with behaviour :
-        smach.StateMachine.add('GET_NEXT', get_next_point.getNextPosition(point_list), 
+        smach.StateMachine.add('GET_NEXT', get_next_line.getNextLine(point_list), 
                                transitions={'succeeded':'GO_TO_POINT', 'aborted':'aborted'})                    
         smach.StateMachine.add('GO_TO_POINT', 
-                               smach_ros.SimpleActionState('/platform_executors/positionActionServer',positionAction, goal_slots=['x','y']),
-                               transitions={'succeeded':'MEASURE','preempted':'preempted','aborted':'aborted'},
-                               remapping={'x':'next_x','y':'next_y'})
+                               smach_ros.SimpleActionState('/platform_executors/lineActionServer', lineAction, goal_slots=['a_x','a_y','b_x','b_y']),
+                               transitions={'succeeded':'GET_NEXT','preempted':'preempted','aborted':'aborted'},
+                               remapping={'a_x':'next_ax','a_y':'next_ay','b_x':'next_bx','b_y':'next_by'})
         smach.StateMachine.add('MEASURE' , wait_state.WaitState(3),
                                transitions={'succeeded':'GET_NEXT','preempted':'preempted','aborted':'aborted'})
         
