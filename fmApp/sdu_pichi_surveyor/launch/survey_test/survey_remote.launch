@@ -1,0 +1,27 @@
+<launch>
+	<group ns="decision_making">
+		<node pkg="sdu_pichi_remote" name="mission_control" type="remote.py" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel_sp" />
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
+			<param name="joy_topic" value="/fmLib/joy" />
+			<param name="max_linear_velocity" value="1.0"/>
+			<param name="max_angular_velocity" value="3.0"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="50"/>
+			<param name="publish_frequency" value="10"/>
+			<param name="filter" value="50"/>
+		</node>
+		
+		<!-- HMI -->
+		<node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
+        	<!--param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/-->
+		</node> 
+		
+		<node pkg="sdu_pichi" name="PID_trimmer" type="trimmer.py" output="screen" />
+		</group>
+		
+		<node name="Plotting" pkg="rqt_plot" type="rqt_plot" args="/usageMonitor/cpu/data /usageMonitor/memory/data" respawn="false" output="screen"/>
+		
+</launch>
