@@ -34,10 +34,10 @@ find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generat
 add_action_files(DIRECTORY action FILES position.action)
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   actionlib_msgs nav_msgs std_msgs
- )
+generate_messages(
+  DEPENDENCIES 
+  actionlib_msgs nav_msgs std_msgs
+)
 
 ###################################################
 ## Declare things to be passed to other projects ##
