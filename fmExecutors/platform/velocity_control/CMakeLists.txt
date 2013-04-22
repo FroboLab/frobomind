@@ -33,7 +33,7 @@ find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs message_generat
 
 #add_action_files(DIRECTORY action FILES line.action)
 
-3## Generate added messages and services with any dependencies listed here
+## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
 #   actionlib_msgs nav_msgs std_msgs
