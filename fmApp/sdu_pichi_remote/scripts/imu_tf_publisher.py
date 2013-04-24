@@ -35,7 +35,7 @@ import matplotlib.pyplot as pyplot
 from sensor_msgs.msg import Imu
 
 class IMUTransformPublisher():
-    def __init__(self,file):        
+    def __init__(self):        
         # Init transform
         self.br = tf.TransformBroadcaster()
         self.quaternion = np.empty((4, ), dtype=np.float64)
@@ -75,6 +75,7 @@ class IMUTransformPublisher():
                      rospy.Time.now(),
                      "mast_top",
                      "map")
+     
     
 if __name__ == '__main__':
     rospy.init_node('imu_transform_pub')
