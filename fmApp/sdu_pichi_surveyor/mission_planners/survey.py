@@ -28,6 +28,7 @@
 #****************************************************************************/
 # Change log:
 # 25-Mar 2013 Leon: Changed fixed list to recorded list (button A adds point)
+# 23-Apr 2013 Leon: Updated to use tf instead of odom topic
 #
 #****************************************************************************/
 import rospy,smach,smach_ros,actionlib,threading
@@ -47,7 +48,8 @@ class Mission():
         rospy.loginfo("mission control initialized")
         
         self.odom_topic = rospy.get_param("~odom_topic",'/odom')
-        self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.onOdometry )
+        self.tf = tf.TransformListener()
+        #self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.onOdometry )
         
         self.hmi = wii_interface.WiiInterface()
         rospy.loginfo("Registering save point callback")
@@ -92,10 +94,18 @@ class Mission():
         """    
             Callback method to save the current position
         """
+#        if self.save_time < rospy.Time.now():
+#            rospy.loginfo("Saving point: (%f,%f) ",self.latest_point.x,self.latest_point.y)
+#            self.point_list.append(self.latest_point)
+#            self.save_time = rospy.Time.now() + self.min_time_between_point_save
         if self.save_time < rospy.Time.now():
-            rospy.loginfo("Saving point: (%f,%f) ",self.latest_point.x,self.latest_point.y)
-            self.point_list.append(self.latest_point)
-            self.save_time = rospy.Time.now() + self.min_time_between_point_save
+            try:
+                (position,orientation) = self.tf.lookupTransform("world_frame" , "mast_bottom",rospy.Time(0)) 
+                self.latest_point.x = position[0]
+                self.latest_point.y = position[1]   
+                rospy.loginfo("Saving point: (%f,%f) ",self.latest_point.x,self.latest_point.y)       
+            except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
+                rospy.loginfo("Transform error: %s",err)
         
     def onOdometry(self,msg):
         """    

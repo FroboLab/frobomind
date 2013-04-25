@@ -122,7 +122,7 @@ void hbl2350::initController(void)
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
 	transmit(1,	"# 10" ); sleep(TIME_BETWEEN_COMMANDS);							// Repeat buffer every 10 ms
 
-	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority
+/*	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority
 	transmit(2, "^RWD",	1000 ); sleep(TIME_BETWEEN_COMMANDS);						// One second watchdog
 
 	transmit(3, "^BLFB", 1, 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
@@ -177,7 +177,7 @@ void hbl2350::initController(void)
 	transmit(3, "^MXPR", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(3, "^MXRPM", 1,	max_rpm ); sleep(TIME_BETWEEN_COMMANDS);			// Set maximum rounds per minute
 	transmit(3, "^MXRPM", 2,	max_rpm );
-	sleep(2);
+*/	sleep(2);
 
 	ROS_INFO("Initialization finished");
 	initialised = true;
