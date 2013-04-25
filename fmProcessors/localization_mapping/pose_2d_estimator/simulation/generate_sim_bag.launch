@@ -13,7 +13,7 @@ This launch file generates a simulation bag which contains output from:
 
 	<group ns="rosbag">
 		<!-- launch a bag from the SDU Pichi robot to emulate sensor input -->
-		<node pkg="rosbag" name="sensors" type="play" args="--start=1 $(find pose_2d_estimator)/bags/pichi_sensors.bag" />
+		<node pkg="rosbag" name="sensors" type="play" args="--start=1 $(find pose_2d_estimator)/bags/survey.bag" />
 
 		<!-- rosbag the output for simulation -->
 		<node pkg="rosbag" name="record" type="record" args="-O $(find pose_2d_estimator)/simulation/sim.bag /fmKnowledge/encoder_odom /fmInformation/gpgga /fmInformation/imu"/>

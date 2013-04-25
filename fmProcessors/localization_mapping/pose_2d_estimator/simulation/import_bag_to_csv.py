@@ -56,7 +56,7 @@ for topic, msg, t in bag.read_messages(topics=['/fmInformation/imu']):
 f.close()
 
 # extract GPGGA data
-f = open ('sim_gps.txt', 'w')
+f = open ('sim_gnss.txt', 'w')
 for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga']):
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
 	f.write ('%d.%03d,%.10f,%.10f,%d,%d,%.2f\n' % (msg.header.stamp.secs,msecs, \

@@ -29,19 +29,24 @@
 # imports
 import matplotlib.pyplot as plt
 from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
+from math import sqrt
 
-class estimatorplot():
+class estimator_plot():
 	def __init__(self):
         # Get parameters
 		self.map_title = 'Pose 2D Estimator'
 		self.map_window_size = 5.0 # [inches]
 		self.trkpt_threshold = 0.1 # [m]
+		self.odometry_enabled = False
+		self.gnss_enabled = True
+		self.pose_enabled = True
         
 		# Initialize map
 		self.origoX = 0
 		self.origoY = 0
 		self.odo = []
-		self.track = []
+		self.gnss = []
+		self.pose = []
 
 		ion() # turn interaction mode on
 		self.fig1 = plt.figure(num=1, figsize=(self.map_window_size, \
@@ -52,23 +57,42 @@ class estimatorplot():
 		axis('equal')
 		grid (True)
 
-	def append_odo (self, x, y):
-		self.odo.append([x, y])
+	def append_odometry_position (self, x, y):
+		if self.odo == [] or sqrt((x-self.odo[-1][0])**2 + (y-self.odo[-1][1])**2) > self.trkpt_threshold:
+			self.odo.append([x, y])
 
-	def append_pos (self):
-		x = msg.pose.pose.position.x - self.origoX
-		y = msg.pose.pose.position.y - self.origoY
-		if (abs(x-self.track[-1][0]) > self.trkpt_threshold \
-			or abs(y-self.track[-1][1]) > self.trkpt_threshold):
-			self.track.append([x, y])
+	def append_gnss_position (self, easting, northing):
+		x = easting - self.origoX
+		y = northing - self.origoY
+		if self.gnss == [] or sqrt((x-self.gnss[-1][0])**2 + (y-self.gnss[-1][1])**2) > self.trkpt_threshold:
+			self.gnss.append([x, y])
 
-	def update_plot(self):
+	def append_pose_position (self, x, y):
+		if self.pose == [] or sqrt((x-self.pose[-1][0])**2 + (y-self.pose[-1][1])**2) > self.trkpt_threshold:
+			self.pose.append([x, y])
+
+	def update(self):
 		plt.figure(1)
-		if self.odo != []:
+		if self.odometry_enabled and self.odo != []:
 			odoT = zip(*self.odo)		
-			odo_plt = plot(odoT[0],odoT[1],'r')
+			odo_plt = plot(odoT[0],odoT[1],'b')
+		if self.gnss_enabled and self.gnss != []:
+			gnssT = zip(*self.gnss)		
+			gnss_plt = plot(gnssT[0],gnssT[1],'black')
+		if self.pose_enabled and self.pose != []:
+			poseT = zip(*self.pose)		
+			pose_plt = plot(poseT[0],poseT[1],'r')
 		draw()
 
-	def save_plot(self):
+	def save(self):
 		self.fig1.savefig ('plot.png')
+
+	def enable_odometry (self, enable):
+		self.odometry_enabled = enable
+
+	def enable_gnss (self, enable):
+		self.gnss_enabled = enable
+
+	def enable_pose (self, enable):
+		self.pose_enabled = enable
 

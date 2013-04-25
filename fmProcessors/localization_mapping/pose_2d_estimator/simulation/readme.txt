@@ -22,11 +22,11 @@ once to create symbolic links to external python libraries used in the simulatio
 
 to make sure that all sensor data are available for the simulation. You will have to quit manually when the rosbag doesn't publish more messages. Then run:
 
-	sim_bag_to_csv.py
+	import_bag_to_csv.py
 
 once to export rosbag data to a suitable comma delimited format. Now you may run 
 
-	robot_drive_sim.py
+	run_simulation.py
 
 to perform the actual simulation.
 
