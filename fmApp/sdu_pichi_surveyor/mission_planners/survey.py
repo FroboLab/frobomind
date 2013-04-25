@@ -31,7 +31,7 @@
 # 23-Apr 2013 Leon: Updated to use tf instead of odom topic
 #
 #****************************************************************************/
-import rospy,smach,smach_ros,actionlib,threading
+import rospy,smach,smach_ros,actionlib,threading,tf
 from wii_interface import wii_interface 
 from surveyor_smach.behaviours import measure_point
 from generic_smach.states import wii_states

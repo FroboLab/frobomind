@@ -4,13 +4,13 @@
 	
     <!-- Monitors -->
     <!--node name="rosbag_player" pkg="rosbag" type="play" args="$(find sdu_pichi_surveyor)/bags/test22-04-so.bag" respawn="true"/-->
-    <node name="rosbag_recorder" pkg="rosbag" type="record" args="-e fmData|usageMonitor -O $(find sdu_pichi_survey)/bags/survey.bag"/-->
+    <node name="rosbag_recorder" pkg="rosbag" type="record" args="-a -O $(find sdu_pichi_surveyor)/bags/survey.bag"/>
     <node name="usageMonitor" pkg="usage_monitor" type="usage_monitor_node">
         <param name="rate" value="4" />
     </node>
 
     <!-- Transforms -->
-    <node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 gps_frame map$
+    <node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 gps_frame map 100"/> 
     <node pkg="tf" type="static_transform_publisher" name="mast_broadcaster" args="-1.20 0 0 0 0 0 mast_top mast_bottom 100"/>
     <node pkg="sdu_pichi_remote" type="imu_tf_publisher.py" name="imu_broadcaster"/>
     
