@@ -4,10 +4,10 @@ project(differential_ifk)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
+find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -45,9 +45,9 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
+#   INCLUDE_DIRS include
 #  LIBRARIES differential_ifk
-#  CATKIN_DEPENDS msgs roscpp rospy
+  CATKIN_DEPENDS roscpp geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -69,7 +69,7 @@ include_directories(include
  add_executable(differential_ifk_node src/differential_ifk_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(differential_ifk_node ${PROJECT_NAME})
+ add_dependencies(differential_ifk_node ${PROJECT_NAME} geometry_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(differential_ifk_node

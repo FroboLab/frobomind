@@ -69,7 +69,7 @@ IF(EXISTS /usr/lib/libJAIFactory.so)
 add_executable(jai_camera_io_node src/jai_camera_io_node.cpp src/jai_ad-080ge.cc)
 
 ## Add dependencies to the executable
-add_dependencies(jai_camera_io_node ${PROJECT_NAME})
+add_dependencies(jai_camera_io_node ${PROJECT_NAME} std_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(jai_camera_io_node

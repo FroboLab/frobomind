@@ -67,7 +67,7 @@ catkin_package(
 # add_executable(sdu_sprayer_node src/sdu_sprayer_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(sdu_sprayer_node ${PROJECT_NAME})
+# add_dependencies(sdu_sprayer_node ${PROJECT_NAME} nav_msgs_gencpp visualization_msgs_gencpp msgs_gencpp actionlib_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(sdu_sprayer_node

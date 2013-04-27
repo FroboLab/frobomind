@@ -69,7 +69,7 @@ include_directories(include
 add_executable(leine_linde_encoder_node src/leine_linde_encoder_node.cpp src/LeineLindeEncoder.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(leine_linde_encoder_node ${PROJECT_NAME})
+add_dependencies(leine_linde_encoder_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(leine_linde_encoder_node

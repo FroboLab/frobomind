@@ -7,7 +7,7 @@ project(gps_gpgga)
 find_package(catkin REQUIRED COMPONENTS roscpp msgs std_msgs)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -69,7 +69,7 @@ include_directories(include
 add_executable(gps_gpgga_node src/gps_gpgga_node.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(gps_gpgga_node ${PROJECT_NAME})
+add_dependencies(gps_gpgga_node ${PROJECT_NAME} msgs_gencpp std_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(gps_gpgga_node

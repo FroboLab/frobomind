@@ -4,7 +4,7 @@ project(roboteq)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp)
+find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs std_msgs msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -47,7 +47,7 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp)
 catkin_package(
    INCLUDE_DIRS include
   LIBRARIES roboteq
-#  CATKIN_DEPENDS msgs roscpp
+  CATKIN_DEPENDS roscpp geometry_msgs std_msgs msgs
 #  DEPENDS system_lib
 )
 
@@ -69,7 +69,7 @@ include_directories(include
 # add_executable(roboteq_node src/roboteq_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(roboteq_node ${PROJECT_NAME})
+# add_dependencies(roboteq_node ${PROJECT_NAME} geometry_msgs_gencpp std_msgs_gencpp msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(roboteq_node

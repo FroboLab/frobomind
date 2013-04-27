@@ -4,7 +4,7 @@ project(generic_smach)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs rospy)
+find_package(catkin REQUIRED COMPONENTS rospy wiimote_interface smach smach_ros)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -47,7 +47,7 @@ find_package(catkin REQUIRED COMPONENTS msgs rospy)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES generic_smach
-#  CATKIN_DEPENDS msgs rospy
+  CATKIN_DEPENDS rospy wiimote_interface smach smach_ros
 #  DEPENDS system_lib
 )
 

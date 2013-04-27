@@ -4,7 +4,7 @@ project(sdu_frobit_casmo)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS smach generic_smach wiimote_interface)
+find_package(catkin REQUIRED COMPONENTS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -47,7 +47,7 @@ find_package(catkin REQUIRED COMPONENTS smach generic_smach wiimote_interface)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES sdu_frobit
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives
 #  DEPENDS system_lib
 )
 

@@ -7,7 +7,7 @@ project(occupancy_grid_utils)
 find_package(catkin REQUIRED roscpp message_generation std_msgs geometry_msgs nav_msgs sensor_msgs tf laser_geometry)
 
 ## System dependencies are found with CMake's conventions
- find_package(Boost REQUIRED COMPONENTS system)
+ find_package(Boost REQUIRED)
  find_package(Eigen REQUIRED)
  include_directories(${Eigen_INCLUDE_DIRS})
 
@@ -18,6 +18,7 @@ find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})                    
 
 add_library(occupancy_grid_utils src/boost_python_exports.cpp)
+add_dependencies(occupancy_grid_utils LocalizedCloud_gencpp NavigationFunction_gencpp OverlayClouds_gencpp std_msgs_gencpp geometry_msgs_gencpp nav_msgs_gencpp sensor_msgs_gencpp)
 target_link_libraries(occupancy_grid_utils grid_utils)
 target_link_libraries(occupancy_grid_utils ${PYTHON_LIBRARIES})
 #link_boost(occupancy_grid_utils python)
@@ -82,11 +83,13 @@ add_library(grid_utils src/ray_tracer.cpp
                                 src/combine_grids.cpp
                                 src/geometry.cpp
                                 src/file.cpp)
+add_dependencies(grid_utils occupancy_grid_utils_gencpp std_msgs_gencpp geometry_msgs_gencpp nav_msgs_gencpp sensor_msgs_gencpp)
  target_link_libraries(grid_utils SDL SDL_image ${catkin_LIBRARIES})
  
 ## Declare a cpp executable
  add_executable(grid_construction_node src/examples/grid_construction_node.cpp)
- target_link_libraries(grid_construction_node grid_utils)
+ add_dependencies(grid_construction_node ${PROJECT_NAME} std_msgs_gencpp geometry_msgs_gencpp nav_msgs_gencpp sensor_msgs_gencpp)
+ target_link_libraries(grid_construction_node occupancy_grid_utils)
                       
 
 #############

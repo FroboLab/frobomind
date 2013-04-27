@@ -69,7 +69,7 @@ include_directories(include
  add_executable(sdu_pichi_node src/sdu_pichi_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(sdu_pichi_node ${PROJECT_NAME})
+ add_dependencies(sdu_pichi_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(sdu_pichi_node

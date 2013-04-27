@@ -4,7 +4,7 @@ project(velocity_control)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS  msgs rospy)
+find_package(catkin REQUIRED COMPONENTS rospy simple_2d_math geometry_msgs tf)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -47,7 +47,7 @@ find_package(catkin REQUIRED COMPONENTS  msgs rospy)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES position_action_server
-# CATKIN_DEPENDS actionlib actionlib_msgs
+ CATKIN_DEPENDS rospy simple_2d_math geometry_msgs tf
 #  DEPENDS system_lib
 )
 

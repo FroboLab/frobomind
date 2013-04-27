@@ -70,7 +70,7 @@ include_directories(include
 add_executable(bluetooth_node src/bluetooth_node.cpp src/Bluetooth.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(bluetooth_node ${PROJECT_NAME})
+ add_dependencies(bluetooth_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(bluetooth_node

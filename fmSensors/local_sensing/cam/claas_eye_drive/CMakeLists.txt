@@ -69,7 +69,7 @@ include_directories(include
  add_executable(class_eye_drive_node src/eye_drive.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(class_eye_drive_node ${PROJECT_NAME})
+ add_dependencies(class_eye_drive_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(class_eye_drive_node

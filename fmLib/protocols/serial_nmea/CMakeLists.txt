@@ -67,7 +67,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_executable(nmea_node src/nmea_node.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(nmea_node ${PROJECT_NAME})
+add_dependencies(nmea_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(nmea_node

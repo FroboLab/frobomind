@@ -66,7 +66,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 ## Declare a cpp executable
 IF(EXISTS /usr/lib/libLMS1xx.so)
     add_executable(sick_lms111_node src/lms111_node.cpp)
-    add_dependencies(sick_lms111_node ${PROJECT_NAME})
+    add_dependencies(sick_lms111_node ${PROJECT_NAME} sensor_msgs_gencpp geometry_msgs_gencpp)
     target_link_libraries(sick_lms111_node /usr/lib/libLMS1xx.so ${catkin_LIBRARIES})
 ENDIF(EXISTS /usr/lib/libLMS1xx.so)
 

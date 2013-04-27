@@ -54,7 +54,7 @@ generate_dynamic_reconfigure_options(cfg/lidar_row_extractor.cfg)
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES row_extractor
-#  CATKIN_DEPENDS dynamic_reconfigure msgs geometry_msgs laser_filters laser_geometry pcl roscpp sensor_msgs tf visualization_msgs
+  CATKIN_DEPENDS dynamic_reconfigure msgs geometry_msgs laser_geometry pcl_ros roscpp sensor_msgs tf visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -77,7 +77,7 @@ include_directories(include
 add_executable(lidar_row_extractor_node src/ransac_row_node.cpp src/ransac_extractor.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(lidar_row_extractor_node ${PROJECT_NAME})
+add_dependencies(lidar_row_extractor_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp visualization_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(lidar_row_extractor_node

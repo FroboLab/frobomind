@@ -69,7 +69,7 @@ IF(EXISTS /usr/include/can4linux.h)
  add_executable(can_can4linux_node src/can_can4linux.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(can_can4linux_node ${PROJECT_NAME})
+ add_dependencies(can_can4linux_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(can_can4linux_node

@@ -70,7 +70,7 @@ catkin_package(
 # add_executable(action_primitives_node src/action_primitives_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(action_primitives_node ${PROJECT_NAME})
+# add_dependencies(action_primitives_node ${PROJECT_NAME} actionlib_msgs_gencpp msgs_gencpp geometry_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(action_primitives_node

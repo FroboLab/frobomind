@@ -4,11 +4,11 @@ project(sdu_vibro_crop)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs msgs roscpp)
+find_package(catkin REQUIRED COMPONENTS message_generation roscpp msgs actionlib actionlib_msgs)
 
 add_action_files(DIRECTORY action FILES move_tool_simple.action)
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -53,7 +53,7 @@ add_action_files(
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES kongskilde_rowcleaner
-  CATKIN_DEPENDS actionlib_msgs
+  CATKIN_DEPENDS roscpp msgs actionlib actionlib_msgs
 #  DEPENDS actionlib
 )
 
@@ -75,7 +75,7 @@ include_directories(include
  add_executable(kongskilde_rowcleaner_controller_node src/kongskilde_rowcleaner_node.cpp src/kongskilderowcleaner.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(kongskilde_rowcleaner_controller_node ${PROJECT_NAME})
+ add_dependencies(kongskilde_rowcleaner_controller_node ${PROJECT_NAME} ${PROJECT_NAME}_gencpp msgs_gencpp actionlib_msgs_gencpp move_tool_simple_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(kongskilde_rowcleaner_controller_node

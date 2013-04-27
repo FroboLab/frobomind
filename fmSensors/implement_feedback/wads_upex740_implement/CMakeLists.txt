@@ -73,7 +73,7 @@ add_executable(wads_implement_node src/wads_implement_simulator_node.cpp src/wad
 add_executable(wads_implement_visualizer src/wads_implement_visualizer_node.cpp src/wads_implement_visualizer.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(wads_implement_node ${PROJECT_NAME})
+add_dependencies(wads_implement_node ${PROJECT_NAME} sensor_msgs_gencpp std_msgs_gencpp)
 add_dependencies(wads_implement_visualizer ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against

@@ -73,7 +73,7 @@ cfg/cpp
  add_executable(line_executer_node src/rabbitPlanner_node.cpp src/rabbitPlanner.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(line_executer_node ${PROJECT_NAME})
+ add_dependencies(line_executer_node ${PROJECT_NAME} actionlib_msgs_gencpp msgs_gencpp nav_msgs_gencpp visualization_msgs_gencpp std_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(line_executer_node

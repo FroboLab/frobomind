@@ -70,7 +70,7 @@ include_directories(include
  add_executable(can_socketcan_node src/can_socketcan_node.cpp src/SocketCan.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(can_socketcan_node ${PROJECT_NAME})
+ add_dependencies(can_socketcan_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(can_socketcan_node

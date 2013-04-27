@@ -7,7 +7,7 @@ project(gpgga_to_utm)
 find_package(catkin REQUIRED COMPONENTS msgs roscpp gps_conversions_lib)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -69,7 +69,7 @@ include_directories(include
  add_executable(gpgga_to_utm_node src/gpgga_to_utm_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(gpgga_to_utm_node ${PROJECT_NAME})
+ add_dependencies(gpgga_to_utm_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(gpgga_to_utm_node

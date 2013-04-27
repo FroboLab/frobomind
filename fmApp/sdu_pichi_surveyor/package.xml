@@ -40,6 +40,13 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend>
+  <build_depend>rospy</build_depend>
+  <run_depend>rospy</run_depend>
+  <build_depend>msgs</build_depend>
+  <run_depend>msgs</run_depend>
   <build_depend>smach</build_depend>
   <run_depend>smach</run_depend>
   <build_depend>smach_ros</build_depend>
@@ -50,6 +57,8 @@
   <run_depend>generic_smach</run_depend>
   <build_depend>action_primitives</build_depend>
   <run_depend>action_primitives</run_depend>
+  <build_depend>line_action_server</build_depend>
+  <run_depend>line_action_server</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

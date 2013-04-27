@@ -4,7 +4,7 @@ project(sparkfun_razor_9dof)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
+find_package(catkin REQUIRED COMPONENTS msgs sensor_msgs roscpp rospy)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -69,7 +69,7 @@ include_directories(include
 add_executable(sparkfun_9dof_node src/sparkfun_9dof_node.cpp src/sparkfun_9dof.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(sparkfun_9dof_node ${PROJECT_NAME})
+add_dependencies(sparkfun_9dof_node ${PROJECT_NAME} msgs_gencpp sensor_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(sparkfun_9dof_node

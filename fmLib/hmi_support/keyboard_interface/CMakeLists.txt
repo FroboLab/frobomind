@@ -66,7 +66,7 @@ catkin_package(
  add_executable(keyboard_node src/keyboardEventListener.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(keyboard_node ${PROJECT_NAME})
+ add_dependencies(keyboard_node ${PROJECT_NAME} std_msgs_gencpp msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(keyboard_node

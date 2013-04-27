@@ -69,7 +69,7 @@ include_directories(include
  add_executable(hakotrac_psp_node src/EXSInterface_node.cpp src/EXSInterface.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(hakotrac_psp_node ${PROJECT_NAME})
+ add_dependencies(hakotrac_psp_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(hakotrac_psp_node

@@ -70,7 +70,7 @@ include_directories(include
 add_executable(serial_string_node src/serial_string.cpp src/serialInterface.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(serial_string_node ${PROJECT_NAME})
+ add_dependencies(serial_string_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(serial_string_node

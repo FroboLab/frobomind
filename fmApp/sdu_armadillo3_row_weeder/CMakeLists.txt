@@ -4,7 +4,7 @@ project(sdu_armadillo3_row_weeder)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
+find_package(catkin REQUIRED COMPONENTS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -50,7 +50,7 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp rospy)
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES sdu_armadillo3_row_weeder
-#  CATKIN_DEPENDS msgs roscpp rospy
+  CATKIN_DEPENDS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives
 #  DEPENDS system_lib
 )
 

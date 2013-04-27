@@ -68,7 +68,7 @@ catkin_package(
  add_executable(grids_combined_node src/grids_combined.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(grids_combined_node ${PROJECT_NAME})
+ add_dependencies(grids_combined_node ${PROJECT_NAME} LocalizedCloud_gencpp NavigationFunction_gencpp OverlayClouds_gencpp nav_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(grids_combined_node

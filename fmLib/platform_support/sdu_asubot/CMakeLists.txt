@@ -69,7 +69,7 @@ include_directories(include
  add_executable(asubot_node src/ASuBot_twist_to_angle_cmd.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(asubot_node ${PROJECT_NAME})
+ add_dependencies(asubot_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpps)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(asubot_node

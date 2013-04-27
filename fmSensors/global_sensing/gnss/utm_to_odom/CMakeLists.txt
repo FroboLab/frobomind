@@ -69,7 +69,7 @@ include_directories(include
  add_executable(utm_to_odom_node src/utm_to_odom.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(utm_to_odom_node ${PROJECT_NAME})
+ add_dependencies(utm_to_odom_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp nav_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(utm_to_odom_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
