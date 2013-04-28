@@ -24,7 +24,15 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-****************************************************************************/
+****************************************************************************
+# Change log:
+# 27-Apr 2013 Leon Bonde Larsen: Renamed parameters for frame_id's
+# 28-Apr 2013 Leon Bonde Larsen: Added parameter for publishing orientation
+#
+#
+#
+***************************************************************************/
+
 #include <ros/ros.h>
 #include <msgs/gpgga_utm.h>
 #include <nav_msgs/Odometry.h>
@@ -58,7 +66,7 @@ tf::TransformBroadcaster *odom_broadcaster;
 std::string frame_id,child_frame_id,tf_child_frame_id,tf_frame_id;
 
 
-bool publish_relative = false;
+bool publish_relative = false, publish_heading = true;
 bool utm_settled=false;
 int utm_settled_count = 0;
 int utm_settled_count_top = 0;
@@ -71,9 +79,7 @@ bool calculate_heading(double& heading)
 {
 	bool ret = false;
 
-
-
-	if(gps_points_buffer.capacity() == gps_points_buffer.size())
+	if(gps_points_buffer.capacity() == gps_points_buffer.size() && publish_heading)
 	{
 		gps_points_t p_comp = gps_points_buffer[0];
 
@@ -193,14 +199,16 @@ int main(int argc, char **argv)
 	n.param<std::string>("odom_frame_id",frame_id,"odom_combined");
 	n.param<std::string>("child_odom_frame_id",child_frame_id,"gps_link");
 	n.param<bool>("publish_relative_coordinates",publish_relative,false);
+	n.param<bool>("publish_heading",publish_heading,true);
+
 	n.param<int>("receive_n_before_publish",utm_settled_count_top,3);
 	n.param<double>("gps_variance",gps_variance,1);
 
 	n.param<double>("gps_heading_threshold",heading_threshold,1);
 	n.param<double>("gps_heading_variance",heading_variance,0.01);
 
-	n.param<std::string>("vehicle_frame",tf_child_frame_id,"base_footprint");
-	n.param<std::string>("odom_estimate_frame",tf_frame_id,"/odom_combined");
+	n.param<std::string>("tf_child_frame",tf_child_frame_id,"base_footprint");
+	n.param<std::string>("tf_frame_id",tf_frame_id,"/odom_combined");
 
 	ros::Subscriber sub = n.subscribe(subscribe_topic_id, 10, utmCallback);
 	odom_pub = n.advertise<nav_msgs::Odometry>(publish_topic_id, 1);

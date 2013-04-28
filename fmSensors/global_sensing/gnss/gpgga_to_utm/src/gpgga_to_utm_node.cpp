@@ -45,6 +45,7 @@ void gpsStateCallback(const msgs::gpgga::ConstPtr& msg)
 {
 	// save current time
 	gpgga_utm_msg.header.stamp = ros::Time::now();
+	gpgga_utm_msg.header.frame_id = frame_id;
 
 	// import data from the gpgga topic
 	gpgga_utm_msg.time_recv = msg->header.stamp;
@@ -85,7 +86,7 @@ int main(int argc, char **argv)
 
 	n.param<std::string> ("subscribe_topic_id", subscribe_topic_id, "fmInformation/gpgga_msg");
 	n.param<std::string> ("publish_topic_id", publish_topic_id, "fmInformation/gpgga_utm_msg");
-//	n.param<std::string> ("frame_id", frame_id, "/base");
+	n.param<std::string> ("frame_id", frame_id, "/base");
 
 	ros::Subscriber sub = n.subscribe(subscribe_topic_id, 1, gpsStateCallback);
 	gpgga_utm_pub = n.advertise<msgs::gpgga_utm> (publish_topic_id, 1);
