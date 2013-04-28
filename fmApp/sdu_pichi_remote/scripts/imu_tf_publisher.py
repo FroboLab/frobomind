@@ -33,15 +33,20 @@ from simple_2d_math.vector import Vector
 from pylab import ion
 import matplotlib.pyplot as pyplot
 from sensor_msgs.msg import Imu
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Quaternion,Point
 
 class IMUTransformPublisher():
     def __init__(self):        
         # Init transform
         self.br = tf.TransformBroadcaster()
         self.quaternion = np.empty((4, ), dtype=np.float64)
+        self.odom_msg = Odometry()
+        self.tf = tf.TransformListener()
         
         # Init subscriber
         self.imu_sub = rospy.Subscriber('/fmInformation/imu', Imu, self.onImu )
+        self.odom_pub = rospy.Publisher('/fmKnowledge/odom_combined', Odometry)
 
 
     def multiply(self,q1,q2):
@@ -61,22 +66,38 @@ class IMUTransformPublisher():
         return new
                 
     
-    def onImu(self,msg):
-        self.quaternion[0] = msg.orientation.x
-        self.quaternion[1] = msg.orientation.y
-        self.quaternion[2] = msg.orientation.z
-        self.quaternion[3] = msg.orientation.w
+    def onImu(self,msg):       
+        # Z-axis is flipped due to ENU        
+        self.quaternion[0] = -msg.orientation.x
+        self.quaternion[1] = -msg.orientation.y
+        self.quaternion[2] = -msg.orientation.z
+        self.quaternion[3] = -msg.orientation.w
         
-        rot = self.quat(0,0,1,math.pi/3)
+        rot = self.quat(0,1,0,math.pi/3)
+        self.quaternion = self.multiply(self.quaternion, rot)
+        rot = self.quat(1,0,0,math.pi/3)
+        self.quaternion = self.multiply(self.quaternion, rot)
+        rot = self.quat(0,0,1,(2*math.pi)/3)
         self.quaternion = self.multiply(self.quaternion, rot)
 
         self.br.sendTransform((0,0,0),
                      self.quaternion,
                      rospy.Time.now(),
-                     "mast_top",
-                     "map")
-     
-    
+                     "map",
+                     "mast_top")
+        
+        try:
+            (position,orientation) = self.tf.lookupTransform("world_frame","mast_bottom", rospy.Time(0)) 
+            self.odom_msg.header.stamp = rospy.Time.now()
+            self.odom_msg.header.frame_id = 'world_frame'
+            self.odom_msg.child_frame_id = 'mast_bottom'
+            self.odom_msg.pose.pose.position = Point(position[0],position[1],0)
+            self.odom_msg.pose.pose.orientation = Quaternion(orientation[0],orientation[1],orientation[2],orientation[3])
+            self.odom_pub.publish(self.odom_msg)
+        except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
+            rospy.loginfo("Transform error: %s",err)
+            
+                
 if __name__ == '__main__':
     rospy.init_node('imu_transform_pub')
     imu = IMUTransformPublisher()

@@ -1,0 +1,18 @@
+<launch>  
+	
+	<node pkg="tf" type="static_transform_publisher" name="gps_broadcaster" args="588599.0922487933 6137322.245287642 0 0 0 0 gps_frame world_frame 100"/> 
+    <node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 map gps_frame 100"/>   
+    <node pkg="tf" type="static_transform_publisher" name="mast_top_broadcaster" args="0 0 0 0 0 0 mast_top map 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="mast_bottom_broadcaster" args="1.20 0 0 0 0 0 mast_bottom mast_top 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="base_broadcaster" args="0 0 0 0 0 0 base_footprint mast_bottom 100"/>
+    
+    <!--
+    <node pkg="tf" type="static_transform_publisher" name="gps_broadcaster" args="588599.0922487933 6137322.245287642 0 0 0 0 world_frame gps_frame 100"/> 
+    <node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 gps_frame map 100"/>   
+    <node pkg="tf" type="static_transform_publisher" name="mast_top_broadcaster" args="0 0 0 0 0 0 map mast_top 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="mast_bottom_broadcaster" args="-1.20 0 0 0 0 0 mast_top mast_bottom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="base_broadcaster" args="0 0 0 0 0 0 mast_bottom base_footprint 100"/>
+    -->
+</launch>
+                
+        

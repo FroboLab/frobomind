@@ -4,7 +4,7 @@
 	<!--node name="rosbag_player" pkg="rosbag" type="play" args="$(find sdu_pichi_surveyor)/bags/input_only.bag" respawn="true"/-->
 	<!--node name="rosbag_recorder" pkg="rosbag" type="record" args="-a -F $(find sdu_pichi_surveyor)/bags/" /-->
 	
-	<node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 gps_frame map 100"/>
+	<node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="-588599.0922487933 -6137322.245287642 0 0 0 0 map gps_frame 100"/>
 	<node pkg="tf" type="static_transform_publisher" name="mast_broadcaster" args="-1.20 0 0 0 0 0 mast_top mast_bottom 100"/>
 
 	<!-- IMU -->

@@ -38,7 +38,7 @@ import matplotlib.pyplot as pyplot
 from sensor_msgs.msg import Imu
 
 class Test():
-    def __init__(self,file):
+    def __init__(self):
         # Task parameters
         self.running = True
         
@@ -50,33 +50,18 @@ class Test():
         # init plot
         self.fig = pyplot.figure(num=None, figsize=(8, 8), dpi=80, facecolor='w', edgecolor='k')
         self.area = 2
+        pyplot.axis('equal')
+        pyplot.grid()
         ion()
         
         # Init transform
         self.tf = tf.TransformListener()
-        self.br = tf.TransformBroadcaster()
         self.quaternion = np.empty((4, ), dtype=np.float64)
         
         # Init node
-        self.rate = rospy.Rate(10)
-        
-        # Init subscriber
-        self.imu_sub = rospy.Subscriber('/fmInformation/imu', Imu, self.onImu )
-        
-        # Init stat
-        self.file = file
-        self.deviations = []    
-            
-    def initPlot(self):
-        pyplot.axis('equal')
-        pyplot.axis([self.origin[0]-self.area/2,self.origin[0]+self.area/2,self.origin[1]-self.area/2,self.origin[1]+self.area/2])
-        pyplot.grid()
-        
+        self.rate = rospy.Rate(10)    
         
     def spin(self):
-        rospy.sleep(1)
-        self.update()
-        self.origin = self.current
         while self.running:
             
             self.update()
@@ -90,14 +75,11 @@ class Test():
                 self.rate.sleep()
             except rospy.ROSInterruptException:
                 self.running = False
-        
-        self.saveList()
 
     def update(self):  
         try:
             now = rospy.Time.now() - rospy.Duration(0.5)
-#            (position,orientation) = self.tf.lookupTransform("mast_bottom", "map",rospy.Time(0)) 
-            (position,orientation) = self.tf.lookupTransform("mast_top", "map",rospy.Time(0))
+            (position,orientation) = self.tf.lookupTransform("world_frame","mast_bottom", rospy.Time(0))
             self.current = Vector(position[0],position[1])               
         except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
             rospy.loginfo("Transform error: %s",err)     
@@ -106,72 +88,10 @@ class Test():
     def draw(self):
         pyplot.plot(self.current[0],self.current[1], 'ro')
         pyplot.draw()  
-        self.position_list.append( [self.current[0] , self.current[1]] )
-        self.deviations.append((self.current - self.origin).length())
-            
 
-    def multiply(self,q1,q2):
-        """
-            x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
-            y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
-            z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
-            w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-        """
-        result = np.empty((4, ), dtype=np.float64)
-        result[0] = q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1]
-        result[1] = q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2]
-        result[2] = q1[3] * q2[2] + q1[2] * q2[3] + q1[0] * q2[1] - q1[1] * q2[0]
-        result[3] = q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]
-        return result
-    
-    def quat(self,x,y,z,w):
-        new = np.empty((4, ), dtype=np.float64)
-        new[0] = x
-        new[1] = y
-        new[2] = z
-        new[3] = w
-        return new
-                
-    
-    def onImu(self,msg):
-        self.quaternion[0] = msg.orientation.x
-        self.quaternion[1] = msg.orientation.y
-        self.quaternion[2] = msg.orientation.z
-        self.quaternion[3] = msg.orientation.w
-        
-#        (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
-#        print((roll,pitch,yaw))
-#        self.quaternion = tf.transformations.quaternion_from_euler(roll,pitch,0)
-        
-        rot = self.quat(0,1,0,-math.pi/2)
-        self.quaternion = self.multiply(self.quaternion, rot)
-        
-        rot = self.quat(0,0,1,-math.pi/2)
-        self.quaternion = self.multiply(self.quaternion, rot)
-        
-#        self.quaternion[0] = msg.orientation.w * 0 + msg.orientation.x * math.pi/2 + msg.orientation.y * 1 - msg.orientation.z * 1
-#        self.quaternion[1] = msg.orientation.w * 1 + msg.orientation.y * math.pi/2 + msg.orientation.z * 0 - msg.orientation.x * 1
-#        self.quaternion[2] = msg.orientation.w * 1 + msg.orientation.z * math.pi/2 + msg.orientation.x * 1 - msg.orientation.y * 0
-#        self.quaternion[3] = msg.orientation.w * math.pi/2 - msg.orientation.x * 0 - msg.orientation.y * 1 - msg.orientation.z * 1
-
-
-        self.br.sendTransform((0,0,0),
-                     self.quaternion,
-                     rospy.Time.now(),
-                     "mast_top",
-                     "imu_link")
-        
-    def saveList(self):
-        with open(self.file, 'wb') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',', quotechar=' ' , quoting=csv.QUOTE_MINIMAL)
-            writer.writerow([self.origin[0],self.origin[1]])
-            writer.writerows(self.position_list)
-            print("Data saved to " + self.file)  
-        avg = sum(self.deviations)/len(self.deviations)
-        rospy.loginfo("Average deviation: %f m",avg)
     
 if __name__ == '__main__':
     rospy.init_node('gps_test')
-    test = Test( str(sys.argv[1]) )
+    test = Test()
     test.spin()
 
