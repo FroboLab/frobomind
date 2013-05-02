@@ -38,6 +38,7 @@
 #                 now supporting odometry, imu angular rate and imu_orientation
 #                 as yaw angle source
 #                 now supporting x,y,z as angular rate yaw axis (including inverted)
+# 2013-05-02 kjen Added support for absolute encoder values
 #
 #****************************************************************************/
 // includes
@@ -61,6 +62,10 @@
 
 #define M_PI2					2*M_PI
 
+#define ENCODER_OUTPUT_RELATIVE	1
+#define ENCODER_OUTPUT_ABSOLUTE	2
+
+
 #define YAW_AXIS_X 				1
 #define YAW_AXIS_X_INVERTED			2
 #define YAW_AXIS_Y				3
@@ -77,10 +82,11 @@ using namespace std;
 class SimpleOdom
 {
 public:
-	SimpleOdom(double tick_to_meter, double wheel_dist, int yaw_source, int yaw_axis)
+	SimpleOdom(double tick_to_meter, double wheel_dist, int encoder_output, int yaw_source, int yaw_axis)
 	{
 		this->tick_to_meter = tick_to_meter;
 		this->wheel_dist = wheel_dist;
+		this->encoder_output = encoder_output;
 		this->yaw_source = yaw_source;
 		this->yaw_axis = yaw_axis;
 
@@ -93,7 +99,8 @@ public:
 		imu_timeout = false;
 	
 		time_launch = l_time_prev = r_time_prev = imu_time_prev = ros::Time::now();
-		l_updated = r_updated = l_ready = r_ready = false;
+		l_updated = r_updated = false;
+		l_first = r_first = true;
 	}
 
 	~SimpleOdom()
@@ -121,20 +128,50 @@ public:
 
 	void processLeftEncoder(const msgs::encoder::ConstPtr& msg)
 	{
-		l_time_prev = l_time_latest;
-		l_time_latest = ros::Time::now();
-		delta_l += msg->encoderticks;
-		prev_l = *msg;
-		l_updated = true;
+		if (encoder_output == ENCODER_OUTPUT_ABSOLUTE)
+		{
+			if (l_first == false)
+			{
+				delta_l += (msg->encoderticks - prev_l.encoderticks);
+				l_time_prev = l_time_latest;
+				l_time_latest = ros::Time::now();
+				l_updated = true;
+			}
+			else
+				l_first = false;
+			prev_l = *msg;
+		}
+		else
+		{
+			delta_l += msg->encoderticks;
+			l_time_prev = l_time_latest;
+			l_time_latest = ros::Time::now();
+			l_updated = true;
+		}
 	}
 
 	void processRightEncoder(const msgs::encoder::ConstPtr& msg)
 	{
-		r_time_prev = r_time_latest;
-		r_time_latest = ros::Time::now();
-		delta_r += msg->encoderticks;
-		prev_r = *msg;
-		r_updated = true;
+		if (encoder_output == ENCODER_OUTPUT_ABSOLUTE)
+		{
+			if (r_first == false)
+			{
+				delta_r += (msg->encoderticks - prev_r.encoderticks);
+				r_time_prev = r_time_latest;
+				r_time_latest = ros::Time::now();
+				r_updated = true;
+			}
+			else
+				r_first = false;
+			prev_r = *msg;
+		}
+		else
+		{
+			delta_r += msg->encoderticks;
+			r_time_prev = r_time_latest;
+			r_time_latest = ros::Time::now();
+			r_updated = true;
+		}
 	}
 
 	void processImu(const sensor_msgs::Imu::ConstPtr& msg)
@@ -190,6 +227,7 @@ public:
 		ros::Time time_now = ros::Time::now();
 		if(l_updated && r_updated)
 		{
+			l_updated = r_updated = false;
 			encoder_timeout = false;
 
 			// check if we are receiving IMU updates
@@ -216,13 +254,13 @@ public:
 			delta_l *= tick_to_meter; // convert from ticks to meter
 			delta_r *= tick_to_meter;
 
-			double dx = (delta_l + delta_r)/2; // approx. distance (assuming linear motion during dt)
+			double dx = (delta_l + delta_r)/2.0; // approx. distance (assuming linear motion during dt)
 			double dtheta;
 
 			// calculate change in orientation using odometry
 			if (yaw_source == YAW_SOURCE_ODOMETRY)
 			{
-				dtheta = (delta_r - delta_l)/wheel_dist; 
+				dtheta = (double) (delta_r - delta_l)/wheel_dist; 
 			}
 			else // or calculate change in orientation using IMU
 			{
@@ -230,14 +268,14 @@ public:
 				prev_imu_yaw = imu_yaw;
 			}
 
- 			delta_l = delta_r = 0;
 			double ang = theta + dtheta/2;
 			x += cos(ang)*dx; //update odometry given position of the robot
 			y += sin(ang)*dx;
 			theta += dtheta;
 			theta = angle_limit (theta); // keep theta within [0;2*pi[
 
-			// ROS_INFO("Odo %.3f %.3f %2f",x, y, theta);
+			//ROS_INFO("Odo %03.8f %03.8f %.3f %.3f %2f",delta_l, delta_r, x, y, theta);
+ 			delta_l = delta_r = 0;
 
    			//since all odometry is 6DOF we'll need a quaternion created from yaw
 			geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
@@ -281,13 +319,12 @@ public:
 
 private:
 	double tick_to_meter, wheel_dist;
-	int yaw_source, yaw_axis;
+	int encoder_output, yaw_source, yaw_axis;
 	double imu_yaw, prev_imu_yaw;
 	bool encoder_timeout, imu_timeout;
 	double delta_l, delta_r;
-	bool l_updated, r_updated;
+	bool l_updated, r_updated, l_first, r_first;
 	ros::Time time_launch, l_time_latest, l_time_prev, r_time_latest, r_time_prev, imu_time_latest, imu_time_prev;
-	bool l_ready, r_ready;
 	double x, y, theta;
 	msgs::encoder prev_l, prev_r;
 	nav_msgs::Odometry odom;
@@ -307,7 +344,7 @@ int main(int argc, char** argv) {
 
 	double wheel_radius, wheel_ticks_rev, tick_to_meter;
 	double wheel_dist;
-	int yaw_source, yaw_axis;
+	int encoder_output, yaw_source, yaw_axis;
 	ros::Subscriber s1,s2,s3;
 
 	// publishers
@@ -325,6 +362,25 @@ int main(int argc, char** argv) {
 	tick_to_meter = 2*M_PI*wheel_radius/wheel_ticks_rev;
 
 	// other parameters
+	std::string encoder_output_str;
+	nh.param<string>("encoder_output", encoder_output_str, "not initialized");
+	if ( encoder_output_str.compare ("relative") == 0)
+	{
+		encoder_output = ENCODER_OUTPUT_RELATIVE;
+		ROS_INFO("%s Encoder output: Relative", IDENT);
+	}
+	else if ( encoder_output_str.compare ("absolute") == 0)
+	{
+		encoder_output = ENCODER_OUTPUT_ABSOLUTE;
+		ROS_INFO("%s Encoder output: Absolute", IDENT);
+	}
+	else
+	{
+		encoder_output = ENCODER_OUTPUT_RELATIVE;
+		ROS_WARN("%s Encoder output: Unknown, defaults to relative", IDENT);
+	}
+
+
 	std::string yaw_source_str;
 	nh.param<string>("yaw_angle_source", yaw_source_str, "not initialized");
 	if ( yaw_source_str.compare ("odometry") == 0)
@@ -389,7 +445,7 @@ int main(int argc, char** argv) {
 	}
 
 	// init class
-	SimpleOdom p(tick_to_meter, wheel_dist, yaw_source, yaw_axis);
+	SimpleOdom p(tick_to_meter, wheel_dist, encoder_output, yaw_source, yaw_axis);
 
 	// subscriber callback functions
 	s1 = nh.subscribe(subscribe_enc_l,15,&SimpleOdom::processLeftEncoder,&p);

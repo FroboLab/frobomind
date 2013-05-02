@@ -3,6 +3,10 @@
 This launch file serves as an example on how to launch the differential_odometry_node
 and describes some of the launch parameters.
 
+encoder_output options:
+	relative		(encoder value is reset after each published message)
+	absolute		(encoder value is published as an absolute value)
+
 yaw_angle_source options:
 	odometry		(estimate the yaw angle from wheel odometry)
 	imu_angular_velocity	(extimate the yaw angle using angular velocity from sensor_msgs/Imu.msg)
@@ -29,6 +33,7 @@ imu_angular_velocity_yaw_axis options:
 			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/odom" />
+			<param name="encoder_output" value="relative"></param>  
 			<param name="yaw_angle_source" value="imu_angular_velocity"></param>  
 			<param name="imu_angular_velocity_yaw_axis" value="z"></param> 
 			<param name="vehicle_frame" value="base_footprint"></param>      
