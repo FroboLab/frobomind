@@ -7,6 +7,7 @@ This launch file generates a simulation bag which contains output from:
 
 <launch>
 	<!-- Armadillo Pichi parameters --> 
+	<param name="robot_max_velocity" value="1.0"/>
 	<param name="diff_steer_wheel_radius" value="0.159"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="1157"/>
 	<param name="diff_steer_wheel_distance" value="0.84"/>
@@ -18,9 +19,6 @@ This launch file generates a simulation bag which contains output from:
 		<node pkg="rosbag" name="sensors" type="play" args="--start=12 --rate=1 --clock $(find pose_2d_estimator)/bags/test01.bag">
 			<remap from="/rosbag/clock" to="/clock"/> <!-- should not be necessary but it is...!!! -->
 		</node>
-
-		<!-- rosbag the output for simulation -->
-		<node pkg="rosbag" name="record" type="record" args="-O $(find pose_2d_estimator)/simulation/sim.bag /fmKnowledge/encoder_odom /fmInformation/gpgga /fmInformation/imu /fmInformation/enc_left /fmInformation/enc_right"/>
 	</group>
 
 	<group ns="fmSensors">
@@ -36,6 +34,24 @@ This launch file generates a simulation bag which contains output from:
 	</group>
 
 	<group ns="fmProcessors">
+
+		<!-- estimate robot 2d position -->
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+
+			<!-- see transverse mercator library for details about these parameters -->
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="1/298.257223563" />
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />

@@ -2,11 +2,8 @@ from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
-  scripts=['src/show_estimator_node.py'],
-)
-
+  scripts=['src/pose_2d_estimator_node.py'],
+  packages=['pose_2d_estimator'],
+  package_dir={'':'src'}
+  )
 setup(**d)
-
-
-
-

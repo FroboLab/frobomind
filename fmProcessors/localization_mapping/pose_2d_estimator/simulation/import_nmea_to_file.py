@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# Pose 2D Estimator - Simulation import classes
+# sim_bag_to_csv
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,67 +27,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 """
-Revision
-2013-04-23 KJ First version
+This script extract relevant data from a rosbag and saves it in csv files.
 """
-
 # imports
-import csv
+import roslib
+import rosbag
+from tf.transformations import euler_from_quaternion
+from geometry_msgs.msg import Quaternion
 
-class odometry_data():
-	def __init__(self, filename, max_lines):
-		self.i = 0
-		print 'Importing odometry data'
-		file = open(filename, 'rb')
-		file_content = csv.reader(file, delimiter=',')
-	 	self.data = []
-		i = 0
-		for time, x, y, yaw in file_content:
-			self.data.append([float(time), float(x), float(y), float(yaw)])
-			i += 1
-			if max_lines > 0 and i == max_lines:
-				break
-		file.close()
-		self.length = len(self.data)
-		print '\tTotal samples: %d' % (self.length) 
-
-	def get_latest(self, time):
-		new_data = 0
-		while self.i < self.length and self.data[self.i][0] <= time:
-			# print ('  Odometry time: %f' % (self.data[self.i][0]))
-			self.i += 1
-			new_data += 1
-		return (new_data, self.data[self.i-1])
+bag = rosbag.Bag ('../bags/survey.bag')
 
 
-class gnss_data:
-	def __init__(self, filename, max_lines, relative_coordinates):
-		self.i = 0
-		print 'Importing GPS data'
-		file = open(filename, 'rb')
-		file_content = csv.reader(file, delimiter=',')
-	 	self.data = []
-		i = 0
-		origo_e = 0
-		origo_n = 0
-		for time, lat, lon, fix, sat, hdop in file_content:
-			self.data.append([float(time), float(lat), float(lon), \
-				int(fix), int(sat), float(hdop)])
-			i += 1
-			if max_lines > 0 and i == max_lines:
-				break
-		file.close()
-		self.length = len(self.data)
-		print '\tTotal samples: %d' % (self.length) 
+# extract left encoder data
+f = open ('sim_nmea.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmData/gps_rx']):
+	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
+	f.write ('%d.%03d,%s\n' % (msg.header.stamp.secs,msecs, \
+		msg.data))
 
-	def get_latest(self, time):
-		new_data = 0
-		while self.i < self.length and self.data[self.i][0] <= time:
-			# print ('  GPS time: %f' % (self.data[self.i][0]))
-			self.i += 1
-			new_data += 1
-		if self.i < self.length:
-			return (new_data, self.data[self.i-1])
-		else:
-			return (0, False)
+
+bag.close()
+
 

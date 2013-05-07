@@ -44,12 +44,12 @@ from pose_2d_estimator_plot import estimator_plot
 
 # parameters
 odo_file = 'sim_odometry.txt'
-odo_max_lines = 0 # read the entire file
+odo_max_lines = 9000 # read the entire file
 gnss_file = 'sim_gnss.txt'
 gnss_max_lines = 0 # read the entire file
 sim_step_interval = 0.01 # 100 Hz
 relative_coordinates = True # first gnss coordinate set to (0,0)
-steps_btw_plot_updates = 600
+steps_btw_plot_updates = 500 # 5 seconds
 
 # return signed difference between new and old angle
 def angle_diff (angle_new, angle_old):
@@ -85,9 +85,9 @@ odometry = []
 gnss_sim = gnss_data(gnss_file, gnss_max_lines, relative_coordinates)
 gnss = []
 
-# define simulation time based on gnss data
-sim_offset = gnss_sim.data[0][0]
-sim_len = gnss_sim.data[-1][0] - sim_offset
+# define simulation time based on odometry data
+sim_offset = odo_sim.data[0][0]
+sim_len = odo_sim.data[-1][0] - sim_offset
 sim_steps = sim_len/sim_step_interval
 sim_time = 0
 print ('Simulation')
@@ -95,7 +95,17 @@ print ('  Step interval: %.2fs' % sim_step_interval)
 print ('  Total: %.2fs (%.0f steps)' % (sim_len, sim_steps))
 
 # initialize estimator (gnss preprocessing)
-gp = pose_2d_gnss_preprocessor()
+robot_max_speed = 3.0 # [m/s]
+
+wgs84_a = 6378137.0 # Equatorial radius, generic for WGS-84 datum
+wgs84_f = 1/298.257223563 # Flattening, generic for WGS-84 datum
+utm_fe = 500000.0 # False Easting, generic for UTM projection
+utm_scale = 0.9996 # Scale Factor, generic forUTM projection
+utm_orglat = 0.0 # Origin Latitude, generic for UTM projection
+utm32_cmer = 9.0 * pi/180.0 # By convention UTM32 (Central Meridian = 9deg) covers all of Denmark 
+utm32_fn =  0.0 # Northern hemisphere
+gp = pose_2d_gnss_preprocessor (robot_max_speed, wgs84_a, wgs84_f, utm_orglat, utm32_cmer, utm_fe, utm32_fn, utm_scale)
+gp.set_auto_offset (True)
 
 # initialize estimator (EKF)
 prev_odometry = [0.0, 0.0, 0.0, 0.0] # [time,X,Y,theta]
@@ -111,10 +121,9 @@ for step in xrange ((int(sim_steps)+1)):
 
     # update odometry position
 	(odo_updates, odometry) = odo_sim.get_latest(log_time) 
-	if odo_updates > 0:
-		odometry[1] = odometry[1]/1000.0 # STRANGE, MUST BE INVESTIGATED !!!!
-		odometry[2] = odometry[2]/1000.0 # STRANGE, MUST BE INVESTIGATED !!!!
-		
+	if odo_updates > 0:		
+		odometry[1] *=4.5 # BUT WHY??????????
+		odometry[2] *=4.5
 		# EKF system update (odometry)
 		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
 		delta_angle = angle_diff (odometry[3], prev_odometry[3])
@@ -125,24 +134,24 @@ for step in xrange ((int(sim_steps)+1)):
 
 		# plot update
 		plot.append_odometry_position(odometry[1], odometry[2])
-		plot.append_pose_position (pose[0], pose[1])
-		#print "  odometry: %.3f %.3f\n" % (odometry[1], odometry[2])
+		plot.append_pose_position (pose[0]+1.0, pose[1]+1.0)
+		# print "  odometry: %.3f %.3f %.3f, %3f, %3f" % (odometry[0], odometry[1], odometry[2], delta_dist, delta_angle)
 
     # update GNSS position
 	(gnss_updates, gnss_measurement) = gnss_sim.get_latest(log_time)
-	if gnss_updates > 0:
+	if gnss_updates > 0: # if new data available
+		if gnss_measurement[3] > 0: # if satellite fix
+			# GNSS data preprocessing
+			pos = gp.add_gnss_measurement (gnss_measurement)
+			if pos != False: # if no error
+				var_pos = gp.estimate_variance()
 
-		# GNSS data preprocessing
-		gp.add_gnss_measurement (gnss_measurement) 
-		pos = [gnss_measurement[6], gnss_measurement[7]]
-		var_pos = gp.estimate_variance()
+				# EKF measurement update (GNSS)
+				pose = ekf.measurement_update_gnss (pos, var_pos)
 
-		# EKF measurement update (GNSS)
-		pose = ekf.measurement_update_gnss (pos, var_pos)
-
-		# plot update
-		plot.append_gnss_position(gnss_measurement[6], gnss_measurement[7])
-		# print "  gnss: %.3f %.3f" % (gnss[6], gnss[7])
+				# plot update
+				plot.append_gnss_position(pos[0], pos[1])
+				# print "  gnss: %.3f, %.3f %.3f" % (gnss_measurement[0], pos[0], pos[1])
 
 	# output to screen
 	#if step % 2000 == 0: # each 20 seconds, needs to be calculated!!!
@@ -158,5 +167,5 @@ for step in xrange ((int(sim_steps)+1)):
 if ctrl_c == False:
 	print 'Simulation completed, press Enter to quit'
 	raw_input() # wait for enter keypress 
-	plot.save()
+	plot.save('map_pose_and_gps.png')
 

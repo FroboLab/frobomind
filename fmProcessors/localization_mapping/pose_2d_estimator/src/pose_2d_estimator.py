@@ -59,16 +59,57 @@ Revision
 import numpy as np
 from math import sqrt, pi, sin, cos
 from numpy import matrix, array, linalg, mat
+from transverse_mercator import tranmerc
 
 # defines
 
 class pose_2d_gnss_preprocessor():
-	def __init__(self):
+	def __init__(self, max_speed, tm_a, tm_f, tm_orglat, tm_cmer, tm_fe, tm_fn, tm_scale):
+		self.deg_to_rad = pi/180.0
+		self.rad_to_deg = 180.0/pi
+		self.max_speed = max_speed
+		self.auto_offset = False
+		self.offset_e = 0.0
+		self.offset_n = 0.0
 		self.gnss = []
 		self.odo = []
+		self.tm = tranmerc()
+		self.tm.set_params (tm_a, tm_f, tm_orglat, tm_cmer, tm_fe, tm_fn, tm_scale)
+
+	def set_auto_offset (self, auto_offset):
+		self.auto_offset = auto_offset
+
+	def set_offset (self, offset_easting, offset_northing):
+		self.offset_e = offset_easting
+		self.offset_n = offset_northing
 	
+	def validate_new_gnss_position(self, time_stamp, easting, northing):
+		error = 0
+		if self.gnss != []:
+			dtime = time_stamp - self.gnss[-1][0]
+			ddist = sqrt((easting - self.gnss[-1][6])**2 + (northing - self.gnss[-1][7])**2)
+			if ddist > self.max_speed *dtime: # if distance larger than possible when driving at maximum speed
+				error = 1
+				print "  gnss position error at time stamp: %.3f, E%.3f, N%.3f" % (time_stamp, easting, northing)
+		return error
+
 	def add_gnss_measurement (self, gnss_measurement):
-		self.gnss.append(gnss_measurement)
+		if gnss_measurement[3] > 0: # if satellite fix
+			# convert to Transverse Mercator projection
+			(easting, northing) = self.tm.geodetic_to_tranmerc \
+				(gnss_measurement[1]*self.deg_to_rad, gnss_measurement[2]*self.deg_to_rad)
+			if self.offset_e == 0 and self.offset_n == 0 and self.auto_offset == True:
+				self.offset_e = -easting
+				self.offset_n = -northing
+			easting += self.offset_e
+			northing += self.offset_n
+			if not self.validate_new_gnss_position(gnss_measurement[0], easting, northing):
+				gnss_measurement.append(easting)
+				gnss_measurement.append (northing)
+				self.gnss.append(gnss_measurement)
+				return ([easting, northing])
+			else:
+				return False
 
 	def add_odometry(self, odometry):
 		self.odo.append(odometry)

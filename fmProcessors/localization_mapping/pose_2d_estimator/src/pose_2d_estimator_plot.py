@@ -84,8 +84,8 @@ class estimator_plot():
 			pose_plt = plot(poseT[0],poseT[1],'r')
 		draw()
 
-	def save(self):
-		self.fig1.savefig ('plot.png')
+	def save(self, file_name):
+		self.fig1.savefig (file_name)
 
 	def enable_odometry (self, enable):
 		self.odometry_enabled = enable
