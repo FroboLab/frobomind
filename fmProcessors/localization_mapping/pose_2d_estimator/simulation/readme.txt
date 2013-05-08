@@ -10,23 +10,22 @@ this software useful please let me know.
 
 ==== QUICK START ====
 
-The simulation directory contains files that allow testing the pose_2d_estimator in a simulated environment without ROS. 
+The simulation directory contains files that allow testing the pose_2d_estimator
+in a simulated environment without ROS. 
 
-Run:
-
-	setup.sh
-
-once to create symbolic links to external python libraries used in the simulation. Then run:
+Edit the file generate_sim_bag.launch to load the rosbag you want to work with.
+Then run:
 
 	roslaunch generate_sim_bag.launch
 
-to make sure that all sensor data are available for the simulation. You will have to quit manually when the rosbag doesn't publish more messages. Then run:
+to once make sure that all sensor data are available for the simulation. You will
+have to quit manually when the rosbag doesn't publish more messages. Then run:
 
-	import_bag_to_csv.py
+	import_odom_imu_gps_to_file.py
 
 once to export rosbag data to a suitable comma delimited format. Now you may run 
 
-	run_simulation.py
+	run_simulation.sh
 
 to perform the actual simulation.
 
