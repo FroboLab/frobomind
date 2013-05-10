@@ -8,7 +8,8 @@ This launch file generates a simulation bag which contains output from:
 <launch>
 	<!-- Armadillo Pichi parameters --> 
 	<param name="diff_steer_wheel_radius" value="0.159"/>
-	<param name="diff_steer_wheel_ticks_per_rev" value="1157"/>
+	<!-- param name="diff_steer_wheel_ticks_per_rev" value="1157"/ -->
+	<param name="diff_steer_wheel_ticks_per_rev" value="275"/> <!-- this value works but does not correspond to calculations -->
 	<param name="diff_steer_wheel_distance" value="0.84"/>
 
 	<param name="/use_sim_time" value="true"/> 
@@ -20,7 +21,7 @@ This launch file generates a simulation bag which contains output from:
 		</node>
 
 		<!-- rosbag the output for simulation -->
-		<node pkg="rosbag" name="record" type="record" args="-O $(find pose_2d_estimator)/simulation/sim.bag /fmKnowledge/encoder_odom /fmInformation/gpgga /fmInformation/imu /fmInformation/enc_left /fmInformation/enc_right"/>
+		<node pkg="rosbag" name="record" type="record" args="-O $(find pose_2d_estimator)/simulation/sim.bag /fmKnowledge/encoder_odom /fmInformation/gpgga_tranmerc /fmInformation/imu /fmInformation/enc_left /fmInformation/enc_right"/>
 	</group>
 
 	<group ns="fmSensors">
@@ -28,11 +29,18 @@ This launch file generates a simulation bag which contains output from:
 		<!-- (this is a temporary fix until we get all encoder messages changed to IntStamped) -->
 		<!-- <node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" /> -->
 
-		<!-- retrieve GPS data from $GPGGA NMEA message -->
-		<!-- <node pkg="gps_gpgga" name="gps_node" type="gps_gpgga_node" output="screen">
-			<param name="subscribe_topic_id" value="/fmData/gps_rx" />   
-			<param name="publish_topic_id" value="/fmInformation/gpgga" />
-		</node> -->
+		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
+		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/gpgga" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> <!-- 1/298.257223563 -->
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
 	</group>
 
 	<group ns="fmProcessors">

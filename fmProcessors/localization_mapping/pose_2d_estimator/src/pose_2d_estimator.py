@@ -59,55 +59,36 @@ Revision
 import numpy as np
 from math import sqrt, pi, sin, cos
 from numpy import matrix, array, linalg, mat
-from transverse_mercator import tranmerc
 
 # defines
 
-class pose_2d_gnss_preprocessor():
-	def __init__(self, max_speed, tm_a, tm_f, tm_orglat, tm_cmer, tm_fe, tm_fn, tm_scale):
+class pose_2d_preprocessor():
+	def __init__(self, max_speed):
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
 		self.max_speed = max_speed
-		self.auto_offset = False
-		self.offset_e = 0.0
-		self.offset_n = 0.0
 		self.gnss = []
 		self.odo = []
-		self.tm = tranmerc()
-		self.tm.set_params (tm_a, tm_f, tm_orglat, tm_cmer, tm_fe, tm_fn, tm_scale)
-
-	def set_auto_offset (self, auto_offset):
-		self.auto_offset = auto_offset
-
-	def set_offset (self, offset_easting, offset_northing):
-		self.offset_e = offset_easting
-		self.offset_n = offset_northing
 	
 	def validate_new_gnss_position(self, time_stamp, easting, northing):
 		error = 0
 		if self.gnss != []:
-			dtime = time_stamp - self.gnss[-1][0]
-			ddist = sqrt((easting - self.gnss[-1][6])**2 + (northing - self.gnss[-1][7])**2)
-			if ddist > self.max_speed *dtime: # if distance larger than possible when driving at maximum speed
+
+			### !!!!! THIS IS TEMPORARILY DISABLED UNTIL ROSBAGS WITH CORRECT time_recv DATA HAVE BEEN RECORDED.
+			# dtime = time_stamp - self.gnss[-1][0]
+			dtime = 0.200
+			ddist = sqrt((easting - self.gnss[-1][2])**2 + (northing - self.gnss[-1][3])**2)
+			max_dist = self.max_speed *dtime
+			if ddist > max_dist: # if distance larger than possible when driving at maximum speed
 				error = 1
 				print "  gnss position error at time stamp: %.3f, E%.3f, N%.3f" % (time_stamp, easting, northing)
 		return error
 
-	def add_gnss_measurement (self, gnss_measurement):
-		if gnss_measurement[3] > 0: # if satellite fix
-			# convert to Transverse Mercator projection
-			(easting, northing) = self.tm.geodetic_to_tranmerc \
-				(gnss_measurement[1]*self.deg_to_rad, gnss_measurement[2]*self.deg_to_rad)
-			if self.offset_e == 0 and self.offset_n == 0 and self.auto_offset == True:
-				self.offset_e = -easting
-				self.offset_n = -northing
-			easting += self.offset_e
-			northing += self.offset_n
-			if not self.validate_new_gnss_position(gnss_measurement[0], easting, northing):
-				gnss_measurement.append(easting)
-				gnss_measurement.append (northing)
-				self.gnss.append(gnss_measurement)
-				return ([easting, northing])
+	def add_gnss_measurement (self, time_stamp, easting, northing, solution):
+		if solution > 0: # if satellite fix
+			if not self.validate_new_gnss_position(time_stamp, easting, northing):
+				self.gnss.append([time_stamp, solution, easting, northing])
+				return (easting, northing)
 			else:
 				return False
 
@@ -118,13 +99,13 @@ class pose_2d_gnss_preprocessor():
 		# estimate speed
 		# use known speed to increase variance
 		if len(self.gnss) > 0:
-			if self.gnss[-1][3] == 4: # rtk fixed solution
+			if self.gnss[-1][1] == 4: # rtk fixed solution
 				std_dev = 0.02
-			elif self.gnss[-1][3] == 5: # rtk float solution
+			elif self.gnss[-1][1] == 5: # rtk float solution
 				std_dev = 2.0
-			elif self.gnss[-1][3] == 2: # dgps solution
+			elif self.gnss[-1][1] == 2: # dgps solution
 				std_dev = 7.0
-			elif self.gnss[-1][3] == 1: # sps solution
+			elif self.gnss[-1][1] == 1: # sps solution
 				std_dev = 15.0
 			else:
 				std_dev = 20000000.0
@@ -139,7 +120,7 @@ class pose_2d_gnss_preprocessor():
 class pose_2d_ekf():
 	def __init__(self):
 		self.prevX = self.set_initial_guess([0.0, 0.0, 0.0])
-		self.prevCov = np.matrix([[1000.0,0.0,0.0],[0.,1000.0,0.0], \
+		self.prevCov = np.matrix([[100000000**2.0,0.0,0.0],[0.,100000000**2,0.0], \
 			[0.0,0.0,2.0*pi]]) # high variance for the initial guess 
 		self.Q = np.identity(3)
 		self.Hgnss = np.matrix([[1., 0., 0.,],[0., 1., 0.]]) # GNSS observation matrix
@@ -168,13 +149,18 @@ class pose_2d_ekf():
 	def measurement_update_gnss (self, pos, var_pos):
 		# Compute Kalman gain: K[t] = P-[t]/(P-[t] + R)
 		K = self.prevCov*self.Hgnss.T*linalg.inv(self.Hgnss*self.prevCov*self.Hgnss.T + self.R(var_pos))
+		#print 'R', self.R(var_pos)
+		#print 'k', K
 
 		# updated (A posteriori) estimate with measurement z[t]: X[t] = X-[t] + K[t]*(z[t] - X-[t])
-		#gpsEN = [gpsSim[-1][GPS_E], gpsSim[-1][GPS_N]] # measurement
 		prev_pos = [array(self.prevX)[0][0], array(self.prevX)[0][1]] # A priori position
+		#print 'prev_pos', prev_pos
+		
 		y = np.matrix(pos).T - np.matrix(prev_pos).T # measurement residual
+		#print 'y', y
 
 		postX = self.prevX + (K*y).T # updated state estimate
+		#print 'postX', postX
 
 		# updated (A posteriori) error covariance: P[t] = (1 - K[t])*P-[t]
 		postCov = (mat(np.identity(3))-K*self.Hgnss)*self.prevCov
@@ -183,7 +169,7 @@ class pose_2d_ekf():
 		self.Q = np.identity(3) # reset the process noise covariance matrix
 		self.prevX = postX # advance to next update step
 		self.prevCov = postCov # save A posteriori error variance estimate
-		return self.prevX
+		return array(self.prevX)[0]
 
 	def measurement_update_ahrs (self):
 		pass

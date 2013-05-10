@@ -28,28 +28,34 @@
 #*****************************************************************************
 """
 This file contains a Python script to test the Pose 2D Estimator using system
-feedback and sensor data from test drives with the Armadillo Pichi field 
-robot platform: http://www.frobomind.org/index.php?title=Robot:Armadillo_Pichi
+feedback and sensor data from FroboMind rosbags
 
 Revision
-2013-04-23 KJ First version
+2013-05-10 KJ First version
 """
 
 # imports
 import signal
 from math import sqrt, pi
-from pose_2d_estimator import pose_2d_gnss_preprocessor, pose_2d_ekf
+from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf
 from sim_import import odometry_data, gnss_data
-from pose_2d_estimator_plot import estimator_plot
+from robot_track_map import track_map
 
 # parameters
+ekf_easting_init = 588784.0   # set these EKF initial guess coordinates close
+ekf_northing_init = 6137262.0 # to actual transverse mercator coordinates.
+enable_pose_plot = True
+enable_gnss_plot = True
+enable_odometry_plot = True
+plot_relative_coordinates = True
 odo_file = 'sim_odometry.txt'
-odo_max_lines = 9000 # read the entire file
+odo_max_lines = 0 # read the entire file
 gnss_file = 'sim_gnss.txt'
 gnss_max_lines = 0 # read the entire file
 sim_step_interval = 0.01 # 100 Hz
-relative_coordinates = True # first gnss coordinate set to (0,0)
 steps_btw_plot_updates = 500 # 5 seconds
+var_dist = 0.0000000001
+var_angle = 0.001
 
 # return signed difference between new and old angle
 def angle_diff (angle_new, angle_old):
@@ -73,16 +79,20 @@ def signal_handler(signal, frame):
     print 'Quit'
 signal.signal(signal.SIGINT, signal_handler)
 
-# load plot functions
-plot = estimator_plot()
-plot.enable_odometry (True)
-plot.enable_gnss (True)
-plot.enable_pose (True)
+# setup plotting
+if plot_relative_coordinates == False: # define absolute or relative plotting coordinates
+	plot_easting_offset = 0.0
+	plot_northing_offset = 0.0
+else:
+	plot_easting_offset = -ekf_easting_init 
+	plot_northing_offset = -ekf_northing_init
+plot = track_map(enable_pose_plot, enable_gnss_plot, enable_odometry_plot, \
+	"Robot track", 5.0, plot_easting_offset, plot_northing_offset)
 
 # import simulation data
 odo_sim = odometry_data(odo_file, odo_max_lines)
 odometry = []
-gnss_sim = gnss_data(gnss_file, gnss_max_lines, relative_coordinates)
+gnss_sim = gnss_data(gnss_file, gnss_max_lines)
 gnss = []
 
 # define simulation time based on odometry data
@@ -94,23 +104,14 @@ print ('Simulation')
 print ('  Step interval: %.2fs' % sim_step_interval)
 print ('  Total: %.2fs (%.0f steps)' % (sim_len, sim_steps))
 
-# initialize estimator (gnss preprocessing)
+# initialize estimator (preprocessing)
 robot_max_speed = 3.0 # [m/s]
-
-wgs84_a = 6378137.0 # Equatorial radius, generic for WGS-84 datum
-wgs84_f = 1/298.257223563 # Flattening, generic for WGS-84 datum
-utm_fe = 500000.0 # False Easting, generic for UTM projection
-utm_scale = 0.9996 # Scale Factor, generic forUTM projection
-utm_orglat = 0.0 # Origin Latitude, generic for UTM projection
-utm32_cmer = 9.0 * pi/180.0 # By convention UTM32 (Central Meridian = 9deg) covers all of Denmark 
-utm32_fn =  0.0 # Northern hemisphere
-gp = pose_2d_gnss_preprocessor (robot_max_speed, wgs84_a, wgs84_f, utm_orglat, utm32_cmer, utm_fe, utm32_fn, utm_scale)
-gp.set_auto_offset (True)
+pp = pose_2d_preprocessor (robot_max_speed)
 
 # initialize estimator (EKF)
 prev_odometry = [0.0, 0.0, 0.0, 0.0] # [time,X,Y,theta]
 ekf = pose_2d_ekf()
-ekf.set_initial_guess([1.0, 1.0, 180.0*pi/180.0])
+ekf.set_initial_guess([ekf_easting_init, ekf_northing_init, 180.0*pi/180.0])
 
 # run simulation
 for step in xrange ((int(sim_steps)+1)):
@@ -122,36 +123,37 @@ for step in xrange ((int(sim_steps)+1)):
     # update odometry position
 	(odo_updates, odometry) = odo_sim.get_latest(log_time) 
 	if odo_updates > 0:		
-		odometry[1] *=4.5 # BUT WHY??????????
-		odometry[2] *=4.5
 		# EKF system update (odometry)
 		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
 		delta_angle = angle_diff (odometry[3], prev_odometry[3])
-		var_dist = 0.0000000001
-		var_angle = 0.001
 		prev_odometry = odometry
 		pose = ekf.system_update (delta_dist, var_dist, delta_angle, var_angle)
-
+	
 		# plot update
 		plot.append_odometry_position(odometry[1], odometry[2])
-		plot.append_pose_position (pose[0]+1.0, pose[1]+1.0)
+		plot.append_pose_position (pose[0], pose[1])
 		# print "  odometry: %.3f %.3f %.3f, %3f, %3f" % (odometry[0], odometry[1], odometry[2], delta_dist, delta_angle)
 
     # update GNSS position
-	(gnss_updates, gnss_measurement) = gnss_sim.get_latest(log_time)
+	(gnss_updates, gnss_data) = gnss_sim.get_latest(log_time)
 	if gnss_updates > 0: # if new data available
-		if gnss_measurement[3] > 0: # if satellite fix
+		solution = gnss_data[5]
+		if solution > 0: # if satellite fix
+			time_recv = gnss_data[0]
+			easting = gnss_data[3] 
+			northing = gnss_data[4]
 			# GNSS data preprocessing
-			pos = gp.add_gnss_measurement (gnss_measurement)
+			pos = pp.add_gnss_measurement (time_recv, easting, northing, solution)
 			if pos != False: # if no error
-				var_pos = gp.estimate_variance()
+				var_pos = pp.estimate_variance()
 
 				# EKF measurement update (GNSS)
 				pose = ekf.measurement_update_gnss (pos, var_pos)
 
 				# plot update
 				plot.append_gnss_position(pos[0], pos[1])
-				# print "  gnss: %.3f, %.3f %.3f" % (gnss_measurement[0], pos[0], pos[1])
+				#print "  gnss: %.3f, %.3f %.3f" % (time_recv, pos[0], pos[1])
+				#print "  pose: %.3f, %.3f %.3f" % (time_recv, pose[0], pose[1])
 
 	# output to screen
 	#if step % 2000 == 0: # each 20 seconds, needs to be calculated!!!

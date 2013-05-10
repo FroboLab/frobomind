@@ -57,10 +57,10 @@ f.close()
 
 # extract GPGGA data
 f = open ('sim_gnss.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga']):
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga_tranmerc']):
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	f.write ('%d.%03d,%.10f,%.10f,%d,%d,%.2f\n' % (msg.header.stamp.secs,msecs, \
-		msg.lat, msg.lon, msg.fix, msg.sat, msg.hdop))
+	f.write ('%d.%03d,%.10f,%.10f,%.4f,%.4f,%d,%d,%.2f\n' % (msg.header.stamp.secs,msecs, \
+		msg.lat, msg.lon, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop))
 
 bag.close()
 

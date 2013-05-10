@@ -61,7 +61,7 @@ class odometry_data():
 
 
 class gnss_data:
-	def __init__(self, filename, max_lines, relative_coordinates):
+	def __init__(self, filename, max_lines):
 		self.i = 0
 		print 'Importing GPS data'
 		file = open(filename, 'rb')
@@ -70,9 +70,9 @@ class gnss_data:
 		i = 0
 		origo_e = 0
 		origo_n = 0
-		for time, lat, lon, fix, sat, hdop in file_content:
+		for time, lat, lon, easting, northing, fix, sat, hdop in file_content:
 			self.data.append([float(time), float(lat), float(lon), \
-				int(fix), int(sat), float(hdop)])
+				float(easting), float(northing), int(fix), int(sat), float(hdop)])
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break
