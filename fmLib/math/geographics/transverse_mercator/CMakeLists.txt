@@ -45,8 +45,8 @@ find_package(catkin REQUIRED COMPONENTS msgs rospy)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- # INCLUDE_DIRS include
-#  LIBRARIES wiimote_interface
+ INCLUDE_DIRS include
+ LIBRARIES transverse_mercator
 #  CATKIN_DEPENDS msgs rospy wiimote
 #  DEPENDS system_lib
 )
@@ -59,9 +59,9 @@ catkin_package(
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(wiimote_interface
-#   src/${PROJECT_NAME}/wiimote_interface.cpp
-# )
+ add_library(transverse_mercator
+   src/transverse_mercator/tranmerc.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(wiimote_interface_node src/wiimote_interface_node.cpp)
@@ -86,18 +86,18 @@ catkin_package(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS wiimote_interface wiimote_interface_node
+ install(TARGETS transverse_mercator
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+ )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+ install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
+#  PATTERN ".svn" EXCLUDE
+ )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
