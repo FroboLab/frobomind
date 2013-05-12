@@ -108,6 +108,8 @@ class Pose2DEstimatorNode():
 		self.odometry_yaw_prev = yaw
 
 	def on_imu_topic(self, msg):
+		#euler_from_quaternion(quaternion, axes='sxyz'): ???
+
 		pass
 
 	def on_gga_topic(self, msg):
@@ -127,7 +129,8 @@ class Pose2DEstimatorNode():
 		self.pose_msg.pose.pose.position.x = self.pose[0]
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
-		#self.pose_msg.pose.pose.orientation = quaternion  !!!!! OI OI NEEDS ATTENTION!!
+		axis = [0,0,1]  # the z axis
+		self.pose_msg.pose.pose.orientation = Quaternion(axis, self.pose[2])
 		#self.pose_msg.twist.twist.linear.x = vxy
 		#self.pose_msg.twist.twist.linear.y = 0
 		#self.pose_msg.twist.twist.angular.z = vth
