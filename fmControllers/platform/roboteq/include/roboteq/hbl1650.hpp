@@ -62,6 +62,7 @@ public:
 	void 					onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
 	void 					onCommand(const msgs::serial::ConstPtr& msg);
 
+	void 					setChannels(bool ch){two_channel = ch;}
 	void					setSerialPub(ros::Publisher pub){serial_publisher = pub;}
 	void					setStatusPub(ros::Publisher pub){status_publisher = pub;}
 	void					setTemperaturePub(ros::Publisher pub){temperature_publisher = pub;}
