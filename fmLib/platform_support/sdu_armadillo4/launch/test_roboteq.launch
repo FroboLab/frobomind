@@ -1,0 +1,4 @@
+<launch>	
+	<node pkg="sdu_armadillo4" type="test.py" name="tester" output="screen"/>
+	<node pkg="sdu_armadillo4" type="sdu_armadillo4_node" name="roboteq"/>
+</launch>

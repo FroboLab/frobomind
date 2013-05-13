@@ -51,6 +51,13 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 		encoder_out.data = cb2;
 		encoder_ch2_publisher.publish(encoder_out);
 	}
+	else if(sscanf(msg->data.c_str(),"CB=%d",	&cb1))
+	{
+		encoder_out.header.stamp = msg->header.stamp;
+
+		encoder_out.data = cb1;
+		encoder_ch1_publisher.publish(encoder_out);
+	}
 	else if(sscanf(msg->data.c_str(),"P=%d:%d",		&p1,&p2))
 	{
 		power_out.header.stamp = msg->header.stamp;
@@ -59,6 +66,12 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 
 		power_out.data = p2;
 		power_ch2_publisher.publish(power_out);
+	}
+	else if(sscanf(msg->data.c_str(),"P=%d",		&p1))
+	{
+		power_out.header.stamp = msg->header.stamp;
+		power_out.data = p1;
+		power_ch1_publisher.publish(power_out);
 	}
 	else if(sscanf(msg->data.c_str(),"FF=%d",		&ff))
 	{
