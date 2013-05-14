@@ -109,9 +109,9 @@ int main(int argc, char **argv)
 	std::string publish_topic_id;
 
 	n.param<std::string>("subscribe_topic_id", subscribe_topic_id,
-			"fmCSP/gps_msg");
+			"fmLib/gps_rx");
 	n.param<std::string>("publish_topic_id", publish_topic_id,
-			"fmSensors/gpgga_msg");
+			"fmInformation/gpgga_msg");
 
 	ros::Subscriber sub = n.subscribe(subscribe_topic_id, 10, gpsCallbackString);
 	gpgga_pub = n.advertise<msgs::gpgga>(publish_topic_id, 1);
