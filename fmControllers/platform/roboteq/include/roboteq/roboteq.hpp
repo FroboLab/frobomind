@@ -17,7 +17,8 @@
 class RoboTeQ
 {
 public:
-	bool					online;
+	bool					online,
+							two_channel;
 
 	unsigned int			ff,fs;
 

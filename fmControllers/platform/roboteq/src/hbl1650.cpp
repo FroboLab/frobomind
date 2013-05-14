@@ -1,15 +1,15 @@
-#include "roboteq/hbl2350.hpp"
+#include "roboteq/hbl1650.hpp"
 
 //int main (int argc, char** argv)
 //{
 //	ros::init(argc,argv,"roboteq_controller");
-//	hbl2350 controller;
+//	hbl1650 controller;
 //	controller.spin();
 //
 //	return 0;
 //}
 
-hbl2350::hbl2350( )
+hbl1650::hbl1650( )
 :local_node_handler("~"),global_node_handler()
 {
 	// Variables for parsing parameters
@@ -38,7 +38,7 @@ hbl2350::hbl2350( )
 	last_serial_msg = ros::Time::now();
 	cmd_vel_publishing = false;
 	controller_responding = true;
-	velocity_ch1 = velocity_ch2 = 0;
+	velocity = 0;
 
 	// Parse from parameter server
 	local_node_handler.param<std::string>("cmd_vel_ch1_topic",	cmd_vel_ch1_topic,		"/fmActuators/cmd_vel_ch1");
@@ -54,13 +54,10 @@ hbl2350::hbl2350( )
 	local_node_handler.param<std::string>("status_topic",		status_topic,			"/fmActuators/status");
 	//	local_node_handler.param<std::string>("temperature_topic",	temperature_topic,		"/fmActuators/temperature");
 
-	local_node_handler.param<int>("p_gain",	p_gain_ch1,	1);
-	local_node_handler.param<int>("i_gain",	i_gain_ch1,	0);
-	local_node_handler.param<int>("d_gain",	d_gain_ch1,	0);
+	local_node_handler.param<int>("p_gain",	p_gain,	1);
+	local_node_handler.param<int>("i_gain",	i_gain,	0);
+	local_node_handler.param<int>("d_gain",	d_gain,	0);
 	local_node_handler.param<bool>("closed_loop_operation",	closed_loop_operation,	false);
-	p_gain_ch2 = p_gain_ch1;
-	i_gain_ch2 = i_gain_ch1;
-	d_gain_ch2 = d_gain_ch1;
 
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
 	max_time_diff = ros::Duration(max_time_diff_input);
@@ -73,24 +70,21 @@ hbl2350::hbl2350( )
 	velocity_max = 1000; //Motor controller constant
 
 	// Set publisher topics
-	setSerialPub( 		local_node_handler.advertise<msgs::serial>(		serial_tx_topic,	10) );
-	setEncoderCh1Pub( 	local_node_handler.advertise<msgs::IntStamped>(	encoder_ch1_topic,	10) );
-	setEncoderCh2Pub( 	local_node_handler.advertise<msgs::IntStamped>(	encoder_ch2_topic,	10) );
-	setPowerCh1Pub( 	local_node_handler.advertise<msgs::IntStamped>(	power_ch1_topic,	10) );
-	setPowerCh2Pub( 	local_node_handler.advertise<msgs::IntStamped>(	power_ch2_topic,	10) );
-	setStatusPub(		local_node_handler.advertise<msgs::StringStamped>(status_topic,		10) );
+	setSerialPub(local_node_handler.advertise<msgs::serial>(serial_tx_topic,10) );
+	setEncoderPub(local_node_handler.advertise<msgs::IntStamped>(encoder_ch1_topic,10) );
+	setPowerPub(local_node_handler.advertise<msgs::IntStamped>(power_ch1_topic,10));
+	setStatusPub(local_node_handler.advertise<msgs::StringStamped>(status_topic,10) );
 	//	setTemperaturePub(	local_node_handler.advertise<fmMsgs::StringStamped>(temperature_topic,	10) );
 
 	// Set subscriber topics
-	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl2350::onSerial,this);
-	command_relay_sub = local_node_handler.subscribe<msgs::serial>(command_relay_topic,10,&hbl2350::onCommand,this);
-	cmd_vel_ch1_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&hbl2350::onCmdVelCh1,this);
-	cmd_vel_ch2_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&hbl2350::onCmdVelCh2,this);
-	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl2350::onDeadman,this);
+	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl1650::onSerial,this);
+	command_relay_sub = local_node_handler.subscribe<msgs::serial>(command_relay_topic,10,&hbl1650::onCommand,this);
+	cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&hbl1650::onCmdVel,this);
+	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl1650::onDeadman,this);
 
 }
 
-void hbl2350::spin(void)
+void hbl1650::spin(void)
 {
 	// Wait for RoboTeQ to come online
 	ros::Rate r(5);
@@ -102,12 +96,12 @@ void hbl2350::spin(void)
 	r.sleep();
 
 	// Initialize timer
-	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.1),&hbl2350::onTimer,this);
+	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.1),&hbl1650::onTimer,this);
 
 	ros::spin();
 }
 
-void hbl2350::initController(void)
+void hbl1650::initController(void)
 {
 	ROS_INFO("Initializing...");
 	sleep(1);
@@ -184,19 +178,13 @@ void hbl2350::initController(void)
 	controller_responding = false;
 }
 
-void hbl2350::onCmdVelCh1(const geometry_msgs::TwistStamped::ConstPtr& msg)
+void hbl1650::onCmdVel(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {
-	last_twist_received_ch1 = ros::Time::now();
-	velocity_ch1 = (int)(msg->twist.linear.x * mps_to_rpm);
+	last_twist_received = ros::Time::now();
+	velocity = (int)(msg->twist.linear.x * mps_to_rpm);
 }
 
-void hbl2350::onCmdVelCh2(const geometry_msgs::TwistStamped::ConstPtr& msg)
-{
-	last_twist_received_ch2 = ros::Time::now();
-	velocity_ch2 = (int)(msg->twist.linear.x * mps_to_rpm);
-}
-
-void hbl2350::onDeadman(const std_msgs::Bool::ConstPtr& msg)
+void hbl1650::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 {
 	deadman_pressed = msg->data;
 	if(deadman_pressed)
@@ -204,7 +192,7 @@ void hbl2350::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 }
 
 /*!Callback for relaying command strings*/
-void hbl2350::onCommand(const msgs::serial::ConstPtr& msg)
+void hbl1650::onCommand(const msgs::serial::ConstPtr& msg)
 {
 	ROS_WARN("Command callback");
 	serial_out.header.stamp = ros::Time::now();
@@ -212,12 +200,11 @@ void hbl2350::onCommand(const msgs::serial::ConstPtr& msg)
 	serial_publisher.publish(serial_out);
 }
 
-void hbl2350::onTimer(const ros::TimerEvent& e)
+void hbl1650::onTimer(const ros::TimerEvent& e)
 {
 	/* Update state variables */
 	deadman_pressed = ((ros::Time::now() - last_deadman_received) < max_time_diff);
-	cmd_vel_publishing = ( (ros::Time::now() - last_twist_received_ch1) < max_time_diff) ||
-			((ros::Time::now() - last_twist_received_ch2) < max_time_diff);
+	cmd_vel_publishing = ( (ros::Time::now() - last_twist_received) < max_time_diff);
 	controller_responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
 
 	std::stringstream ss;
@@ -243,22 +230,15 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 						}
 
 						ss << "deadman_pressed ";
-						/* All is good - send speeds */
-						int out_ch1 = (velocity_ch1*velocity_max)/max_rpm,
-							out_ch2 = (velocity_ch2*velocity_max)/max_rpm;
+						/* All is good - send speed */
+						int out_ch1 = (velocity*velocity_max)/max_rpm;
 
 						if(out_ch1 < - velocity_max)
 							out_ch1 = -velocity_max;
 						else if(out_ch1 > velocity_max)
 							out_ch1 = velocity_max;
 
-						if(out_ch2 < - velocity_max)
-							out_ch2 = -velocity_max;
-						else if(out_ch2 > velocity_max)
-							out_ch2 = velocity_max;
-
-						transmit(3,"!G",1,out_ch1);
-						transmit(3,"!G",2,out_ch2);
+						transmit(2,"!G",out_ch1);
 					}
 					else /* deadman not pressed */
 					{
@@ -266,8 +246,7 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 						/* Set speeds to 0 */
 						transmit(1,"!EX");
 						emergency_stop = true;
-						transmit(3,"!G",1,0);
-						transmit(3,"!G",2,0);
+						transmit(2,"!G",0);
 					}
 				}
 				else /* Cmd_vel is not publishing */
@@ -276,8 +255,7 @@ void hbl2350::onTimer(const ros::TimerEvent& e)
 					/* Set speeds to 0 */
 					transmit(1,"!EX");
 					emergency_stop = true;
-					transmit(3,"!G",1,0);
-					transmit(3,"!G",2,0);
+					transmit(2,"!G",0);
 				}
 			}
 			else /* controller is not responding */

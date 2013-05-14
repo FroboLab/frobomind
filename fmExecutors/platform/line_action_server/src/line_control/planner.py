@@ -33,6 +33,8 @@ from geometry_msgs.msg import TwistStamped, Point
 from line_control.markers import MarkerUtility
 from velocity_control import Controller
 from tf import TransformListener
+from dynamic_reconfigure.server import Server
+from line_action_server.cfg import ParametersConfig
 
 class LinePlanner():
     """
@@ -123,6 +125,9 @@ class LinePlanner():
             self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         
+        # Setup dynamic reconfigure
+        srv = Server(ParametersConfig, self.reconfigure_cb)
+        
     def getParameters(self):
         # Get topics and transforms
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic","/fmSignals/cmd_vel")
@@ -162,7 +167,10 @@ class LinePlanner():
         
         self.z4_distance_to_target = rospy.get_param("~zone4_distance_to_target",0.4)
         self.z_filter_size = rospy.get_param("~transition_filter_size",10)
-
+    
+    def reconfigure_cb(self, config, level):
+        return config
+        
     def stop(self):
         # Publish a zero twist to stop the robot
         self.twist.header.stamp = rospy.Time.now()
