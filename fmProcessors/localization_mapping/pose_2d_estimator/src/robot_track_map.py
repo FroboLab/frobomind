@@ -32,11 +32,12 @@ from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
 from math import sqrt
 
 class track_map():
-	def __init__(self, enable_pose, enable_gnss, enable_odometry, map_title, map_window_size, easting_offset, northing_offset):
+	def __init__(self, enable_pose, enable_pose_yaw, enable_gnss, enable_odometry, map_title, map_window_size, easting_offset, northing_offset):
         # Get parameters
-		self.odometry_enabled = enable_odometry
-		self.gnss_enabled = enable_gnss
 		self.pose_enabled = enable_pose
+		self.gnss_enabled = enable_gnss
+		self.odometry_enabled = enable_odometry
+		self.pose_yaw_enabled = enable_pose_yaw
 		self.trkpt_threshold = 0.1 # [m]
         
 		# Initialize map
@@ -44,7 +45,8 @@ class track_map():
 		self.offset_n = northing_offset
 		self.odo = []
 		self.gnss = []
-		self.pose = []
+		self.pose_pos = []
+		self.pose_yaw = []
 
 		ion() # turn interaction mode on
 		if self.gnss_enabled or self.pose_enabled:
@@ -70,11 +72,22 @@ class track_map():
 			axis('equal')
 			grid (True)
 
+		if self.pose_yaw_enabled:
+			self.fig3 = plt.figure(num=3, figsize=(map_window_size, \
+				map_window_size), dpi=80, facecolor='w', edgecolor='w')
+			title (map_title + ' - Orientation (yaw)')
+			xlabel('[deg]')
+			ylabel('time')
+			grid (True)
+
 	def append_pose_position (self, easting, northing):
 		x = easting + self.offset_e
 		y = northing + self.offset_n
-		if self.pose == [] or sqrt((x-self.pose[-1][0])**2 + (y-self.pose[-1][1])**2) > self.trkpt_threshold:
-			self.pose.append([x, y])
+		if self.pose_pos == [] or sqrt((x-self.pose_pos[-1][0])**2 + (y-self.pose_pos[-1][1])**2) > self.trkpt_threshold:
+			self.pose_pos.append([x, y])
+
+	def append_pose_orientation (self, yaw):
+		self.pose_yaw.append(yaw)
 
 	def append_gnss_position (self, easting, northing):
 		x = easting + self.offset_e
@@ -91,20 +104,32 @@ class track_map():
 			plt.figure(1)
 			gnssT = zip(*self.gnss)		
 			gnss_plt = plot(gnssT[0],gnssT[1],'black')
-		if self.pose_enabled and self.pose != []:
+		if self.pose_enabled and self.pose_pos != []:
 			plt.figure(1)
-			poseT = zip(*self.pose)		
+			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
 		if self.odometry_enabled and self.odo != []:
 			plt.figure(2)
 			odoT = zip(*self.odo)		
 			odo_plt = plot(odoT[0],odoT[1],'b')
-		if self.gnss_enabled or self.pose_enabled or self.odometry_enabled:
+		if self.pose_yaw_enabled and self.pose_yaw != []:
+			plt.figure(3)
+			pose_yaw_plt = plot(self.pose_yaw,'r')
+		if self.gnss_enabled or self.pose_enabled or self.odometry_enabled or self.pose_yaw_enabled:
 			draw()
 
 	def save(self, file_name):
-		if self.gnss_enabled or self.pose_enabled or self.odometry_enabled:
-			self.fig1.savefig (file_name)
+		if self.gnss_enabled or self.pose_enabled:
+			if self.gnss_enabled and self.pose_enabled:
+				self.fig1.savefig (file_name+'-gnss-pose.png')
+			elif self.gnss_enabled:
+				self.fig1.savefig (file_name+'-gnss.png')
+			else:
+				self.fig1.savefig (file_name+'-pose.png')
+		if self.odometry_enabled:
+			self.fig2.savefig (file_name+'-odometry.png')
+		if self.pose_yaw_enabled:
+			self.fig3.savefig (file_name+'-yaw.png')
 
 	def set_trackpoint_threshold (self, threshold):
 		self.trkpt_threshold = threshold 

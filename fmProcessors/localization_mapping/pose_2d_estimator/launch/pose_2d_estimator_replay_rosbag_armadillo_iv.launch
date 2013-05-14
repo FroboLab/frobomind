@@ -7,9 +7,8 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 	<!-- Armadillo Pichi parameters --> 
 	<param name="robot_max_velocity" value="2.0"/>
 	<param name="diff_steer_wheel_radius" value="0.159"/>
-	<!-- param name="diff_steer_wheel_ticks_per_rev" value="1157"/ -->
-	<param name="diff_steer_wheel_ticks_per_rev" value="275"/>  <!-- this value works but does not correspond to calculations -->
-	<param name="diff_steer_wheel_distance" value="0.84"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="1562"/>
+	<param name="diff_steer_wheel_distance" value="3.175"/>
 
 	<param name="/use_sim_time" value="true"/> 
 

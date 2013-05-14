@@ -124,6 +124,7 @@ class pose_2d_ekf():
 			[0.0,0.0,2.0*pi]]) # high variance for the initial guess 
 		self.Q = np.identity(3)
 		self.Hgnss = np.matrix([[1., 0., 0.,],[0., 1., 0.]]) # GNSS observation matrix
+		self.Hahrs = np.matrix([[0., 0., 0.,],[0., 0., 1.]]) # AHRS observation matrix
 
 	def set_initial_guess (self, x):
 		self.prevX = np.matrix(x)
@@ -171,7 +172,9 @@ class pose_2d_ekf():
 		self.prevCov = postCov # save A posteriori error variance estimate
 		return array(self.prevX)[0]
 
-	def measurement_update_ahrs (self):
+	def measurement_update_ahrs (self, yaw, var_yaw):
+		self.prevX[2][2] = yaw
+		return array(self.prevX)[0]
 		pass
 
 	def R (self, var_pos): # measurement error covariance matrix

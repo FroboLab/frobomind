@@ -35,11 +35,13 @@ Revision
 """
 # ROS imports
 import rospy
+import tf
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from msgs.msg import gpgga_tranmerc
-from math import pi, sqrt
+from math import pi, sqrt, atan2
 from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class Pose2DEstimatorNode():
 	def __init__(self):
@@ -96,7 +98,7 @@ class Pose2DEstimatorNode():
 			# EKF system update (odometry)
 			delta_dist =  sqrt((x-self.odometry_x_prev)**2 + (y-self.odometry_y_prev)**2)
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
-			pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
+			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
 
 			# publish the estimated pose	
 			self.publish_pose()
@@ -108,9 +110,16 @@ class Pose2DEstimatorNode():
 		self.odometry_yaw_prev = yaw
 
 	def on_imu_topic(self, msg):
-		#euler_from_quaternion(quaternion, axes='sxyz'): ???
+		#qx = msg.orientation.x
+		#qy = msg.orientation.y
+		#qz = msg.orientation.z
+		#qw = msg.orientation.w
+		#imu_yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
+		#self.pose = self.ekf.measurement_update_ahrs (yaw, var_yaw)
+		#self.pose[2] = imu_yaw
 
-		pass
+		angles = tf.transformations.euler_from_quaternion (msg.orientation, 'sxyz')
+		self.pose[2] = angles[2]
 
 	def on_gga_topic(self, msg):
 		if msg.fix > 0: # if satellite fix
@@ -129,8 +138,12 @@ class Pose2DEstimatorNode():
 		self.pose_msg.pose.pose.position.x = self.pose[0]
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
-		axis = [0,0,1]  # the z axis
-		self.pose_msg.pose.pose.orientation = Quaternion(axis, self.pose[2])
+		
+		q = tf.transformations.quaternion_from_euler (0, 0, self.pose[2])
+		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
+ 
+		#axis = [0,0,1]  # the z axis
+		#self.pose_msg.pose.pose.orientation = Quaternion(axis, self.pose[2])
 		#self.pose_msg.twist.twist.linear.x = vxy
 		#self.pose_msg.twist.twist.linear.y = 0
 		#self.pose_msg.twist.twist.angular.z = vth
