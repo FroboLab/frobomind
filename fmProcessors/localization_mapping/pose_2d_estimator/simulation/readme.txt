@@ -16,12 +16,12 @@ in a simulated environment without ROS.
 Edit the file generate_sim_bag.launch to load the rosbag you want to work with.
 Then run:
 
-	roslaunch generate_sim_bag.launch
+	roslaunch gen_sim_bag_armadillo_iv.launch
 
 to once make sure that all sensor data are available for the simulation. You will
 have to quit manually when the rosbag doesn't publish more messages. Then run:
 
-	import_odom_imu_gps_to_file.py
+	export_odom_imu_gps_to_file.py
 
 once to export rosbag data to a suitable comma delimited format. Now you may run 
 

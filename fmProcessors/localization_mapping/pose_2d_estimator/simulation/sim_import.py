@@ -59,6 +59,29 @@ class odometry_data():
 			new_data += 1
 		return (new_data, self.data[self.i-1])
 
+class imu_data():
+	def __init__(self, filename, max_lines):
+		self.i = 0
+		print 'Importing IMU data'
+		file = open(filename, 'rb')
+		file_content = csv.reader(file, delimiter=',')
+	 	self.data = []
+		i = 0
+		for time, ang_vel_z, orient_yaw in file_content:
+			self.data.append([float(time), float(ang_vel_z), float(orient_yaw)])
+			i += 1
+			if max_lines > 0 and i == max_lines:
+				break
+		file.close()
+		self.length = len(self.data)
+		print '\tTotal samples: %d' % (self.length) 
+
+	def get_latest(self, time):
+		new_data = 0
+		while self.i < self.length and self.data[self.i][0] <= time:
+			self.i += 1
+			new_data += 1
+		return (new_data, self.data[self.i-1])
 
 class gnss_data:
 	def __init__(self, filename, max_lines):

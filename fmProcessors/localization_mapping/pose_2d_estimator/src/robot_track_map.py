@@ -29,10 +29,11 @@
 # imports
 import matplotlib.pyplot as plt
 from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
-from math import sqrt
+from math import pi, sqrt
 
 class track_map():
 	def __init__(self, enable_pose, enable_pose_yaw, enable_gnss, enable_odometry, map_title, map_window_size, easting_offset, northing_offset):
+		self.rad_to_deg = 180.0/pi
         # Get parameters
 		self.pose_enabled = enable_pose
 		self.gnss_enabled = enable_gnss
@@ -76,8 +77,8 @@ class track_map():
 			self.fig3 = plt.figure(num=3, figsize=(map_window_size, \
 				map_window_size), dpi=80, facecolor='w', edgecolor='w')
 			title (map_title + ' - Orientation (yaw)')
-			xlabel('[deg]')
-			ylabel('time')
+			xlabel('time')
+			ylabel('[deg]')
 			grid (True)
 
 	def append_pose_position (self, easting, northing):
@@ -87,7 +88,8 @@ class track_map():
 			self.pose_pos.append([x, y])
 
 	def append_pose_orientation (self, yaw):
-		self.pose_yaw.append(yaw)
+		self.pose_yaw.append(yaw*self.rad_to_deg)
+		#print len(self.pose_yaw), yaw*self.rad_to_deg
 
 	def append_gnss_position (self, easting, northing):
 		x = easting + self.offset_e

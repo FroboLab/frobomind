@@ -31,29 +31,33 @@ This file contains a Python script to test the Pose 2D Estimator using system
 feedback and sensor data from FroboMind rosbags
 
 Revision
-2013-05-10 KJ First version
+2013-05-10 KJ First alpha release
+2013-05-15 KJ Added AHRS support
 """
 
 # imports
 import signal
 from math import sqrt, pi
 from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf
-from sim_import import odometry_data, gnss_data
+from sim_import import odometry_data, imu_data, gnss_data
 from robot_track_map import track_map
 
 # parameters
-ekf_easting_init = 588784.0   # set these EKF initial guess coordinates close
-ekf_northing_init = 6137262.0 # to actual transverse mercator coordinates.
+ekf_easting_init = 588767.5   # set these EKF initial guess coordinates close
+ekf_northing_init = 6137270.3 # to actual transverse mercator coordinates.
 enable_pose_plot = True
 enable_gnss_plot = True
 enable_odometry_plot = True
+enable_pose_yaw_plot = True
 plot_relative_coordinates = True
 odo_file = 'sim_odometry.txt'
-odo_max_lines = 0 # read the entire file
+odo_max_lines = 0 # 0 = read the entire file
+imu_file = 'sim_imu.txt'
+imu_max_lines = 0
 gnss_file = 'sim_gnss.txt'
-gnss_max_lines = 0 # read the entire file
+gnss_max_lines = 0 
 sim_step_interval = 0.01 # 100 Hz
-steps_btw_plot_updates = 500 # 5 seconds
+steps_btw_plot_updates = 250 # 2.5 seconds
 var_dist = 0.0000000001
 var_angle = 0.001
 
@@ -86,14 +90,13 @@ if plot_relative_coordinates == False: # define absolute or relative plotting co
 else:
 	plot_easting_offset = -ekf_easting_init 
 	plot_northing_offset = -ekf_northing_init
-plot = track_map(enable_pose_plot, enable_gnss_plot, enable_odometry_plot, \
+plot = track_map(enable_pose_plot, enable_pose_yaw_plot, enable_gnss_plot, enable_odometry_plot, \
 	"Robot track", 5.0, plot_easting_offset, plot_northing_offset)
 
 # import simulation data
 odo_sim = odometry_data(odo_file, odo_max_lines)
-odometry = []
+imu_sim = imu_data(imu_file, imu_max_lines)
 gnss_sim = gnss_data(gnss_file, gnss_max_lines)
-gnss = []
 
 # define simulation time based on odometry data
 sim_offset = odo_sim.data[0][0]
@@ -122,17 +125,33 @@ for step in xrange ((int(sim_steps)+1)):
 
     # update odometry position
 	(odo_updates, odometry) = odo_sim.get_latest(log_time) 
-	if odo_updates > 0:		
-		# EKF system update (odometry)
+	if odo_updates > 0:
+		# odometry data preprocessing
+		time_recv = odometry[0]
 		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
 		delta_angle = angle_diff (odometry[3], prev_odometry[3])
 		prev_odometry = odometry
+		pp.add_odometry (time_recv, delta_dist, delta_angle)
+		
+		# EKF system update (odometry)
 		pose = ekf.system_update (delta_dist, var_dist, delta_angle, var_angle)
 	
 		# plot update
 		plot.append_odometry_position(odometry[1], odometry[2])
 		plot.append_pose_position (pose[0], pose[1])
 		# print "  odometry: %.3f %.3f %.3f, %3f, %3f" % (odometry[0], odometry[1], odometry[2], delta_dist, delta_angle)
+
+    # update IMU position
+	(imu_updates, imu_data) = imu_sim.get_latest(log_time) 
+	if imu_updates > 0:		
+		# EKF measurement update (IMU)
+		time_recv = imu_data[0]
+		rate_yaw = imu_data[1]
+		orientation_yaw = imu_data[2]
+		pos = pp.add_imu_measurement (time_recv, rate_yaw, orientation_yaw)
+	
+		# plot update
+		#plot.append_pose_orientation(orientation_yaw)
 
     # update GNSS position
 	(gnss_updates, gnss_data) = gnss_sim.get_latest(log_time)
@@ -143,17 +162,18 @@ for step in xrange ((int(sim_steps)+1)):
 			easting = gnss_data[3] 
 			northing = gnss_data[4]
 			# GNSS data preprocessing
-			pos = pp.add_gnss_measurement (time_recv, easting, northing, solution)
-			if pos != False: # if no error
-				var_pos = pp.estimate_variance()
+			error = pp.add_gnss_measurement (time_recv, easting, northing, solution)
+			if error == False: # if no error
+				var_pos = pp.estimate_variance_gnss()
 
 				# EKF measurement update (GNSS)
-				pose = ekf.measurement_update_gnss (pos, var_pos)
+				pose = ekf.measurement_update_pos ([easting, northing], var_pos)
 
 				# plot update
-				plot.append_gnss_position(pos[0], pos[1])
-				#print "  gnss: %.3f, %.3f %.3f" % (time_recv, pos[0], pos[1])
-				#print "  pose: %.3f, %.3f %.3f" % (time_recv, pose[0], pose[1])
+				plot.append_gnss_position(easting, northing)
+				(err, yaw) = pp.estimate_orientation_from_gnss_positions()
+				if err == False:
+					plot.append_pose_orientation (yaw)
 
 	# output to screen
 	#if step % 2000 == 0: # each 20 seconds, needs to be calculated!!!
@@ -169,5 +189,5 @@ for step in xrange ((int(sim_steps)+1)):
 if ctrl_c == False:
 	print 'Simulation completed, press Enter to quit'
 	raw_input() # wait for enter keypress 
-	plot.save('map_pose_and_gps.png')
+	plot.save('simulation')
 

@@ -57,10 +57,13 @@ Revision
 """
 # imports
 import numpy as np
-from math import sqrt, pi, sin, cos
+from math import sqrt, pi, sin, cos, acos
 from numpy import matrix, array, linalg, mat
 
 # defines
+buffer_initial_size_gnss = 200
+buffer_initial_size_imu = 100
+buffer_initial_size_odo = 100
 
 class pose_2d_preprocessor():
 	def __init__(self, max_speed):
@@ -68,7 +71,17 @@ class pose_2d_preprocessor():
 		self.rad_to_deg = 180.0/pi
 		self.max_speed = max_speed
 		self.gnss = []
+		self.gnss_buffer_time = 2 # [s]
+		self.gnss_measurement_interval = -1 # [s]
+		self.gnss_buffer_size = buffer_initial_size_gnss
+		self.imu = []
+		self.imu_buffer_time = 2 # [s]
+		self.imu_measurement_interval = -1 # [s]
+		self.imu_buffer_size = buffer_initial_size_imu
 		self.odo = []
+		self.odo_buffer_time = 2 # [s]
+		self.odo_measurement_interval = -1 # [s]
+		self.odo_buffer_size = buffer_initial_size_odo
 	
 	def validate_new_gnss_position(self, time_stamp, easting, northing):
 		error = 0
@@ -81,23 +94,83 @@ class pose_2d_preprocessor():
 			max_dist = self.max_speed *dtime
 			if ddist > max_dist: # if distance larger than possible when driving at maximum speed
 				error = 1
-				print "  gnss position error at time stamp: %.3f, E%.3f, N%.3f" % (time_stamp, easting, northing)
+				print "  GNSS position error at time stamp: %.3f: E%.3f, N%.3f" % (time_stamp, easting, northing)
 		return error
 
+	def estimate_orientation_from_gnss_positions (self):
+		err = True
+		yaw = 0.0
+		buflen = len (self.gnss)
+		if buflen >= 2:
+			if self.gnss[-1][1] == 4: # if latest position is based on a fixed solution
+				i = 1
+				size = 0
+				fix = 1
+				E = 2
+				N = 3
+				while i<buflen and size < 0.25:
+					i += 1
+					if self.gnss[-i][fix] == 4: 
+						size = sqrt ((self.gnss[-1][E]- self.gnss[-i][E])**2 + (self.gnss[-1][N]- self.gnss[-i][N])**2)
+				if size >= 0.25: # if we found two coordinates at the required distance
+					err = False
+				
+					# calc angle between gnss coordinate vector and northing axis
+					northing_axis_vector_len = self.gnss[-1][N] - self.gnss[-i][N]
+					gnss_coord_vector_len = size
+					theta = acos(northing_axis_vector_len/gnss_coord_vector_len)
+	
+					# handle special case for the 2. and 3. quadrant
+					if self.gnss[-i][E] > self.gnss[-1][E]:
+						theta = 2.0*pi - theta
+					#print theta*180/pi, i, size, self.gnss[-1][E]- self.gnss[-i][E], self.gnss[-1][N]- self.gnss[-i][N],self.gnss[-1][E],self.gnss[-1][N],self.gnss[-i][E],self.gnss[-i][N]
+					yaw = theta
+
+		return (err, yaw)
+	
+
 	def add_gnss_measurement (self, time_stamp, easting, northing, solution):
+		err = True
 		if solution > 0: # if satellite fix
 			if not self.validate_new_gnss_position(time_stamp, easting, northing):
 				self.gnss.append([time_stamp, solution, easting, northing])
-				return (easting, northing)
-			else:
-				return False
+				err = False
+				if len(self.gnss) > self.gnss_buffer_size: # trim buffer length to size
+					self.gnss.pop(0)
+				elif len(self.gnss) == 50 and self.gnss_measurement_interval == -1: # update buffer size based on gnss update interval
+					self.gnss_measurement_interval = (self.gnss[-1][0] - self.gnss[0][0])/50.0
+					print "  Estimated GNSS measurement interval: %.3fs" % (self.gnss_measurement_interval)
+					self.gnss_buffer_size = self.gnss_buffer_time / self.gnss_measurement_interval
+		if err:
+			self.gnss = []
+		return err
 
-	def add_odometry(self, odometry):
-		self.odo.append(odometry)
+	def add_imu_measurement(self, time_stamp, yaw_rate, yaw_orientation):
+		self.imu.append([time_stamp, yaw_rate, yaw_orientation])
+		if len(self.imu) > self.imu_buffer_size: # trim buffer length to size
+			self.imu.pop(0)
+		elif len(self.imu) == 50: # update buffer size based on gnss update interval
+			self.imu_measurement_interval = (self.imu[-1][0] - self.imu[0][0])/50.0
+			print "  Estimated IMU measurement interval: %.3fs" % (self.imu_measurement_interval)
+			self.imu_buffer_size = self.imu_buffer_time / self.imu_measurement_interval
+			while len(self.imu) > self.imu_buffer_size:
+				self.imu.pop(0)
 
-	def estimate_variance(self):
+	def add_odometry(self, time_stamp, delta_dist, delta_angle):
+		self.odo.append([time_stamp, delta_dist, delta_angle])
+		if len(self.odo) > self.odo_buffer_size: # trim buffer length to size
+			self.odo.pop(0)
+		elif len(self.odo) == 50: # update buffer size based on gnss update interval
+			self.odo_measurement_interval = (self.odo[-1][0] - self.odo[0][0])/50.0
+			print "  Estimated odometry update interval: %.3fs" % (self.odo_measurement_interval)
+			self.odo_buffer_size = self.odo_buffer_time / self.odo_measurement_interval
+			while len(self.odo) > self.odo_buffer_size:
+				self.odo.pop(0)
+
+	def estimate_variance_gnss(self):
 		# estimate speed
 		# use known speed to increase variance
+		std_dev = 20000000.0
 		if len(self.gnss) > 0:
 			if self.gnss[-1][1] == 4: # rtk fixed solution
 				std_dev = 0.02
@@ -107,8 +180,6 @@ class pose_2d_preprocessor():
 				std_dev = 7.0
 			elif self.gnss[-1][1] == 1: # sps solution
 				std_dev = 15.0
-			else:
-				std_dev = 20000000.0
 		return std_dev**2
 
 	def estimate_yaw(self):
@@ -147,7 +218,7 @@ class pose_2d_ekf():
 		self.prevCov = priCov
 		return array(self.prevX)[0]
 
-	def measurement_update_gnss (self, pos, var_pos):
+	def measurement_update_pos (self, pos, var_pos):
 		# Compute Kalman gain: K[t] = P-[t]/(P-[t] + R)
 		K = self.prevCov*self.Hgnss.T*linalg.inv(self.Hgnss*self.prevCov*self.Hgnss.T + self.R(var_pos))
 		#print 'R', self.R(var_pos)
@@ -172,7 +243,7 @@ class pose_2d_ekf():
 		self.prevCov = postCov # save A posteriori error variance estimate
 		return array(self.prevX)[0]
 
-	def measurement_update_ahrs (self, yaw, var_yaw):
+	def measurement_update_yaw (self, yaw, var_yaw):
 		self.prevX[2][2] = yaw
 		return array(self.prevX)[0]
 		pass
@@ -199,5 +270,4 @@ class pose_2d_ekf():
 		l2 = [0., 1., u[0]*cos(theta+dTheta/2.)]
 		l3 = [0., 0., 1.]
 		return (np.matrix([l1, l2, l3]))
-
 

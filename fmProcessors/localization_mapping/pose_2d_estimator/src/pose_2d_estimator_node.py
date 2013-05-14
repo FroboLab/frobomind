@@ -35,9 +35,9 @@ Revision
 """
 # ROS imports
 import rospy
-import tf
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Quaternion
 from msgs.msg import gpgga_tranmerc
 from math import pi, sqrt, atan2
 from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf
@@ -110,16 +110,9 @@ class Pose2DEstimatorNode():
 		self.odometry_yaw_prev = yaw
 
 	def on_imu_topic(self, msg):
-		#qx = msg.orientation.x
-		#qy = msg.orientation.y
-		#qz = msg.orientation.z
-		#qw = msg.orientation.w
-		#imu_yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
-		#self.pose = self.ekf.measurement_update_ahrs (yaw, var_yaw)
-		#self.pose[2] = imu_yaw
-
-		angles = tf.transformations.euler_from_quaternion (msg.orientation, 'sxyz')
-		self.pose[2] = angles[2]
+		(roll,pitch,yaw) = euler_from_quaternion([msg.orientation.x, \
+			msg.orientation.y, msg.orientation.z, msg.orientation.w])
+		# self.pose[2] = yaw # NOT ACCURATE ENOUGH FROM THE VECTORNAV !!!
 
 	def on_gga_topic(self, msg):
 		if msg.fix > 0: # if satellite fix
@@ -131,15 +124,20 @@ class Pose2DEstimatorNode():
 
 				# EKF measurement update (GNSS)
 				self.pose = self.ekf.measurement_update_gnss (pos, var_pos)
-				# rospy.loginfo ("pose: %.3f %.3f" % (self.pose[0], self.pose[1]))
+
 
 	def publish_pose(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
 		self.pose_msg.pose.pose.position.x = self.pose[0]
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
+
+		# DIRTY HACK, MUST BE CHANGED !!!
+		(err, yaw) = self.pp.estimate_orientation_from_gnss_positions() 
+		if err == False:
+			self.pose[2] = yaw
 		
-		q = tf.transformations.quaternion_from_euler (0, 0, self.pose[2])
+		q = quaternion_from_euler (0, 0, self.pose[2])
 		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
  
 		#axis = [0,0,1]  # the z axis
