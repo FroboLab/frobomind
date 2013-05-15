@@ -1,6 +1,7 @@
 <launch>
-	<include file="$(find sdu_armadillo4_remote)/launch/action.launch"/>	
-	<include file="$(find sdu_armadillo4_remote)/launch/robot.launch"/>
+	<include file="$(find sdu_armadillo4_remote)/launch/include/action.launch"/>	
+	<include file="$(find sdu_armadillo4_remote)/launch/include/robot.launch"/>
+	<include file="$(find sdu_armadillo4_remote)/launch/include/perception.launch"/>
 
 	<group ns="DecisionMaking">
     	<node pkg="sdu_armadillo4_remote" type="remote.py" name="remote" output="screen">

@@ -1,0 +1,12 @@
+<launch>
+	<group ns="Action">
+		<node pkg="differential_ifk" type="differential_ifk_node" name="differential_ifk">
+			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel" />
+			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left" />
+			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right" />
+			<param name="distance_center_to_wheel" value="1.10" />
+			<param name="deadmanbutton_topic" value="/fmHMI/joy" />
+		</node>
+	</group>
+
+</launch>

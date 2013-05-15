@@ -31,7 +31,7 @@ from simple_2d_math.vector import Vector
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped, Point
 from line_control.markers import MarkerUtility
-from velocity_control import Controller
+from velocity.control import Controller
 from tf import TransformListener
 from dynamic_reconfigure.server import Server
 from line_action_server.cfg import ParametersConfig
@@ -80,14 +80,6 @@ class LinePlanner():
         self.isPreemptRequested = self.empty_method()
         self.setPreempted = self.empty_method()
         
-        # Get parameters from parameter server
-        self.getParameters()
-        
-        # Set up markers for rviz
-        self.point_marker = MarkerUtility("/point_marker" , self.odom_frame)
-        self.line_marker = MarkerUtility("/line_marker" , self.odom_frame)
-        self.pos_marker = MarkerUtility("/pos_marker" , self.odom_frame)
-        
         # Init velocity control
         self.controller = Controller()    
         self.distance_to_goal = 0
@@ -97,6 +89,14 @@ class LinePlanner():
         self.sp_angular = 0
         self.distance_to_line = 0
         
+        # Get parameters from parameter server
+        self.getParameters()
+        
+        # Set up markers for rviz
+        self.point_marker = MarkerUtility("/point_marker" , self.odom_frame)
+        self.line_marker = MarkerUtility("/line_marker" , self.odom_frame)
+        self.pos_marker = MarkerUtility("/pos_marker" , self.odom_frame)
+    
         # Init TF listener
         self.__listen = TransformListener()    
         
@@ -116,7 +116,7 @@ class LinePlanner():
         self.projection = Vector(1,0) # Projection of the position vector on the line
         
         # Set up circular buffer for filter
-        self.zone_filter = [self.z3_value]*self.z_filter_size
+        self.zone_filter = [self.z3_value]*int(self.z_filter_size)
         self.zone = 2
         self.z_ptr = 0
         
@@ -126,7 +126,8 @@ class LinePlanner():
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         
         # Setup dynamic reconfigure
-        srv = Server(ParametersConfig, self.reconfigure_cb)
+        if self.use_dynamic_reconfigure :
+            self.reconfigure_server = Server(ParametersConfig, self.reconfigure_cb)
         
     def getParameters(self):
         # Get topics and transforms
@@ -135,6 +136,7 @@ class LinePlanner():
         self.odometry_topic = rospy.get_param("~odometry_topic","/fmKnowledge/odom")
         self.base_frame = rospy.get_param("~base_frame","/base_footprint")
         self.use_tf = rospy.get_param("~use_tf",True)
+        self.use_dynamic_reconfigure = rospy.get_param("~use_dynamic_reconfigure",False)
         
         # Get general parameters
         self.period = rospy.get_param("~period",0.1)
@@ -169,6 +171,27 @@ class LinePlanner():
         self.z_filter_size = rospy.get_param("~transition_filter_size",10)
     
     def reconfigure_cb(self, config, level):
+        self.max_distance_error = config['max_distance_error']
+        self.retarder = config['retarder']                 
+        self.z1_value = config['zone1_value']
+        self.z1_lin_vel = config['zone1_linear_velocity']
+        self.z1_ang_vel = config['zone1_angular_velocity']
+        self.z1_rabbit = config['zone1_rabbit_factor']
+        self.z1_max_distance = config['zone1_max_distance_to_line']
+        self.z1_max_angle = config['zone1_max_angle_error']
+        self.z2_value = config['zone2_value']
+        self.z2_lin_vel = config['zone2_linear_velocity']
+        self.z2_ang_vel = config['zone2_angular_velocity']
+        self.z2_rabbit = config['zone2_rabbit_factor']
+        self.z2_max_distance = config['zone2_max_distance_to_line']
+        self.z2_max_angle = config['zone2_max_angle_error']
+        self.z3_value = config['zone3_value']
+        self.z3_lin_vel = config['zone3_linear_velocity']
+        self.z3_ang_vel = config['zone3_angular_velocity']
+        self.z3_rabbit = config['zone3_rabbit_factor']
+        self.z4_distance_to_target = config['zone4_distance_to_target']
+        
+        self.controller.reconfigure_cb(config, level)
         return config
         
     def stop(self):

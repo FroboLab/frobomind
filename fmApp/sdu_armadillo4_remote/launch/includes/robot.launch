@@ -1,0 +1,50 @@
+<launch>
+	<group ns="Robot">
+		<node pkg="serial_string" type="serial_string_node" name="serial_comm_left">
+			<param name="publisher_topic" value="/fmData/serial_comm_left_rx" />
+			<param name="subscriber_topic" value="/fmData/serial_comm_left_tx" />
+			<param name="device" value="/dev/left_belt" />
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="13" />
+		</node>
+
+		<node pkg="serial_string" type="serial_string_node" name="serial_comm_right">
+			<param name="publisher_topic" value="/fmData/serial_comm_right_rx" />
+			<param name="subscriber_topic" value="/fmData/serial_comm_right_tx" />
+			<param name="device" value="/dev/right_belt" />
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="13" />
+		</node>
+
+		<node pkg="sdu_armadillo4" type="sdu_armadillo4_node" name="roboteq_left">
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
+			<param name="serial_rx_topic" value="/fmData/serial_comm_left_rx" />
+			<param name="serial_tx_topic" value="/fmData/serial_comm_left_tx" />
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
+			<param name="power_ch1_topic" value="/fmData/power_left"/>
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="mps_to_rpm" value="1432"/>
+			<param name="closed_loop_operation" value="true"/>
+			<param name="p_gain" value="0"/>
+			<param name="i_gain" value="0"/>
+			<param name="d_gain" value="0"/> 
+		</node>
+
+		<node pkg="sdu_armadillo4" type="sdu_armadillo4_node" name="roboteq_right">
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_right"/>
+			<param name="serial_rx_topic" value="/fmData/serial_comm_right_rx" />
+			<param name="serial_tx_topic" value="/fmData/serial_comm_right_tx" />
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_right"/>
+			<param name="power_ch1_topic" value="/fmData/power_right"/>
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="mps_to_rpm" value="1302"/>
+			<param name="closed_loop_operation" value="true"/>
+			<param name="p_gain" value="0"/>
+			<param name="i_gain" value="0"/>
+			<param name="d_gain" value="0"/> 
+		</node>
+
+	</group>
+</launch>

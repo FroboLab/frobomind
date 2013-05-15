@@ -56,6 +56,7 @@ class Controller():
         self.filter_size = rospy.get_param("~filter_size",10) 
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",1)
+        self.use_dynamic_reconfigure = rospy.get_param("~use_dynamic_reconfigure",False)
         self.linear_vel = [0.0] * self.filter_size
         self.angular_vel = [0.0] * self.filter_size
         self.time = 0.0
@@ -67,6 +68,16 @@ class Controller():
         self.last_heading = Vector(1,0)
         self.ptr = 0
         
+    def reconfigure_cb(self, config, level):
+        self.lin_p = config['lin_p']
+        self.lin_i = config['lin_i']
+        self.lin_d = config['lin_d']
+        self.ang_p = config['ang_p']
+        self.ang_i = config['ang_i']
+        self.ang_d = config['ang_d']
+        self.int_max = config['integrator_max']   
+        return config
+    
     def generateTwist(self,sp_linear,sp_angular):
         # Calculate time since last entry
         self.period = (rospy.Time.now() - self.last_cl_entry).to_sec()

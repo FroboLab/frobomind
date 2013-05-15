@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(velocity_control)
+project(sdu_armadillo4_abtest)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy simple_2d_math geometry_msgs tf)
+find_package(catkin REQUIRED COMPONENTS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -12,12 +12,6 @@ find_package(catkin REQUIRED COMPONENTS rospy simple_2d_math geometry_msgs tf)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
  catkin_python_setup()
-
-#add dynamic reconfigure api
-find_package(catkin REQUIRED dynamic_reconfigure)
-generate_dynamic_reconfigure_options(conf/Parameters.cfg)
-# make sure configure headers are build before node using them
-#add_dependencies(example_node dynamic_tutorials_gencfg) 
 
 #######################################
 ## Declare ROS messages and services ##
@@ -40,7 +34,7 @@ generate_dynamic_reconfigure_options(conf/Parameters.cfg)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   actionlib_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ###################################################
@@ -52,8 +46,8 @@ generate_dynamic_reconfigure_options(conf/Parameters.cfg)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES position_action_server
- CATKIN_DEPENDS rospy simple_2d_math geometry_msgs tf
+#  LIBRARIES sdu_armadillo_3
+  CATKIN_DEPENDS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives
 #  DEPENDS system_lib
 )
 
@@ -65,18 +59,18 @@ catkin_package(
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(position_action_server
-#   src/${PROJECT_NAME}/position_action_server.cpp
+# add_library(sdu_armadillo_3
+#   src/${PROJECT_NAME}/sdu_armadillo_3.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(position_action_server_node src/position_action_server_node.cpp)
+# add_executable(sdu_armadillo_3_node src/sdu_armadillo_3_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(position_action_server_node ${PROJECT_NAME})
+# add_dependencies(sdu_armadillo_3_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(position_action_server_node
+# target_link_libraries(sdu_armadillo_3_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -87,12 +81,12 @@ catkin_package(
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
 # install(PROGRAMS
-#   scripts/positionGoalActionServer
+#   mission_planners/wii_remote
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS position_action_server position_action_server_node
+# install(TARGETS sdu_armadillo_3 sdu_armadillo_3_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -117,7 +111,7 @@ catkin_package(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_position_action_server.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_armadillo_3.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

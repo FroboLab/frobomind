@@ -42,46 +42,39 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 
 	if(sscanf(msg->data.c_str(),"+%s",dummy)){}
 
-	if(two_channel)
+	else if(two_channel && sscanf(msg->data.c_str(),"CB=%d:%d",	&cb1,&cb2))
 	{
-		if(sscanf(msg->data.c_str(),"CB=%d:%d",	&cb1,&cb2))
-		{
-			encoder_out.header.stamp = msg->header.stamp;
+		encoder_out.header.stamp = msg->header.stamp;
 
-			encoder_out.data = cb1;
-			encoder_ch1_publisher.publish(encoder_out);
+		encoder_out.data = cb1;
+		encoder_ch1_publisher.publish(encoder_out);
 
-			encoder_out.data = cb2;
-			encoder_ch2_publisher.publish(encoder_out);
-		}
-		else if(sscanf(msg->data.c_str(),"P=%d:%d",		&p1,&p2))
-		{
-			power_out.header.stamp = msg->header.stamp;
-			power_out.data = p1;
-			power_ch1_publisher.publish(power_out);
-
-			power_out.data = p2;
-			power_ch2_publisher.publish(power_out);
-		}
+		encoder_out.data = cb2;
+		encoder_ch2_publisher.publish(encoder_out);
 	}
-	else
+	else if(two_channel && sscanf(msg->data.c_str(),"P=%d:%d",		&p1,&p2))
 	{
-		if(sscanf(msg->data.c_str(),"CB=%d",	&cb1))
-		{
-			encoder_out.header.stamp = msg->header.stamp;
+		power_out.header.stamp = msg->header.stamp;
+		power_out.data = p1;
+		power_ch1_publisher.publish(power_out);
 
-			encoder_out.data = cb1;
-			encoder_ch1_publisher.publish(encoder_out);
-		}
-		else if(sscanf(msg->data.c_str(),"P=%d",		&p1))
-		{
-			power_out.header.stamp = msg->header.stamp;
-			power_out.data = p1;
-			power_ch1_publisher.publish(power_out);
-		}
+		power_out.data = p2;
+		power_ch2_publisher.publish(power_out);
 	}
+	else if((!two_channel) && sscanf(msg->data.c_str(),"CB=%d",	&cb1))
+	{
+		encoder_out.header.stamp = msg->header.stamp;
 
-	if(sscanf(msg->data.c_str(),"FF=%d",		&ff))
+		encoder_out.data = cb1;
+		encoder_ch1_publisher.publish(encoder_out);
+	}
+	else if((!two_channel) && sscanf(msg->data.c_str(),"P=%d",		&p1))
+	{
+		power_out.header.stamp = msg->header.stamp;
+		power_out.data = p1;
+		power_ch1_publisher.publish(power_out);
+	}
+	else if(sscanf(msg->data.c_str(),"FF=%d",		&ff))
 	{
 		std::stringstream ss;
 		ss << statusFlagsToString(fs) << faultFlagsToString(ff) <<
@@ -118,9 +111,6 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 	{
 		ROS_WARN("RoboTeQ: %s",msg->data.c_str());
 	}
-
-
-
 }
 
 /*!Converts status flag to elaborated string*/

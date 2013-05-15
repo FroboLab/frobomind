@@ -29,8 +29,10 @@
 import rospy, tf, math
 from simple_2d_math.vector import Vector
 from geometry_msgs.msg import TwistStamped
-from velocity_control.velocity_control import Controller
+from velocity.control import Controller
 from tf import TransformListener
+from dynamic_reconfigure.server import Server
+from velocity import ParametersConfig
 
 class CmdVelController():
     """
@@ -70,6 +72,7 @@ class CmdVelController():
 if __name__ == '__main__':
     rospy.init_node('cmd_vel_controller')
     node = Controller()
+    reconfigure_server = Server(ParametersConfig, node.reconfigure_cb)
     rospy.spin()
     
 

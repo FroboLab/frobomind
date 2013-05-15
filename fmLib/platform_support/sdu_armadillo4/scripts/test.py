@@ -40,51 +40,42 @@ class TestInterface():
     def __init__(self):
         # Init node and setup topics
         rospy.init_node('test_interface')
-        self.publisher = rospy.Publisher("/fmData/rx", serial)
-        
-        self.tx_sub = rospy.Subscriber("/fmData/tx", serial, self.onTx)
-        self.rx_sub = rospy.Subscriber("/fmData/rx", serial, self.onRx)
+        self.publisher_left = rospy.Publisher("/fmData/serial_comm_left_rx", serial)
+        self.tx_sub_left = rospy.Subscriber("/fmData/serial_comm_left_tx", serial, self.onTxLeft)
+        self.rx_sub_left = rospy.Subscriber("/fmData/serial_comm_left_rx", serial, self.onRxLeft)
+        self.publisher_right = rospy.Publisher("/fmData/serial_comm_right_rx", serial)
+        self.tx_sub_right = rospy.Subscriber("/fmData/serial_comm_right_tx", serial, self.onTxRight)
+        self.rx_sub_right = rospy.Subscriber("/fmData/serial_comm_right_rx", serial, self.onRxRight)
         self.msg = serial()
 
         # Spin
         try:
             while not rospy.is_shutdown():
-#                self.msg.header.stamp = rospy.Time.now()
-#                self.msg.data = "FF=0"
-#                self.publisher.publish(self.msg)
-#                rospy.sleep(0.1)
-#                
-#                self.msg.header.stamp = rospy.Time.now()
-#                self.msg.data = "FS=0"
-#                self.publisher.publish(self.msg)
-#                rospy.sleep(0.1)
-#                
-#                self.msg.header.stamp = rospy.Time.now()
-#                self.msg.data = "CB=30:30"
-#                self.publisher.publish(self.msg)
-#                rospy.sleep(0.1)
-#                
-#                self.msg.header.stamp = rospy.Time.now()
-#                self.msg.data = "P=40:40"
-#                self.publisher.publish(self.msg)
-#                rospy.sleep(0.1)
-#                
-#                self.msg.header.stamp = rospy.Time.now()
-#                self.msg.data = "T=40:10:10"
-#                self.publisher.publish(self.msg)
                 rospy.sleep(10)
         except rospy.ROSInterruptException:
             pass
     
-    def onRx(self,msg):
-        print(msg.data)
+    def onRxLeft(self,msg):
+#        print(msg.data)
+        return 0
             
-    def onTx(self,msg):
-        print(msg.data)
+    def onTxLeft(self,msg):
+#        print(msg.data)
         if "?FID" in msg.data :
             self.msg.header.stamp = rospy.Time.now()
             self.msg.data = "FID=Roboteq blah blah"
-            self.publisher.publish(self.msg)
+            self.publisher_left.publish(self.msg)
+            
+    def onRxRight(self,msg):
+#        print(msg.data)
+        return 0
+            
+    def onTxRight(self,msg):
+#        print(msg.data)
+        if "?FID" in msg.data :
+            self.msg.header.stamp = rospy.Time.now()
+            self.msg.data = "FID=Roboteq blah blah"
+            self.publisher_right.publish(self.msg)
 
 
 if __name__ == '__main__':
