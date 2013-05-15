@@ -39,6 +39,8 @@
 #                 as yaw angle source
 #                 now supporting x,y,z as angular rate yaw axis (including inverted)
 # 2013-05-02 kjen Added support for absolute encoder values
+# 2013-05-15 kjen Corrected a potential bug when encoder callbacks updates
+#                 the relative tick vars while publishing is in progres.
 #
 #****************************************************************************/
 // includes
@@ -90,7 +92,7 @@ public:
 		this->yaw_source = yaw_source;
 		this->yaw_axis = yaw_axis;
 
-		delta_l = delta_r = 0; // reset encoder ticks (since last published odometry)
+		delta_ticks_l = delta_ticks_r = 0; // reset encoder ticks (since last published odometry)
 		x = y = theta = 0; // reset map pose
 
 		imu_yaw = prev_imu_yaw = 0; // reset imu angle
@@ -132,7 +134,7 @@ public:
 		{
 			if (l_first == false)
 			{
-				delta_l += (msg->encoderticks - prev_l.encoderticks);
+				delta_ticks_l += (msg->encoderticks - prev_l.encoderticks);
 				l_time_prev = l_time_latest;
 				l_time_latest = ros::Time::now();
 				l_updated = true;
@@ -143,7 +145,7 @@ public:
 		}
 		else
 		{
-			delta_l += msg->encoderticks;
+			delta_ticks_l += msg->encoderticks;
 			l_time_prev = l_time_latest;
 			l_time_latest = ros::Time::now();
 			l_updated = true;
@@ -156,7 +158,7 @@ public:
 		{
 			if (r_first == false)
 			{
-				delta_r += (msg->encoderticks - prev_r.encoderticks);
+				delta_ticks_r += (msg->encoderticks - prev_r.encoderticks);
 				r_time_prev = r_time_latest;
 				r_time_latest = ros::Time::now();
 				r_updated = true;
@@ -167,7 +169,7 @@ public:
 		}
 		else
 		{
-			delta_r += msg->encoderticks;
+			delta_ticks_r += msg->encoderticks;
 			r_time_prev = r_time_latest;
 			r_time_latest = ros::Time::now();
 			r_updated = true;
@@ -250,17 +252,21 @@ public:
 					}
 				}
 			}
-			
-			delta_l *= tick_to_meter; // convert from ticks to meter
-			delta_r *= tick_to_meter;
 
-			double dx = (delta_l + delta_r)/2.0; // approx. distance (assuming linear motion during dt)
-			double dtheta;
+			// copy and reset encoder ticks since last odometry publish
+			int64_t tick_l = delta_ticks_l;
+			delta_ticks_l = 0;
+			int64_t tick_r = delta_ticks_r;
+			delta_ticks_r = 0;		
+
+			// calculate approx. distance (assuming linear motion during dt)
+			double dx = (tick_l + tick_r)*tick_to_meter/2.0;
 
 			// calculate change in orientation using odometry
+			double dtheta;
 			if (yaw_source == YAW_SOURCE_ODOMETRY)
 			{
-				dtheta = (double) (delta_r - delta_l)/wheel_dist; 
+				dtheta = (tick_r - tick_l)*tick_to_meter/wheel_dist; 
 			}
 			else // or calculate change in orientation using IMU
 			{
@@ -273,9 +279,6 @@ public:
 			y += sin(ang)*dx;
 			theta += dtheta;
 			theta = angle_limit (theta); // keep theta within [0;2*pi[
-
-			//ROS_INFO("Odo %03.8f %03.8f %.3f %.3f %2f",delta_l, delta_r, x, y, theta);
- 			delta_l = delta_r = 0;
 
    			//since all odometry is 6DOF we'll need a quaternion created from yaw
 			geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
@@ -322,7 +325,7 @@ private:
 	int encoder_output, yaw_source, yaw_axis;
 	double imu_yaw, prev_imu_yaw;
 	bool encoder_timeout, imu_timeout;
-	double delta_l, delta_r;
+	int64_t delta_ticks_l, delta_ticks_r;
 	bool l_updated, r_updated, l_first, r_first;
 	ros::Time time_launch, l_time_latest, l_time_prev, r_time_latest, r_time_prev, imu_time_latest, imu_time_prev;
 	double x, y, theta;
