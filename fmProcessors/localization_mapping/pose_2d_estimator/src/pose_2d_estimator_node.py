@@ -47,8 +47,8 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 class Pose2DEstimatorNode():
 	def __init__(self):
 		self.pose_msg = Odometry()
-		self.pose_msg.header.frame_id = "odom"
-		self.pose_msg.child_frame_id = "map"
+		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
+		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
 		self.odom_topic_received = False
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
@@ -147,7 +147,7 @@ class Pose2DEstimatorNode():
 		
 		q = quaternion_from_euler (0, 0, self.pose[2])
 		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
- 
+ 		
 		#axis = [0,0,1]  # the z axis
 		#self.pose_msg.pose.pose.orientation = Quaternion(axis, self.pose[2])
 		#self.pose_msg.twist.twist.linear.x = vxy
