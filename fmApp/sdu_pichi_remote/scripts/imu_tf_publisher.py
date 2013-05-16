@@ -68,10 +68,10 @@ class IMUTransformPublisher():
     
     def onImu(self,msg):       
         # Z-axis is flipped due to ENU        
-        self.quaternion[0] = -msg.orientation.x
-        self.quaternion[1] = -msg.orientation.y
-        self.quaternion[2] = -msg.orientation.z
-        self.quaternion[3] = -msg.orientation.w
+        self.quaternion[0] = msg.orientation.x
+        self.quaternion[1] = msg.orientation.y
+        self.quaternion[2] = msg.orientation.z
+        self.quaternion[3] = msg.orientation.w
         
         rot = self.quat(0,1,0,math.pi/3)
         self.quaternion = self.multiply(self.quaternion, rot)

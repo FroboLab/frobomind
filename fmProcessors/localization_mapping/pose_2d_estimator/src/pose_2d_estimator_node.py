@@ -126,7 +126,13 @@ class Pose2DEstimatorNode():
 		self.quaternion[1] = msg.orientation.y
 		self.quaternion[2] = msg.orientation.z
 		self.quaternion[3] = msg.orientation.w
-		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
+		rot = self.quat(0,1,0,pi/3)
+		self.quaternion = self.multiply(self.quaternion, rot)
+		rot = self.quat(1,0,0,pi/3)
+		self.quaternion = self.multiply(self.quaternion, rot)
+		rot = self.quat(0,0,1,(2*pi)/3)
+		self.quaternion = self.multiply(self.quaternion, rot)
+		#(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 		# self.pose[2] = yaw # NOT ACCURATE ENOUGH FROM THE VECTORNAV !!!
 
 	def on_gga_topic(self, msg):
@@ -142,18 +148,40 @@ class Pose2DEstimatorNode():
 				(error, yaw) = self.pp.estimate_orientation_from_gnss_positions()
 				if error == False:
 					self.pose[2] = yaw;
-
+	
+	def multiply(self,q1,q2):
+		"""
+			Multiplies two quaternions
+		"""
+		result = np.empty((4, ), dtype=np.float64)
+		result[0] = q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1]
+		result[1] = q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2]
+		result[2] = q1[3] * q2[2] + q1[2] * q2[3] + q1[0] * q2[1] - q1[1] * q2[0]
+		result[3] = q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]
+		return result
+	
+	def quat(self,x,y,z,w):
+		"""
+			Generates a quaternion	
+		"""
+		new = np.empty((4, ), dtype=np.float64)
+		new[0] = x
+		new[1] = y
+		new[2] = z
+		new[3] = w
+		return new
+	
 	def publish_pose(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
 		self.pose_msg.pose.pose.position.x = self.pose[0]
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
-
-		q = quaternion_from_euler (0, 0, self.pose[2])
-		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
-
+		
+#		q = quaternion_from_euler (0, 0, self.pose[2])
+#		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
+		self.pose_msg.pose.pose.orientation = Quaternion(self.quaternion[0], self.quaternion[1], self.quaternion[2], self.quaternion[3])
 		self.pose_pub.publish(self.pose_msg); # publish the pose message
-		self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), "odom", "map") # publish the transform message
+		self.br.sendTransform((self.pose[0],self.pose[1],0), self.quaternion, rospy.Time.now(), self.pose_msg.header.frame_id, self.pose_msg.child_frame_id) # publish the transform message
 
 	def updater(self):
 		while not rospy.is_shutdown():

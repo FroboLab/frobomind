@@ -321,17 +321,14 @@ class LinePlanner():
             self.rabbit_factor = self.z1_rabbit
             self.max_linear_velocity = self.z1_lin_vel
             self.max_angular_velocity = self.z1_ang_vel
-            print("In zone 1")
         elif self.zone < (self.z2_value + ( (self.z3_value - self.z2_value )/2) ):
             self.rabbit_factor = self.z2_rabbit
             self.max_linear_velocity = self.z2_lin_vel
             self.max_angular_velocity = self.z2_ang_vel
-            print("In zone 2")
         else :
             self.rabbit_factor = self.z3_rabbit
             self.max_linear_velocity = self.z3_lin_vel
             self.max_angular_velocity = self.z3_ang_vel
-            print("In zone 3")
         
 #        if self.distance_to_goal < 3*self.max_distance_error :
 #            self.max_linear_velocity *= self.distance_to_goal
@@ -340,7 +337,6 @@ class LinePlanner():
             #self.max_linear_velocity = self.max_linear_velocity / ( self.max_linear_velocity + (self.z4_distance_to_target - self.distance_to_goal)**2)
             self.max_linear_velocity = (self.max_linear_velocity/self.z4_distance_to_target) * self.distance_to_goal
             self.max_angular_velocity = self.z3_ang_vel 
-            print("Overwriting to zone 4.New speed: " + str(self.max_linear_velocity))
         elif not self.corrected:
             self.rabbit_factor = self.z3_rabbit * self.retarder
             if math.fabs(self.angle_error) < self.z2_max_angle :
@@ -350,7 +346,7 @@ class LinePlanner():
             self.max_angular_velocity = self.z3_ang_vel
 #            self.max_linear_velocity *=  self.retarder
 #            self.rabbit_factor = self.z3_rabbit
-            print("Uncorrected")
+
              
     def control_loop(self):
         """
