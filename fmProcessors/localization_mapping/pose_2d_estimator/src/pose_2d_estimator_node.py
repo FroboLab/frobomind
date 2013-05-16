@@ -34,7 +34,7 @@ Revision
 2013-05-10 KJ First version
 """
 # ROS imports
-import rospy
+import rospy,tf
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion
@@ -47,7 +47,7 @@ class Pose2DEstimatorNode():
 	def __init__(self):
 		self.pose_msg = Odometry()
 		self.pose_msg.header.frame_id = "odom"
-		self.pose_msg.child_frame_id = "base_link"
+		self.pose_msg.child_frame_id = "map"
 		self.odom_topic_received = False
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
@@ -72,6 +72,7 @@ class Pose2DEstimatorNode():
 		rospy.Subscriber(self.odom_topic, Odometry, self.on_odom_topic)
 		rospy.Subscriber(self.imu_topic, Imu, self.on_imu_topic)
 		rospy.Subscriber(self.gga_topic, gpgga_tranmerc, self.on_gga_topic)
+		self.br = tf.TransformBroadcaster()
 
 		# setup publish topics
 		self.pose_pub = rospy.Publisher(self.pose_topic, Odometry)
@@ -83,7 +84,7 @@ class Pose2DEstimatorNode():
 		self.ekf = pose_2d_ekf()
 		self.pose = [ekf_init_guess_easting, ekf_init_guess_northing, ekf_init_guess_yaw]
 		self.ekf.set_initial_guess(self.pose)
-      
+        
 		# Call updater function
 		rospy.loginfo(rospy.get_name() + ": Start")
 		self.r = rospy.Rate(10) # set updater frequency [Hz]
@@ -146,6 +147,12 @@ class Pose2DEstimatorNode():
 		#self.pose_msg.twist.twist.linear.y = 0
 		#self.pose_msg.twist.twist.angular.z = vth
 		self.pose_pub.publish(self.pose_msg);
+		
+		self.br.sendTransform((self.pose[0],self.pose[1],0),
+					 q,
+					 rospy.Time.now(),
+					 "odom",
+					 "map")
 
 	def updater(self):
 		while not rospy.is_shutdown():
