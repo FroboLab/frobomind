@@ -46,7 +46,7 @@ find_package(catkin REQUIRED COMPONENTS rospy msgs smach smach_ros wiimote_inter
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES sdu_armadillo_3
+#  LIBRARIES sdu_frobit
   CATKIN_DEPENDS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives
 #  DEPENDS system_lib
 )
@@ -59,18 +59,18 @@ catkin_package(
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(sdu_armadillo_3
-#   src/${PROJECT_NAME}/sdu_armadillo_3.cpp
+# add_library(sdu_frobit
+#   src/${PROJECT_NAME}/sdu_frobit.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(sdu_armadillo_3_node src/sdu_armadillo_3_node.cpp)
+# add_executable(sdu_frobit_node src/sdu_frobit_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(sdu_armadillo_3_node ${PROJECT_NAME})
+# add_dependencies(sdu_frobit_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(sdu_armadillo_3_node
+# target_link_libraries(sdu_frobit_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -81,12 +81,12 @@ catkin_package(
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
 # install(PROGRAMS
-#   mission_planners/wii_remote
+#   mission_planners/frobit_remote
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS sdu_armadillo_3 sdu_armadillo_3_node
+# install(TARGETS sdu_frobit sdu_frobit_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -111,7 +111,7 @@ catkin_package(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_armadillo_3.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_frobit.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

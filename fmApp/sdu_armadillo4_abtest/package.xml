@@ -2,12 +2,12 @@
 <package>
   <name>sdu_armadillo4_abtest</name>
   <version>0.0.0</version>
-  <description>The sdu_armadillo_3 package</description>
+  <description>The sdu_frobit package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="frobobox@todo.todo">frobobox</maintainer>
+  <maintainer email="leon@todo.todo">leon</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://ros.org/wiki/sdu_armadillo_3</url> -->
+  <!-- <url type="website">http://ros.org/wiki/sdu_frobit</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -57,7 +57,6 @@
   <run_depend>generic_smach</run_depend>
   <build_depend>action_primitives</build_depend>
   <run_depend>action_primitives</run_depend>
-  
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

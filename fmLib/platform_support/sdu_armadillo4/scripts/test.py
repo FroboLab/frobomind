@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-    This script is for testing the Pichi system without a roboteq controller present.
+    This script is for testing the Armadillo system without a roboteq controller present.
 """
 import rospy
 import math
