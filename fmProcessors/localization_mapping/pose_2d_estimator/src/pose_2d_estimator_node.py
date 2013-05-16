@@ -35,6 +35,7 @@ Revision
 """
 # ROS imports
 import rospy,tf
+import numpy as np
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion
@@ -52,6 +53,7 @@ class Pose2DEstimatorNode():
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
 		self.odometry_yaw_prev = 0.0
+		self.quaternion = np.empty((4, ), dtype=np.float64)
 
 		# Get parameters
 		robot_max_velocity = rospy.get_param("~/robot_max_velocity", "1.0") # Robot maximum velocity [m/s]
@@ -93,7 +95,12 @@ class Pose2DEstimatorNode():
 	def on_odom_topic(self, msg):
 		x = msg.pose.pose.position.x
 		y = msg.pose.pose.position.y
-		yaw = 0.0 # !!!!! OI OI NEEDS ATTENTION!!! MUST GET THIS FROM QUARTERNION
+		#yaw = 0.0 # !!!!! OI OI NEEDS ATTENTION!!! MUST GET THIS FROM QUARTERNION
+		self.quaternion[0] = msg.pose.pose.orientation.x
+		self.quaternion[1] = msg.pose.pose.orientation.y
+		self.quaternion[2] = msg.pose.pose.orientation.z
+		self.quaternion[3] = msg.pose.pose.orientation.w
+		(roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
 
 		if self.odom_topic_received == True: # if we have received a first odom message
 			# EKF system update (odometry)

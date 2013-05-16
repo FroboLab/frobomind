@@ -14,7 +14,7 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 
 	<group ns="rosbag">
 		<!-- launch a bag from the SDU Pichi robot to emulate sensor input -->
-		<node pkg="rosbag" name="sensors" type="play" args="--start=12 --rate=1 --clock $(find pose_2d_estimator)/bags/test01.bag">
+		<node pkg="rosbag" name="sensors" type="play" args="--start=12 --rate=1 --clock $(find pose_2d_estimator)/bags/armadillo_iv_square.bag">
 			<remap from="/rosbag/clock" to="/clock"/> <!-- should not be necessary but it is...!!! -->
 		</node>
 	</group>
@@ -37,7 +37,7 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 	<group ns="fmProcessors">
 		<!-- estimate robot 2d pose -->
 		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
-			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
