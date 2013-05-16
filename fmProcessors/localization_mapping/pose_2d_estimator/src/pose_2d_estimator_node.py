@@ -31,7 +31,7 @@ This file wraps the FroboMind Pose 2D Estimator library into a ROS node.
 Most documentation of the library is in pose_2d_estimator.py
 
 Revision
-2013-05-10 KJ First version
+2013-05-16 KJ First version
 """
 # ROS imports
 import rospy,tf
@@ -47,15 +47,16 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 class Pose2DEstimatorNode():
 	def __init__(self):
 		self.pose_msg = Odometry()
-		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
-		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
+		self.quaternion = np.empty((4, ), dtype=np.float64) 
 		self.odom_topic_received = False
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
 		self.odometry_yaw_prev = 0.0
-		self.quaternion = np.empty((4, ), dtype=np.float64)
 
 		# Get parameters
+		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
+		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
+
 		robot_max_velocity = rospy.get_param("~/robot_max_velocity", "1.0") # Robot maximum velocity [m/s]
 		ekf_init_guess_easting = rospy.get_param("~ekf_initial_guess_easting", "0.0")
 		ekf_init_guess_northing = rospy.get_param("~ekf_initial_guess_northing", "0.0")
@@ -74,10 +75,10 @@ class Pose2DEstimatorNode():
 		rospy.Subscriber(self.odom_topic, Odometry, self.on_odom_topic)
 		rospy.Subscriber(self.imu_topic, Imu, self.on_imu_topic)
 		rospy.Subscriber(self.gga_topic, gpgga_tranmerc, self.on_gga_topic)
-		self.br = tf.TransformBroadcaster()
 
 		# setup publish topics
 		self.pose_pub = rospy.Publisher(self.pose_topic, Odometry)
+		self.br = tf.TransformBroadcaster()
 
 		# initialize estimator (preprocessing)
 		self.pp = pose_2d_preprocessor (robot_max_velocity)
@@ -100,12 +101,15 @@ class Pose2DEstimatorNode():
 		self.quaternion[1] = msg.pose.pose.orientation.y
 		self.quaternion[2] = msg.pose.pose.orientation.z
 		self.quaternion[3] = msg.pose.pose.orientation.w
-		(roll,pitch,yaw) = tf.transformations.euler_from_quaternion(self.quaternion)
+		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 
 		if self.odom_topic_received == True: # if we have received a first odom message
+
 			# EKF system update (odometry)
+			time_recv = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
 			delta_dist =  sqrt((x-self.odometry_x_prev)**2 + (y-self.odometry_y_prev)**2)
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
+			self.pp.add_odometry (time_recv, delta_dist, delta_angle)
 			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
 
 			# publish the estimated pose	
@@ -118,21 +122,26 @@ class Pose2DEstimatorNode():
 		self.odometry_yaw_prev = yaw
 
 	def on_imu_topic(self, msg):
-		(roll,pitch,yaw) = euler_from_quaternion([msg.orientation.x, \
-			msg.orientation.y, msg.orientation.z, msg.orientation.w])
+		self.quaternion[0] = msg.orientation.x
+		self.quaternion[1] = msg.orientation.y
+		self.quaternion[2] = msg.orientation.z
+		self.quaternion[3] = msg.orientation.w
+		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 		# self.pose[2] = yaw # NOT ACCURATE ENOUGH FROM THE VECTORNAV !!!
 
 	def on_gga_topic(self, msg):
 		if msg.fix > 0: # if satellite fix
 			# GNSS data preprocessing
 			time_recv = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
-			pos = self.pp.add_gnss_measurement (time_recv, msg.easting, msg.northing, msg.fix)
-			if pos != False: # if we have a valid (relative) position 
-				var_pos = self.pp.estimate_variance()
+			error = self.pp.add_gnss_measurement (time_recv, msg.easting, msg.northing, msg.fix)
+			if error == False: # if we have a valid position 
+				var_pos = self.pp.estimate_variance_gnss()
 
 				# EKF measurement update (GNSS)
-				self.pose = self.ekf.measurement_update_gnss (pos, var_pos)
-
+				self.pose = self.ekf.measurement_update_pos ([msg.easting, msg.northing], var_pos)
+				(error, yaw) = self.pp.estimate_orientation_from_gnss_positions()
+				if error == False:
+					self.pose[2] = yaw;
 
 	def publish_pose(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
@@ -140,26 +149,11 @@ class Pose2DEstimatorNode():
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
 
-		# DIRTY HACK, MUST BE CHANGED !!!
-		(err, yaw) = self.pp.estimate_orientation_from_gnss_positions() 
-		if err == False:
-			self.pose[2] = yaw
-		
 		q = quaternion_from_euler (0, 0, self.pose[2])
 		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
- 		
-		#axis = [0,0,1]  # the z axis
-		#self.pose_msg.pose.pose.orientation = Quaternion(axis, self.pose[2])
-		#self.pose_msg.twist.twist.linear.x = vxy
-		#self.pose_msg.twist.twist.linear.y = 0
-		#self.pose_msg.twist.twist.angular.z = vth
-		self.pose_pub.publish(self.pose_msg);
-		
-		self.br.sendTransform((self.pose[0],self.pose[1],0),
-					 q,
-					 rospy.Time.now(),
-					 "odom",
-					 "map")
+
+		self.pose_pub.publish(self.pose_msg); # publish the pose message
+		self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), "odom", "map") # publish the transform message
 
 	def updater(self):
 		while not rospy.is_shutdown():
