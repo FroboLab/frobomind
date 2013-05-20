@@ -37,7 +37,9 @@ Revision
 
 # ROS imports
 import rospy
-from math import sqrt, atan2
+import numpy as np
+from tf.transformations import euler_from_quaternion
+from math import sqrt, atan2, pi
 from nav_msgs.msg import Odometry
 from msgs.msg import gpgga_tranmerc
 from robot_track_map import track_map
@@ -47,12 +49,13 @@ class track_map_node():
 		self.prev_easting = 0.0
 		self.prev_northing = 0.0
 		self.yaw = 0.0
+		self.q = np.empty((4, ), dtype=np.float64) 
 
 		# Get parameters
-		en_pose = rospy.get_param("~enable_pose_track",False)
-		en_gnss = rospy.get_param("~enable_gnss_track",False)
-		en_odometry = rospy.get_param("~enable_odometry_track",False)
-		en_pose_yaw = rospy.get_param("~enable_pose_orientation",False)
+		plot_pose_pos = rospy.get_param("~plot_pose_track",False)
+		plot_gnss = rospy.get_param("~plot_gnss_track",False)
+		plot_odometry = rospy.get_param("~plot_odometry_track",False)
+		plot_yaw = rospy.get_param("~plot_pose_yaw",False)
 		offset_e = rospy.get_param("~easting_offset",0.0) # [m]
 		offset_n = rospy.get_param("~northing_offset",0.0) # [m]
 		self.trkpt_threshold = rospy.get_param("~trackpoint_threshold",0.1) # [m]
@@ -63,7 +66,7 @@ class track_map_node():
 		rospy.loginfo(rospy.get_name() + " Trackpoint threshold: %.3f m" % (self.trkpt_threshold))
  
 		# setup map plot
-		self.plot = track_map(en_pose, en_pose_yaw, en_gnss, en_odometry, map_title, map_window_size, offset_e, offset_n)
+		self.plot = track_map(plot_pose_pos, plot_gnss, plot_odometry, plot_yaw, map_title, map_window_size, offset_e, offset_n)
 		self.plot.set_trackpoint_threshold (self.trkpt_threshold)
 
 		# Get topic names
@@ -93,6 +96,19 @@ class track_map_node():
 		qw = msg.pose.pose.orientation.w
 		self.yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
 
+		#self.q[0] = msg.pose.pose.orientation.x
+		#self.q[1] = msg.pose.pose.orientation.y
+		#self.q[2] = msg.pose.pose.orientation.z
+		#self.q[3] = msg.pose.pose.orientation.w
+		#rot = self.quat(0,1,0,pi/3)
+		#self.quaternion = self.multiply(self.quaternion, rot)
+		#rot = self.quat(1,0,0,pi/3)
+		#self.quaternion = self.multiply(self.quaternion, rot)
+		#rot = self.quat(0,0,1,(2*pi)/3)
+		#self.quaternion = self.multiply(self.quaternion, rot)
+		#(roll, pitch, self.yaw) = euler_from_quaternion(self.q)
+		#print 'received', self.yaw*180.0/pi
+
 	# handle incoming GNSS messages
 	def on_gnss_topic(self, msg):
 		# dirty hack to perform simple filtering of singular extreme outliers to maintain map visibility
@@ -111,7 +127,7 @@ class track_map_node():
 	def updater(self):
 		while not rospy.is_shutdown():
 			# Update map
-			self.plot.append_pose_orientation(self.yaw)
+			self.plot.append_pose_yaw(self.yaw)
 			self.plot.update()
 
 			self.r.sleep()

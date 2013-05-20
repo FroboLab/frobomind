@@ -41,7 +41,7 @@ from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion
 from msgs.msg import gpgga_tranmerc
 from math import pi, sqrt, atan2
-from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf
+from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf, yaw_ekf
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class Pose2DEstimatorNode():
@@ -87,7 +87,8 @@ class Pose2DEstimatorNode():
 		self.ekf = pose_2d_ekf()
 		self.pose = [ekf_init_guess_easting, ekf_init_guess_northing, ekf_init_guess_yaw]
 		self.ekf.set_initial_guess(self.pose)
-        
+		self.yawekf = yaw_ekf() # !!! TEMPORARY HACK
+
 		# Call updater function
 		rospy.loginfo(rospy.get_name() + ": Start")
 		self.r = rospy.Rate(10) # set updater frequency [Hz]
@@ -111,6 +112,7 @@ class Pose2DEstimatorNode():
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
 			self.pp.add_odometry (time_recv, delta_dist, delta_angle)
 			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
+			self.pose[2] = self.yawekf.system_update (delta_angle, self.odometry_var_angle) # !!! TEMPORARY HACK
 
 			# publish the estimated pose	
 			self.publish_pose()
@@ -126,28 +128,29 @@ class Pose2DEstimatorNode():
 		self.quaternion[1] = msg.orientation.y
 		self.quaternion[2] = msg.orientation.z
 		self.quaternion[3] = msg.orientation.w
-		rot = self.quat(0,1,0,pi/3)
-		self.quaternion = self.multiply(self.quaternion, rot)
-		rot = self.quat(1,0,0,pi/3)
-		self.quaternion = self.multiply(self.quaternion, rot)
-		rot = self.quat(0,0,1,(2*pi)/3)
-		self.quaternion = self.multiply(self.quaternion, rot)
-		#(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
+		#rot = self.quat(0,1,0,pi/3)
+		#self.quaternion = self.multiply(self.quaternion, rot)
+		#rot = self.quat(1,0,0,pi/3)
+		#self.quaternion = self.multiply(self.quaternion, rot)
+		#rot = self.quat(0,0,1,(2*pi)/3)
+		#self.quaternion = self.multiply(self.quaternion, rot)
+		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 		# self.pose[2] = yaw # NOT ACCURATE ENOUGH FROM THE VECTORNAV !!!
 
 	def on_gga_topic(self, msg):
 		if msg.fix > 0: # if satellite fix
 			# GNSS data preprocessing
 			time_recv = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
-			error = self.pp.add_gnss_measurement (time_recv, msg.easting, msg.northing, msg.fix)
+			error = self.pp.add_gnss_measurement (time_recv, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
 			if error == False: # if we have a valid position 
 				var_pos = self.pp.estimate_variance_gnss()
 
 				# EKF measurement update (GNSS)
 				self.pose = self.ekf.measurement_update_pos ([msg.easting, msg.northing], var_pos)
-				(error, yaw) = self.pp.estimate_orientation_from_gnss_positions()
+				(error, gnss_yaw) = self.pp.estimate_orientation_from_gnss_positions()
 				if error == False:
-					self.pose[2] = yaw;
+					var_gnss_yaw = 0.1
+					self.pose[2] = self.yawekf.measurement_update (gnss_yaw, var_gnss_yaw) # !!! TEMPORARY HACK
 	
 	def multiply(self,q1,q2):
 		"""
@@ -176,12 +179,12 @@ class Pose2DEstimatorNode():
 		self.pose_msg.pose.pose.position.x = self.pose[0]
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
-		
-#		q = quaternion_from_euler (0, 0, self.pose[2])
-#		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
-		self.pose_msg.pose.pose.orientation = Quaternion(self.quaternion[0], self.quaternion[1], self.quaternion[2], self.quaternion[3])
+		#print 'sent', self.pose[2]*180.0/pi
+		q = quaternion_from_euler (0, 0, self.pose[2])
+		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
 		self.pose_pub.publish(self.pose_msg); # publish the pose message
-		self.br.sendTransform((self.pose[0],self.pose[1],0), self.quaternion, rospy.Time.now(), self.pose_msg.header.frame_id, self.pose_msg.child_frame_id) # publish the transform message
+		self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), \
+			self.pose_msg.header.frame_id, self.pose_msg.child_frame_id) # publish the transform message
 
 	def updater(self):
 		while not rospy.is_shutdown():

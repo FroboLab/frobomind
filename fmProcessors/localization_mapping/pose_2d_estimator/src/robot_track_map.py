@@ -26,19 +26,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
+"""
+This file contains a 2D pose mapping class designed for field robots.
+
+The pose follows the ENU coordinate system to allow use of GNSS based
+coordinates represented in a Transverse Mercator projection. 
+
+	Pose position vector: [easting, northing]
+	Pose orientation vector: [yaw] positive rotation CCW (opposite compass headings) 
+
+Revision
+2013-04-25 KJ First version
+"""
 # imports
 import matplotlib.pyplot as plt
 from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
 from math import pi, sqrt
 
 class track_map():
-	def __init__(self, enable_pose, enable_pose_yaw, enable_gnss, enable_odometry, map_title, map_window_size, easting_offset, northing_offset):
+	def __init__(self, plot_pose, plot_gnss, plot_odometry, plot_yaw, map_title, map_window_size, easting_offset, northing_offset):
 		self.rad_to_deg = 180.0/pi
         # Get parameters
-		self.pose_enabled = enable_pose
-		self.gnss_enabled = enable_gnss
-		self.odometry_enabled = enable_odometry
-		self.pose_yaw_enabled = enable_pose_yaw
+		self.plot_pose = plot_pose
+		self.plot_gnss = plot_gnss
+		self.plot_odometry = plot_odometry
+		self.plot_yaw = plot_yaw
 		self.trkpt_threshold = 0.1 # [m]
         
 		# Initialize map
@@ -47,24 +59,27 @@ class track_map():
 		self.odo = []
 		self.gnss = []
 		self.pose_pos = []
+		self.odo_yaw = []
+		self.gnss_yaw = []
+		self.ahrs_yaw = []
 		self.pose_yaw = []
 
 		ion() # turn interaction mode on
-		if self.gnss_enabled or self.pose_enabled:
+		if self.plot_gnss or self.plot_pose:
 			self.fig1 = plt.figure(num=1, figsize=(map_window_size, \
 				map_window_size), dpi=80, facecolor='w', edgecolor='w')
-			if self.gnss_enabled and self.pose_enabled:
-				title (map_title + ' - EKF and GNSS')
-			elif self.gnss_enabled:
+			if self.plot_gnss and self.plot_pose:
+				title (map_title + ' - Pose and GNSS')
+			elif self.plot_gnss:
 				title (map_title + ' - GNSS')
-			elif self.pose_enabled:
-				title (map_title + ' - EKF')
+			elif self.plot_pose:
+				title (map_title + ' - Pose')
 			xlabel('Easting [m]')
 			ylabel('Northing [m]')
 			axis('equal')
 			grid (True)
 
-		if self.odometry_enabled:
+		if self.plot_odometry:
 			self.fig2 = plt.figure(num=2, figsize=(map_window_size, \
 				map_window_size), dpi=80, facecolor='w', edgecolor='w')
 			title (map_title + ' - Odometry')
@@ -73,7 +88,7 @@ class track_map():
 			axis('equal')
 			grid (True)
 
-		if self.pose_yaw_enabled:
+		if self.plot_yaw:
 			self.fig3 = plt.figure(num=3, figsize=(map_window_size, \
 				map_window_size), dpi=80, facecolor='w', edgecolor='w')
 			title (map_title + ' - Orientation (yaw)')
@@ -87,10 +102,6 @@ class track_map():
 		if self.pose_pos == [] or sqrt((x-self.pose_pos[-1][0])**2 + (y-self.pose_pos[-1][1])**2) > self.trkpt_threshold:
 			self.pose_pos.append([x, y])
 
-	def append_pose_orientation (self, yaw):
-		self.pose_yaw.append(yaw*self.rad_to_deg)
-		#print len(self.pose_yaw), yaw*self.rad_to_deg
-
 	def append_gnss_position (self, easting, northing):
 		x = easting + self.offset_e
 		y = northing + self.offset_n
@@ -101,36 +112,58 @@ class track_map():
 		if self.odo == [] or sqrt((x-self.odo[-1][0])**2 + (y-self.odo[-1][1])**2) > self.trkpt_threshold:
 			self.odo.append([x, y])
 
+	def append_pose_yaw (self, yaw):
+		self.pose_yaw.append(yaw*self.rad_to_deg)
+
+	def append_gnss_yaw (self, yaw):
+		self.gnss_yaw.append(yaw*self.rad_to_deg)
+
+	def append_ahrs_yaw (self, yaw):
+		self.ahrs_yaw.append(yaw*self.rad_to_deg)
+
+	def append_odo_yaw (self, yaw):
+		self.odo_yaw.append(yaw*self.rad_to_deg)
+
 	def update(self):
-		if self.gnss_enabled and self.gnss != []:
+		if self.plot_gnss and self.gnss != []:
 			plt.figure(1)
 			gnssT = zip(*self.gnss)		
 			gnss_plt = plot(gnssT[0],gnssT[1],'black')
-		if self.pose_enabled and self.pose_pos != []:
+		if self.plot_pose and self.pose_pos != []:
 			plt.figure(1)
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
-		if self.odometry_enabled and self.odo != []:
+		if self.plot_odometry and self.odo != []:
 			plt.figure(2)
 			odoT = zip(*self.odo)		
 			odo_plt = plot(odoT[0],odoT[1],'b')
-		if self.pose_yaw_enabled and self.pose_yaw != []:
-			plt.figure(3)
-			pose_yaw_plt = plot(self.pose_yaw,'r')
-		if self.gnss_enabled or self.pose_enabled or self.odometry_enabled or self.pose_yaw_enabled:
+		if self.plot_pose:
+			if  self.odo_yaw != []:
+				plt.figure(3)
+				odo_yaw_plt = plot(self.odo_yaw,'b')
+			if  self.ahrs_yaw != []:
+				plt.figure(3)
+				ahrs_yaw_plt = plot(self.ahrs_yaw,'g')
+			if  self.gnss_yaw != []:
+				plt.figure(3)
+				gnss_yaw_plt = plot(self.gnss_yaw, 'black')
+			if  self.pose_yaw != []:
+				plt.figure(3)
+				pose_yaw_plt = plot(self.pose_yaw,'r')
+		if self.plot_gnss or self.plot_pose or self.plot_odometry or self.plot_yaw:
 			draw()
 
 	def save(self, file_name):
-		if self.gnss_enabled or self.pose_enabled:
-			if self.gnss_enabled and self.pose_enabled:
+		if self.plot_gnss or self.plot_pose:
+			if self.plot_gnss and self.plot_pose:
 				self.fig1.savefig (file_name+'-gnss-pose.png')
-			elif self.gnss_enabled:
+			elif self.plot_gnss:
 				self.fig1.savefig (file_name+'-gnss.png')
 			else:
 				self.fig1.savefig (file_name+'-pose.png')
-		if self.odometry_enabled:
+		if self.plot_odometry:
 			self.fig2.savefig (file_name+'-odometry.png')
-		if self.pose_yaw_enabled:
+		if self.plot_yaw:
 			self.fig3.savefig (file_name+'-yaw.png')
 
 	def set_trackpoint_threshold (self, threshold):

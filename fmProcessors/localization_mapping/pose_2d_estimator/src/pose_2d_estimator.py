@@ -57,7 +57,7 @@ Revision
 """
 # imports
 import numpy as np
-from math import sqrt, pi, sin, cos, acos
+from math import sqrt, pi, sin, cos, acos, fabs
 from numpy import matrix, array, linalg, mat
 
 # defines
@@ -69,6 +69,7 @@ class pose_2d_preprocessor():
 	def __init__(self, max_speed):
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
+		self.pi2 = 2.0*pi
 		self.max_speed = max_speed
 		self.gnss = []
 		self.gnss_buffer_time = 2 # [s]
@@ -82,6 +83,8 @@ class pose_2d_preprocessor():
 		self.odo_buffer_time = 2 # [s]
 		self.odo_measurement_interval = -1 # [s]
 		self.odo_buffer_size = buffer_initial_size_odo
+		self.gnss_orientation_timeout = 0.0
+		self.gnss_orientation_prev_yaw = -10.0
 	
 	def validate_new_gnss_position(self, time_stamp, easting, northing):
 		error = 0
@@ -102,18 +105,20 @@ class pose_2d_preprocessor():
 		yaw = 0.0
 		buflen = len (self.gnss)
 		if buflen >= 2:
-			if self.gnss[-1][1] == 4: # if latest position is based on a fixed solution
+			time_stamp = 0
+			fix = 1
+			E = 2
+			N = 3
+			sat = 4
+			hdop = 5
+			if self.gnss[-1][fix] == 4  and self.gnss_orientation_timeout < self.gnss[-1][time_stamp]: # if latest position is based on a fixed solution
 				i = 1
 				size = 0
-				fix = 1
-				E = 2
-				N = 3
-				while i<buflen and size < 0.25:
+				while i<buflen and size < 0.5:
 					i += 1
 					if self.gnss[-i][fix] == 4: 
 						size = sqrt ((self.gnss[-1][E]- self.gnss[-i][E])**2 + (self.gnss[-1][N]- self.gnss[-i][N])**2)
-				if size >= 0.25: # if we found two coordinates at the required distance
-					err = False
+				if size >= 0.5: # if we found two coordinates at the required distance
 				
 					# calc angle between gnss coordinate vector and northing axis
 					northing_axis_vector_len = self.gnss[-1][N] - self.gnss[-i][N]
@@ -123,17 +128,27 @@ class pose_2d_preprocessor():
 					# handle special case for the 2. and 3. quadrant
 					if self.gnss[-i][E] > self.gnss[-1][E]:
 						theta = 2.0*pi - theta
-					#print theta*180/pi, i, size, self.gnss[-1][E]- self.gnss[-i][E], self.gnss[-1][N]- self.gnss[-i][N],self.gnss[-1][E],self.gnss[-1][N],self.gnss[-i][E],self.gnss[-i][N]
+					# convert from compass heading to unit circle orientaion
+					theta = -theta
+
+					# OI OI hack alert!!!, yaw is not the same as heading but for how it is!!!
 					yaw = theta
 
-		return (err, yaw)
-	
+					# check for irregular "jumps" 
+					err = False
+					if self.gnss_orientation_prev_yaw != -10 and fabs(self.angle_diff(yaw, self.gnss_orientation_prev_yaw)) > 30/180.0*pi:
+						err = True
+						self.gnss_orientation_timeout = self.gnss[-1][0] + 3.0 # dont rely on estimates the next seconds
+						
+					self.gnss_orientation_prev_yaw = yaw
 
-	def add_gnss_measurement (self, time_stamp, easting, northing, solution):
+		return (err, self.angle_limit(yaw))
+
+	def add_gnss_measurement (self, time_stamp, easting, northing, solution, sat, hdop):
 		err = True
 		if solution > 0: # if satellite fix
 			if not self.validate_new_gnss_position(time_stamp, easting, northing):
-				self.gnss.append([time_stamp, solution, easting, northing])
+				self.gnss.append([time_stamp, solution, easting, northing, sat, hdop])
 				err = False
 				if len(self.gnss) > self.gnss_buffer_size: # trim buffer length to size
 					self.gnss.pop(0)
@@ -173,11 +188,13 @@ class pose_2d_preprocessor():
 		std_dev = 20000000.0
 		if len(self.gnss) > 0:
 			if self.gnss[-1][1] == 4: # rtk fixed solution
-				std_dev = 0.02
+				std_dev = 0.02 * self.gnss[-1][5]
 			elif self.gnss[-1][1] == 5: # rtk float solution
 				std_dev = 2.0
+				std_dev = 2.0 * self.gnss[-1][5]*20
 			elif self.gnss[-1][1] == 2: # dgps solution
 				std_dev = 7.0
+				std_dev = 7.0 * self.gnss[-1][5]*20
 			elif self.gnss[-1][1] == 1: # sps solution
 				std_dev = 15.0
 		return std_dev**2
@@ -185,17 +202,31 @@ class pose_2d_preprocessor():
 	def estimate_yaw(self):
 		pass
 
-	def remove_old_measurements (self):
-		pass
+	def angle_limit (self, angle): # return angle within [0;2pi[
+		while angle < 0:
+			angle += self.pi2
+		while angle >= self.pi2:
+			angle -= self.pi2
+		return angle
+
+	# return signed difference between new and old angle
+	def angle_diff (self, angle_new, angle_old):
+		diff = angle_new - angle_old
+		while diff < -pi:
+			diff += 2*pi
+		while diff > pi:
+			diff -= 2*pi
+		return diff
 
 class pose_2d_ekf():
 	def __init__(self):
+		self.pi2 = 2.0*pi
 		self.prevX = self.set_initial_guess([0.0, 0.0, 0.0])
 		self.prevCov = np.matrix([[100000000**2.0,0.0,0.0],[0.,100000000**2,0.0], \
-			[0.0,0.0,2.0*pi]]) # high variance for the initial guess 
+			[0.0,0.0,pi**2]]) # high variance for the initial guess 
 		self.Q = np.identity(3)
-		self.Hgnss = np.matrix([[1., 0., 0.,],[0., 1., 0.]]) # GNSS observation matrix
-		self.Hahrs = np.matrix([[0., 0., 0.,],[0., 0., 1.]]) # AHRS observation matrix
+		self.Hpos= np.matrix([[1., 0., 0.,],[0., 1., 0.]]) # Position observation matrix
+		self.Hyaw = np.matrix([[0., 0., 0.,],[0., 0., 1.]]) # Yaw angle observation matrix
 
 	def set_initial_guess (self, x):
 		self.prevX = np.matrix(x)
@@ -207,9 +238,11 @@ class pose_2d_ekf():
 		priX = self.f(self.prevX, u)
 
 		# predicted (A priori) error covariance estimate: P-[t] = P[t-1] + Q
+		#print 'pri:',  self.Q
 		self.Q = self.Q + np.matrix([[delta_dist*var_dist, 0.0, 0.0], \
 			[0.0, delta_dist*var_dist, 0.0], \
-			[0.0, 0.0, delta_angle/(2*pi)*var_angle]])
+			[0.0, 0.0, delta_angle/self.pi2*var_angle]])
+		#print 'pos:',  self.Q
 		Gm = self.G(self.prevX, u)
 		priCov = Gm*self.prevCov*Gm.T + self.Q 
 
@@ -220,33 +253,61 @@ class pose_2d_ekf():
 
 	def measurement_update_pos (self, pos, var_pos):
 		# Compute Kalman gain: K[t] = P-[t]/(P-[t] + R)
-		K = self.prevCov*self.Hgnss.T*linalg.inv(self.Hgnss*self.prevCov*self.Hgnss.T + self.R(var_pos))
-		#print 'R', self.R(var_pos)
-		#print 'k', K
-
+		K = self.prevCov*self.Hpos.T*linalg.inv(self.Hpos*self.prevCov*self.Hpos.T + self.R(var_pos))
+		#print 'K',K
 		# updated (A posteriori) estimate with measurement z[t]: X[t] = X-[t] + K[t]*(z[t] - X-[t])
 		prev_pos = [array(self.prevX)[0][0], array(self.prevX)[0][1]] # A priori position
-		#print 'prev_pos', prev_pos
 		
-		y = np.matrix(pos).T - np.matrix(prev_pos).T # measurement residual
-		#print 'y', y
+		y = np.matrix(pos).T - np.matrix(prev_pos).T # measurement residual (z[t] - X-[t])
 
 		postX = self.prevX + (K*y).T # updated state estimate
-		#print 'postX', postX
 
 		# updated (A posteriori) error covariance: P[t] = (1 - K[t])*P-[t]
-		postCov = (mat(np.identity(3))-K*self.Hgnss)*self.prevCov
+		postCov = (mat(np.identity(3))-K*self.Hpos)*self.prevCov
 
 		# housekeeping
-		self.Q = np.identity(3) # reset the process noise covariance matrix
+		self.Q[0,0] = 1.0 # reset the position part of the process noise covariance matrix
+		self.Q[1,1] = 1.0
 		self.prevX = postX # advance to next update step
 		self.prevCov = postCov # save A posteriori error variance estimate
 		return array(self.prevX)[0]
 
 	def measurement_update_yaw (self, yaw, var_yaw):
-		self.prevX[2][2] = yaw
+		# Compute Kalman gain: K[t] = P-[t]/(P-[t] + R)
+		K = self.prevCov[2,2]/(self.prevCov[2,2] + var_yaw)
+
+		# updated (A posteriori) estimate with measurement z[t]: X[t] = X-[t] + K[t]*(z[t] - X-[t])
+		prev_yaw = self.prevX[0,2] # A priori yaw angle
+		
+		y = yaw - prev_yaw # measurement residual (z[t] - X-[t])
+
+		postX = self.prevX
+		#print postX
+		#postX.itemset(2, postX.item(2)+ K*y) #= 4# += [0,0,K*y].T # updated state estimate
+
+		#print 'her'
+		#print postX
+		#print K
+		#print y
+		#print K*y
+
+		postX[0,2] = postX[0,2] + K*y
+		#print postX
+		#print K*self.Hyaw
+
+		# updated (A posteriori) error covariance: P[t] = (1 - K[t])*P-[t]
+		#postCov = (mat(np.identity(3))-K*self.Hyaw)*self.prevCov
+
+		#print 'foer', self.prevCov
+		postCov = self.prevCov
+		postCov[2,2] = (1-K)*postCov[2,2]
+		# housekeeping
+		self.Q[2,2] = 1.0 # reset the yaw orientation part of the process noise covariance matrix
+		self.prevX = postX # advance to next update step
+		self.prevCov = postCov # save A posteriori error variance estimate
+		#print 'efter', self.prevCov
+
 		return array(self.prevX)[0]
-		pass
 
 	def R (self, var_pos): # measurement error covariance matrix
 		return np.matrix([[var_pos, 0.],[0., var_pos]])
@@ -257,7 +318,7 @@ class pose_2d_ekf():
 		x = array(x)[0]
 		theta = x[2]
 		dTheta = u[1]
-		l1 = [x[0]+u[0]*cos(theta+dTheta/2.),x[1]+u[0]*sin(theta+dTheta/2.),theta+dTheta]
+		l1 = [x[0]+u[0]*cos(theta+dTheta/2.0),x[1]+u[0]*sin(theta+dTheta/2.0),theta+dTheta]
 		return np.matrix(l1)
 
 	def G (self, x, u): # system error covariance matrix
@@ -270,4 +331,44 @@ class pose_2d_ekf():
 		l2 = [0., 1., u[0]*cos(theta+dTheta/2.)]
 		l3 = [0., 0., 1.]
 		return (np.matrix([l1, l2, l3]))
+
+class yaw_ekf():
+	def __init__(self):
+		self.pi2 = 2.0*pi
+		self.estimated_angle = 0.0
+		self.estimated_var = pi**2
+
+	def set_initial_guess (self, angle):
+		self.estimated_angle = angle
+
+	def system_update (self, delta_angle, var_delta_angle):
+		predicted_angle = self.estimated_angle + delta_angle
+		predicted_var = self.estimated_var + var_delta_angle
+
+		# house keeping
+		self.estimated_angle = self.angle_limit (predicted_angle)
+		self.estimated_var = predicted_var
+		return self.estimated_angle
+
+	def measurement_update (self, angle, var_angle):
+		K = self.estimated_var/(self.estimated_var + var_angle)
+		y = angle - self.estimated_angle
+		if y > pi:
+			y -= self.pi2
+		elif y< -pi:
+			y += self.pi2
+		corrected_angle = self.estimated_angle + K*y
+		corrected_var = self.estimated_var*(1 - K)
+
+		# house keeping
+		self.estimated_angle = self.angle_limit(corrected_angle)
+		self.estimated_var = corrected_var
+		return self.estimated_angle
+
+	def angle_limit (self, angle): # return angle within [0;2pi[
+		while angle < 0:
+			angle += self.pi2
+		while angle >= self.pi2:
+			angle -= self.pi2
+		return angle
 
