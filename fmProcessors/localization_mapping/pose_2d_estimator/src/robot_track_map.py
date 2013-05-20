@@ -33,7 +33,7 @@ The pose follows the ENU coordinate system to allow use of GNSS based
 coordinates represented in a Transverse Mercator projection. 
 
 	Pose position vector: [easting, northing]
-	Pose orientation vector: [yaw] positive rotation CCW (opposite compass headings) 
+	Pose orientation vector: [yaw] positive rotation CCW origo at the easting axis 
 
 Revision
 2013-04-25 KJ First version

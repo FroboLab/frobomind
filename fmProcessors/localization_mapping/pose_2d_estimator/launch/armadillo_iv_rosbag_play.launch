@@ -11,7 +11,11 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 	<param name="diff_steer_wheel_ticks_per_rev" value="625"/>
 	<param name="diff_steer_wheel_distance" value="3.175"/>
 
-	<!-- param name="/use_sim_time" value="true"/ --> 
+	<param name="/use_sim_time" value="true"/> 
+
+	<group ns="transforms">
+		<node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 100"/>
+	</group>
 
 	<group ns="rosbag">
 		<!-- launch a bag from the robot to emulate sensor input -->

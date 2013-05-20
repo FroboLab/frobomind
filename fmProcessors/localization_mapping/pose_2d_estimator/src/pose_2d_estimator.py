@@ -33,6 +33,13 @@ A pose defines the position and orientation of a shape in world space
 (or the parent coordinate space). In this implementation the pose describes
 the robot lateral (2D) position in a geographical coordinate plane.
 
+In this library the ENU coordinate system is used as reference to allow use
+of GNSS based coordinates represented in a Transverse Mercator projection: 
+
+	Pose position vector: [easting, northing]
+	Pose orientation vector: [yaw]
+		Positive rotation counter clockwise, origo at easting axis 
+
 The pose is estimated based on sensor inputs from:
 	Robot odometry feedback:
 		Wheel encoders (typically fused with a gyro)
@@ -57,7 +64,7 @@ Revision
 """
 # imports
 import numpy as np
-from math import sqrt, pi, sin, cos, acos, fabs
+from math import sqrt, pi, sin, cos, atan2, fabs
 from numpy import matrix, array, linalg, mat
 
 # defines
@@ -113,32 +120,26 @@ class pose_2d_preprocessor():
 			hdop = 5
 			if self.gnss[-1][fix] == 4  and self.gnss_orientation_timeout < self.gnss[-1][time_stamp]: # if latest position is based on a fixed solution
 				i = 1
-				size = 0
-				while i<buflen and size < 0.5:
+				distance = 0.0
+				while i<buflen and distance < 0.5:
 					i += 1
 					if self.gnss[-i][fix] == 4: 
-						size = sqrt ((self.gnss[-1][E]- self.gnss[-i][E])**2 + (self.gnss[-1][N]- self.gnss[-i][N])**2)
-				if size >= 0.5: # if we found two coordinates at the required distance
+						distance = sqrt ((self.gnss[-1][E]- self.gnss[-i][E])**2 + (self.gnss[-1][N]- self.gnss[-i][N])**2)
+				if distance >= 0.5: # if we found two coordinates at the required distance
 				
-					# calc angle between gnss coordinate vector and northing axis
+					# calc gnss coordinate vector heading
+					easting_axis_vector_len = self.gnss[-1][E] - self.gnss[-i][E]
 					northing_axis_vector_len = self.gnss[-1][N] - self.gnss[-i][N]
-					gnss_coord_vector_len = size
-					theta = acos(northing_axis_vector_len/gnss_coord_vector_len)
-	
-					# handle special case for the 2. and 3. quadrant
-					if self.gnss[-i][E] > self.gnss[-1][E]:
-						theta = 2.0*pi - theta
-					# convert from compass heading to unit circle orientaion
-					theta = -theta
+					psi = atan2 (northing_axis_vector_len, easting_axis_vector_len)				
 
-					# OI OI hack alert!!!, yaw is not the same as heading but for how it is!!!
-					yaw = theta
+					# OI OI hack alert!!! vehicle orientation yaw angle is not necessarily the same as gnss heading but for how it is
+					yaw = psi
 
-					# check for irregular "jumps" 
+					# check for irregular "jumps" due to gnss signal interruptions
 					err = False
 					if self.gnss_orientation_prev_yaw != -10 and fabs(self.angle_diff(yaw, self.gnss_orientation_prev_yaw)) > 30/180.0*pi:
 						err = True
-						self.gnss_orientation_timeout = self.gnss[-1][0] + 3.0 # dont rely on estimates the next seconds
+						self.gnss_orientation_timeout = self.gnss[-1][0] + 3.0 # dont rely on estimates the next 3 seconds
 						
 					self.gnss_orientation_prev_yaw = yaw
 

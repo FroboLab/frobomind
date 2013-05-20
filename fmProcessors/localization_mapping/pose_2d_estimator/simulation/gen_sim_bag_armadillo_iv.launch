@@ -6,7 +6,7 @@ This launch file generates a simulation bag which contains output from:
 -->
 
 <launch>
-	<!-- Armadillo Pichi parameters --> 
+	<!-- Armadillo IV parameters --> 
 	<param name="diff_steer_wheel_radius" value="0.159"/>
 	<!-- param name="diff_steer_wheel_ticks_per_rev" value="1562"/-->
 	<param name="diff_steer_wheel_ticks_per_rev" value="625"/>
@@ -16,7 +16,7 @@ This launch file generates a simulation bag which contains output from:
 
 	<group ns="rosbag">
 		<!-- launch a bag from the SDU Pichi robot to emulate sensor input -->
-		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find pose_2d_estimator)/bags/armadillo_iv_square_gps_shading.bag">
+		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find pose_2d_estimator)/bags/armadillo_iv_square.bag">
 			<remap from="/rosbag/clock" to="/clock"/> <!-- should not be necessary but it is...!!! -->
 		</node>
 
