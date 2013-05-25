@@ -1,0 +1,12 @@
+<launch>	
+	<group ns="fmSensors">
+		<node pkg="serial_string" name="gps_serial" type="serial_string_node" output="screen"  respawn="true">
+			<param name="publisher_topic" value="/fmData/gps_rx" />	 
+			<param name="subscriber_topic" value="/fmData/gps_tx" />
+			<param name="device" value="/dev/gps" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node>
+
+	</group>
+</launch>

@@ -1,0 +1,12 @@
+<launch>	
+	<group ns="fmExecutors">
+		<node pkg="position_action_server" name="position_planner" type="positionGoalActionServer.py" output="screen">
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="odom_topic" value="fmKnowledge/odom" />
+			<param name="max_linear_velocity" value="1"/>
+			<param name="max_angular_velocity" value="4.0"/>
+			<param name="straight_line" value="True"/>
+			<param name="straight_line_angle_error" value="0.5"/>
+		</node>
+	</group>
+</launch>

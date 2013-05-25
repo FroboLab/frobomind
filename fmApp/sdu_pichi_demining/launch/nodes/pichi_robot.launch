@@ -1,17 +1,14 @@
-<launch>	
-	<!-- Platform executors -->
-	<group ns="fmExecutors">
-		<node pkg="position_action_server" name="position_planner" type="positionGoalActionServer.py" output="screen">
-			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="odom_topic" value="fmKnowledge/odom" />
-			<param name="max_linear_velocity" value="1"/>
-			<param name="max_angular_velocity" value="4.0"/>
-			<param name="straight_line" value="True"/>
-			<param name="straight_line_angle_error" value="0.5"/>
+<launch>
+	<group ns="robot">	
+		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/robot_rx" />	 
+			<param name="subscriber_topic" value="/fmData/robot_tx" />
+			<param name="device" value="/dev/robot" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="13"/>
 		</node>
 	</group>
-	
-	<!-- Platform Controllers -->
+
 	<group ns="fmControllers">
 		<node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
 			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
@@ -24,7 +21,7 @@
 			<param name="cmd_vel_ch2_topic" value="/fmSignals/cmd_vel_right"/>
 			<param name="serial_rx_topic" value="/fmData/robot_rx"/>
 			<param name="serial_tx_topic" value="/fmData/robot_tx"/>
-			<param name="deadman_topic" value="/fmSafety/deadman"/>
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
 			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
 			<param name="encoder_ch2_topic" value="/fmInformation/encoder_right"/>	
 			<param name="power_ch1_topic" value="/fmData/power_left"/>

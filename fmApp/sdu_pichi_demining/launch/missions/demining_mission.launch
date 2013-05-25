@@ -1,0 +1,38 @@
+<launch>	
+	<group ns="mission_planner">
+		<node pkg="sdu_pichi_demining" name="mission_control" type="demining.py" output="screen">
+		    <param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="feedback_topic" value="/HMI/joy/set_feedback" />
+			<param name="joy_topic" value="/HMI/joy" />
+			<param name="status_topic" value="/fmData/status"/>		
+			<param name="max_linear_velocity" value="1"/>
+			<param name="max_angular_velocity" value="1"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="40"/>
+			<param name="publish_frequency" value="5"/>
+			<param name="odom_frame" value="/odom" />
+			<param name="base_frame" value="/base_footprint" />
+		</node>
+	</group>
+	
+	<group ns="HMI">
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<!--param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/-->
+		</node>
+	</group>
+	
+	<group ns="fmProcessors">
+	 	<node pkg="occupancy_grid_updater" type="grid_updater.py" name="map" output="screen">
+ 		  	<param name="sensor_width" value="2.0" />
+	      	<param name="sensor_length" value="1.0" />
+	      	<param name="sensor_offset_x" value="0.6" />
+	      	<param name="sensor_offset_y" value="0.0" />
+	      	<param name="sensor_outerrange" value="0.1" />
+	      	<param name="resolution" value="0.1" /> <!-- Size of cell in [m] -->
+	      	<param name="perios" value="0.1" /> <!-- Frequency of node in [Hz] -->
+		</node>
+		
+		<node pkg="occupancy_grid_updater" type="grids_combined_node" name="combiner" output="screen"/>
+	</group>
+</launch>
