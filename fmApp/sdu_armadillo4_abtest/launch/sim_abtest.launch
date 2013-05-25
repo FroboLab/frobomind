@@ -3,12 +3,12 @@
 	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_armadillo4_abtest)/conf/default.rviz"/>
 	<!--node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/-->
 	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
-	
-	<group ns="platform_executors">
+		
+	<group ns="fmExecutors">
 		<node pkg="line_action_server" name="lineActionServer" type="lineGoalActionServer.py" output="screen">
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="odometry_topic" value="/odom" /> 
-			<param name="use_tf" value="False"/> 
+			<param name="use_tf" value="false"/> 
 			<param name="use_dynamic_reconfigure" value="true"/> 
 		</node>
 	</group>	

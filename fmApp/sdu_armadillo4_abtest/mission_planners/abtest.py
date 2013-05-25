@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind survey.py
-# Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
+# FroboMind abtest.py
+# Copyright (c) 2011-2013, Leon Bonde Larsen <leon@bondelarsen.dk>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,44 +26,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-# Change log:
-# 25-Mar 2013 Leon: Changed fixed list to recorded list (button A adds point)
-#
-#****************************************************************************/
-import rospy,smach,smach_ros,actionlib,threading
+
+import rospy,smach,smach_ros,actionlib,threading,tf
 from wii_interface import wii_interface 
-from casmo_smach.behaviours import follow_route
+from surveyor_smach.behaviours import measure_point
 from generic_smach.states import wii_states
 from nav_msgs.msg import Odometry 
 from geometry_msgs.msg import Point   
-
-from simple_2d_math.vector import Vector 
-"""            
-Start x: 588767.383534
-      y: 6137270.30297
-
-Goal  x: 588768.211459
-      y: 6137318.80895
-      
-Map   x: -588784.0 
-      y: -6137262.0
-"""
+           
 class Mission():
     """    
         Top level user interface node implemented as a concurrence between wiimote interface and 
         the mission behaviour
+        
+        Start x: 588767.383534
+              y: 6137270.30297
+
+        Goal  x: 588768.211459
+              y: 6137318.80895
+      
+        Map   x: -588784.0 
+              y: -6137262.0
+      
     """
     def __init__(self):
         rospy.init_node('mission_control')
         rospy.loginfo("mission control initialized")
         
         self.odom_topic = rospy.get_param("~odom_topic",'/odom')
-        self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.onOdometry )
+        self.tf = tf.TransformListener()
+        #self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.onOdometry )
         
         self.hmi = wii_interface.WiiInterface()
         rospy.loginfo("Registering save point callback")
         self.hmi.register_callback_button_A(self.savePoint)
-        self.point_list = [Point(-16.6,8.3,0),Point(15.8,56.8,0)]
+        self.point_list = []
         self.latest_point = Point()
         self.save_time = rospy.Time.now()
         self.min_time_between_point_save = rospy.Duration(3) # No magic numbers...
@@ -75,12 +72,12 @@ class Mission():
          # Build the autonomous state as concurrence between wiimote and measuring behaviour to allow user preemption
         autonomous = smach.Concurrence(  outcomes = ['exitAutomode','aborted'],
                                                 default_outcome = 'exitAutomode',
-                                                outcome_map = {'exitAutomode':{'HMI':'preempted','FOLLOW_ROUTE':'preempted'},
-                                                               'aborted':{'HMI':'preempted','FOLLOW_ROUTE':'aborted'}},
+                                                outcome_map = {'exitAutomode':{'HMI':'preempted','MEASURE':'preempted'},
+                                                               'aborted':{'HMI':'preempted','MEASURE':'aborted'}},
                                                 child_termination_cb = onPreempt)
         with autonomous:
             smach.Concurrence.add('HMI', wii_states.interfaceState(self.hmi))
-            smach.Concurrence.add('FOLLOW_ROUTE', follow_route.build(self.point_list))
+            smach.Concurrence.add('MEASURE', measure_point.build(self.point_list))
         
         # Build the top level mission control from the remote control state and the autonomous state
         mission_control = smach.StateMachine(outcomes=['preempted','aborted'])            
@@ -102,10 +99,15 @@ class Mission():
     def savePoint(self):
         """    
             Callback method to save the current position
-        """
+        """           
         if self.save_time < rospy.Time.now():
-            rospy.loginfo("Saving point: (%f,%f) ",self.latest_point.x,self.latest_point.y)
-            self.point_list.append(self.latest_point)
+            try:
+                (position,orientation) = self.tf.lookupTransform("world" , "pose",rospy.Time(0))
+                point = Point(position[0],position[1],0) 
+                self.point_list.append(point)  
+                rospy.loginfo("Saving point: (%f,%f) ",point.x,point.y)       
+            except (tf.LookupException, tf.ConnectivityException, tf.Exception),err:
+                rospy.loginfo("Transform error: %s",err)
             self.save_time = rospy.Time.now() + self.min_time_between_point_save
         
     def onOdometry(self,msg):

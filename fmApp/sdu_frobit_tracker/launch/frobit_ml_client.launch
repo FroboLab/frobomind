@@ -26,7 +26,7 @@
     	<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/>
 	</node>
 		
-	<group ns="platform_executors">
+	<group ns="fmExecutors">
 		<node pkg="line_action_server" name="lineActionServer" type="lineGoalActionServer.py" output="screen">
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="odometry_topic" value="/fmKnowledge/odom" /> 

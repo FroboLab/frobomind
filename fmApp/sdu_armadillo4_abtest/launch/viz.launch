@@ -1,0 +1,20 @@
+<launch>
+
+		<node pkg="pose_2d_estimator" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="enable_pose_track" value="true" />
+			<param name="enable_gnss_track" value="true" />
+			<param name="enable_odometry_track" value="true" />
+			<param name="enable_pose_orientation" value="true" />
+			<param name="easting_offset" value="-588784.0" />
+			<param name="northing_offset" value="-6137262.0" />
+			<param name="trackpoint_threshold" value="0.1" />
+			<param name="map_update_frequency" value="2" />
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="5.0" />
+		</node>
+		
+
+</launch>

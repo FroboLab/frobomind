@@ -1,0 +1,22 @@
+<launch>
+	<!--param name="/use_sim_time" value="true"/-->
+	<node pkg="state_print" name="state_printer" type="state_printer.py" output="screen"/>
+	<node pkg="rosbag" name="robot" type="play" args="--clock --rate=1 $(find sdu_armadillo4_abtest)/bags/2013-05-20-12-02-52.bag" >
+		<!--remap from="/rosbag/clock" to="/clock"/-->
+	</node>
+		<node pkg="pose_2d_estimator" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="plot_pose_track" value="true" /> <!-- remember to use proper values for ekf_initial_guess_ at pose_2d_estimator for this plot -->
+			<param name="plot_gnss_track" value="true" />
+			<param name="plot_odometry_track" value="true" />
+			<param name="plot_pose_yaw" value="true" />
+			<param name="easting_offset" value="-588784.0" />
+			<param name="northing_offset" value="-6137262.0" />
+			<param name="trackpoint_threshold" value="0.1" /> <!-- [m] -->
+			<param name="map_update_frequency" value="2.0" /> <!-- [Hz] -->
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="5.0" /> <!-- [inches] -->
+		</node>
+</launch>

@@ -1,5 +1,13 @@
 <launch>
 	<!-- IMU -->
+	<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" >
+		<param name="publisher_topic" value="/fmData/imu_rx" />	 
+		<param name="subscriber_topic" value="/fmData/imu_tx" />
+		<param name="device" value="/dev/imu" />	
+		<param name="baudrate" value="115200" />
+		<param name="termination_character" value="10"/>
+	</node> 
+		
 	<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen" respawn="True" >
 		<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
 		<param name="imu_pub" value="/fmInformation/imu"/>
@@ -11,6 +19,14 @@
 	 </node>
 
 	<!-- GPS -->
+	<node pkg="serial_string" name="gps_serial" type="serial_string_node" output="screen" >
+		<param name="publisher_topic" value="/fmData/gps_rx" />	 
+		<param name="subscriber_topic" value="/fmData/gps_tx" />
+		<param name="device" value="/dev/gps" />	
+		<param name="baudrate" value="115200" />
+		<param name="termination_character" value="10"/>
+	</node>
+		
 	<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen">
         <param name="subscribe_topic_id" value="/fmData/gps_rx" />
 		<param name="publish_topic_id" value="/fmInformation/gpgga" />
@@ -32,31 +48,31 @@
 		<!-- start conversion node to convert IntStamped messages to encoder messages -->
 	<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
 	
-	<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-		<param name="enc_left_sub" value="/fmInformation/enc_left" />
-		<param name="enc_right_sub" value="/fmInformation/enc_right" />
-		<param name="imu_sub" value="/fmInformation/imu" />
-		<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
-		<param name="encoder_output" value="absolute"></param>  
-	    <!--<param name="yaw_angle_source" value="imu_orientation"></param> -->
-		<param name="yaw_angle_source" value="imu_angular_velocity"></param>
-		<param name="imu_angular_velocity_yaw_axis" value="y"></param>
-		<param name="vehicle_frame" value="base_footprint"></param>      
-		<param name="odom_estimate_frame" value="odom"></param>      
-	</node>
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/enc_left" />
+			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<param name="encoder_output" value="absolute"></param>  
+		    <!--<param name="yaw_angle_source" value="imu_orientation"></param> -->
+			<param name="yaw_angle_source" value="imu_angular_velocity"></param>
+			<param name="imu_angular_velocity_yaw_axis" value="y"></param>
+			<param name="vehicle_frame" value="/wheel_odom"></param>      
+			<param name="odom_estimate_frame" value="/map"></param>      
+		</node>
 	
-	<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
-		<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
-		<param name="imu_sub" value="/fmInformation/imu" />
-		<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
-		<param name="pose_pub" value="/fmKnowledge/pose" />
-		<param name="frame_id" value="odom" />
-		<param name="child_frame_id" value="base_footprint" />
-		<param name="ekf_initial_guess_easting" value="588784.0" /> <!-- [m] if unsure set to 0.0 -->
-		<param name="ekf_initial_guess_northing" value="6137262.0" /> <!-- [m] if unsure set to 0.0 -->
-		<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->
-		<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
-		<param name="odometry_angular_variance" value="0.0001" /> <!-- [rad/update] -->
-	</node>
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="frame_id" value="/pose" />
+			<param name="child_frame_id" value="/map" />
+			<param name="ekf_initial_guess_easting" value="588784.0" />
+			<param name="ekf_initial_guess_northing" value="6137262.0" />
+			<param name="ekf_initial_guess_yaw" value="0.0" />
+			<param name="odometry_distance_variance" value="0.000001" />
+			<param name="odometry_angular_variance" value="0.0001" />
+		</node>
 
 </launch>

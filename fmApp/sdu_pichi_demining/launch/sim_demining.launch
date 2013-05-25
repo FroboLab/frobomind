@@ -2,7 +2,7 @@
 	<include file="$(find sdu_pichi_demining)/launch/includes/decision_making.launch"/>
 	<include file="$(find sdu_pichi_demining)/launch/includes/hmi.launch"/>
 	<!-- from action -->
-	<group ns="platform_executors">
+	<group ns="fmExecutors">
 		<node pkg="position_action_server" name="position_planner" type="positionGoalActionServer.py" output="screen">
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="odom_topic" value="fmKnowledge/odom" />
