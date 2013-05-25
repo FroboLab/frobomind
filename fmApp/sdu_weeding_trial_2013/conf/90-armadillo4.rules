@@ -1,0 +1,7 @@
+# /etc/udev/rules.d/
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", GROUP="dialout", MODE="0666", SYMLINK+="gps"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTUTUNWH", GROUP="dialout", MODE="0666", SYMLINK+="imu"
+KERNEL=="ttyS0", GROUP="dialout", MODE="0666", SYMLINK+="right_belt"
+KERNEL=="ttyS1", GROUP="dialout", MODE="0666", SYMLINK+="left_belt"
+
+
