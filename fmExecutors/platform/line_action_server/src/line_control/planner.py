@@ -132,7 +132,7 @@ class LinePlanner():
     def getParameters(self):
         # Get topics and transforms
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic","/fmSignals/cmd_vel")
-        self.odom_frame = rospy.get_param("~odom_frame","/odom")
+        self.odom_frame = rospy.get_param("~odom_frame","/world")
         self.odometry_topic = rospy.get_param("~odometry_topic","/fmKnowledge/odom")
         self.base_frame = rospy.get_param("~base_frame","/base_footprint")
         self.use_tf = rospy.get_param("~use_tf",True)
@@ -301,7 +301,7 @@ class LinePlanner():
         t1 = self.heading.rotate(self.goal_angle_error)
         if self.goal_path.angle(t1) != 0 :
             self.goal_angle_error = -self.goal_angle_error
-            
+        print("Errors (to goal, to line, angle) : (" + str(self.distance_to_goal) + " , " + str(self.distance_to_line) + " , " + str(self.angle_error) + ")")    
         # Determine zone
         if self.distance_to_line < self.z1_max_distance and math.fabs(self.angle_error) < self.z1_max_angle :
             self.zone_filter[self.z_ptr] = self.z1_value
@@ -406,6 +406,7 @@ class LinePlanner():
                 self.position[0] = position[0]
                 self.position[1] = position[1]
                 (roll,pitch,self.yaw) = tf.transformations.euler_from_quaternion(head)
+                print("State: (" + str(position[0]) + " , " + str(position[1]) + " , " + str(self.yaw) + ")")
             except (tf.LookupException, tf.ConnectivityException),err:
                 rospy.loginfo("could not locate vehicle")             
 

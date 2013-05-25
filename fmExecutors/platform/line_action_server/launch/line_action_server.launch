@@ -1,5 +1,5 @@
 <launch>
-	<group ns="platform_executors">
+	<group ns="fmExecutors">
 		<node pkg="line_action_server" name="lineActionServer" type="lineGoalActionServer.py" output="screen">
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" /> <!-- Topic for publishing twist messages -->
 			<param name="odometry_topic" value="/odom" /> <!-- Topic for receiving odometry messages if tf is not used -->
