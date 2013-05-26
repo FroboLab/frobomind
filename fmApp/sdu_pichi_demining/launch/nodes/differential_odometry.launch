@@ -1,6 +1,6 @@
 <launch>	
 	<group ns="fmProcessors">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
+		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_differentiator.py" />
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />
 			<param name="enc_right_sub" value="/fmInformation/enc_right" />

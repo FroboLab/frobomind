@@ -120,6 +120,7 @@ void hbl2350::initController(void)
 	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
 	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
+//	transmit(1, "?CBR"); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(1,	"# 10" ); sleep(TIME_BETWEEN_COMMANDS);							// Repeat buffer every 10 ms
 
 /*	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority

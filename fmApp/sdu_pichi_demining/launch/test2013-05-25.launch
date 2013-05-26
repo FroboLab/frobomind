@@ -1,4 +1,9 @@
 <launch>
+	<param name="robot_max_velocity" value="2.0"/>
+	<param name="diff_steer_wheel_radius" value="0.10"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="1432"/>
+	<param name="diff_steer_wheel_distance" value="0.85"/>
+	
 	<!-- Mission -->
 	<include file="$(find sdu_pichi_demining)/launch/missions/remote_mission.launch"/>
 
