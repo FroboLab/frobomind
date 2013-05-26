@@ -11,6 +11,7 @@
 	<include file="$(find sdu_pichi_demining)/launch/nodes/web_cam.launch"/>
 	<include file="$(find sdu_pichi_demining)/launch/nodes/topcon_gps.launch"/>
 	<include file="$(find sdu_pichi_demining)/launch/nodes/vectornav_imu.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/nodes/wads.launch"/>
 	
 	<!-- Robot -->
 	<include file="$(find sdu_pichi_demining)/launch/nodes/pichi_robot.launch"/>
