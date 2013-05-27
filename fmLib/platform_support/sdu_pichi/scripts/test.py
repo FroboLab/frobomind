@@ -40,15 +40,15 @@ class TestInterface():
     def __init__(self):
         # Init node and setup topics
         rospy.init_node('test_interface')
-        self.publisher = rospy.Publisher("/fmData/rx", serial)
+        self.publisher = rospy.Publisher("/fmData/robot_rx", serial)
         
-        self.tx_sub = rospy.Subscriber("/fmData/tx", serial, self.onTx)
-        self.rx_sub = rospy.Subscriber("/fmData/rx", serial, self.onRx)
+        self.tx_sub = rospy.Subscriber("/fmData/robot_tx", serial, self.onTx)
+        self.rx_sub = rospy.Subscriber("/fmData/robot_rx", serial, self.onRx)
         self.msg = serial()
 
         # Spin
-        try:
-            while not rospy.is_shutdown():
+#        try:
+#            while not rospy.is_shutdown():
 #                self.msg.header.stamp = rospy.Time.now()
 #                self.msg.data = "FF=0"
 #                self.publisher.publish(self.msg)
@@ -72,15 +72,16 @@ class TestInterface():
 #                self.msg.header.stamp = rospy.Time.now()
 #                self.msg.data = "T=40:10:10"
 #                self.publisher.publish(self.msg)
-                rospy.sleep(10)
-        except rospy.ROSInterruptException:
-            pass
+#                rospy.sleep(10)
+#        except rospy.ROSInterruptException:
+#            pass
     
     def onRx(self,msg):
-        print(msg.data)
+#        print(msg.data)
+        return 0
             
     def onTx(self,msg):
-        print(msg.data)
+#        print(msg.data)
         if "?FID" in msg.data :
             self.msg.header.stamp = rospy.Time.now()
             self.msg.data = "FID=Roboteq blah blah"

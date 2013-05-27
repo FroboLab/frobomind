@@ -1,0 +1,28 @@
+<launch>
+	<group ns="robot">	
+		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/robot_rx" />	 
+			<param name="subscriber_topic" value="/fmData/robot_tx" />
+			<param name="device" value="/dev/robot" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="13"/>
+		</node>
+
+		<node pkg="serial_string" name="gps_serial" type="serial_string_node" output="screen"  respawn="true">
+			<param name="publisher_topic" value="/fmData/gps_rx" />	 
+			<param name="subscriber_topic" value="/fmData/gps_tx" />
+			<param name="device" value="/dev/gps" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node>
+		
+		<node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen"  respawn="true">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node>
+
+	</group>
+</launch>

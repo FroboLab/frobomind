@@ -1,12 +1,6 @@
 <launch>
-	<group ns="robot">	
-		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
-			<param name="publisher_topic" value="/fmData/robot_rx" />	 
-			<param name="subscriber_topic" value="/fmData/robot_tx" />
-			<param name="device" value="/dev/robot" />	
-			<param name="baudrate" value="115200" />
-			<param name="termination_character" value="13"/>
-		</node>
+	<group ns="fmTools">
+		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py" />
 	</group>
 
 	<group ns="fmControllers">

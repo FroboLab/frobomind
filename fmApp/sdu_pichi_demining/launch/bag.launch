@@ -1,0 +1,51 @@
+<launch>
+	<param name="robot_max_velocity" value="2.0"/>
+	<param name="diff_steer_wheel_radius" value="0.10"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="829"/>
+	<param name="diff_steer_wheel_distance" value="0.85"/>
+	<node pkg="rviz" name="rviz" type="rviz"/>
+	
+	<!--node pkg="state_print" name="state_printer" type="state_printer.py" output="screen"/-->
+	
+	<group ns="fmHMI">
+		<node pkg="pose_2d_estimator" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="plot_pose_track" value="true" /> <!-- remember to use proper values for ekf_initial_guess_ at pose_2d_estimator for this plot -->
+			<param name="plot_gnss_track" value="true" />
+			<param name="plot_odometry_track" value="true" />
+			<param name="plot_pose_yaw" value="true" />
+			<param name="easting_offset" value="-588784.0" />
+			<param name="northing_offset" value="-6137262.0" />
+			<param name="trackpoint_threshold" value="0.1" /> <!-- [m] -->
+			<param name="map_update_frequency" value="2.0" /> <!-- [Hz] -->
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="5.0" /> <!-- [inches] -->
+		</node>
+	</group>
+	
+	<!-- Transforms -->
+	<include file="$(find sdu_pichi_demining)/launch/nodes/transform.launch"/>
+
+	<!-- Sensors -->
+	<include file="$(find sdu_pichi_demining)/launch/nodes/topcon_gps.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/nodes/vectornav_imu.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/nodes/wads.launch"/>
+	
+	<!-- Interface -->
+	<node pkg="rosbag" name="robot" type="play" args="--rate=1 $(find sdu_pichi_demining)/bags/test08-so.bag" respawn="true">
+		<remap from="/rosbag/clock" to="/clock"/>
+	</node>
+	
+	<!-- Belts -->
+	<include file="$(find sdu_pichi_demining)/launch/nodes/pichi_robot.launch"/>
+	<node pkg="sdu_pichi" type="test.py" name="dummy" output="screen"/>
+	
+	<!-- Executors -->
+	<!--include file="$(find sdu_pichi_demining)/launch/nodes/ab_line.launch"/-->
+	
+	<!-- Processors -->
+	<include file="$(find sdu_pichi_demining)/launch/nodes/kalman_pose.launch"/>
+	<include file="$(find sdu_pichi_demining)/launch/nodes/differential_odometry.launch"/>
+</launch>
