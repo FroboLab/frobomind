@@ -2,6 +2,7 @@
 #include <std_msgs/Float64.h>
 #include <msgs/serial.h>
 #include <string>
+#include <cctype>
 
 class WADSImplementCommunicator
 {
@@ -11,22 +12,68 @@ protected:
   
   ros::Publisher pub_;
   ros::Subscriber sub_;
+
+  // Parameters
+  double gain_;
+  double offset_;
+  std::string rx_topic_;
+  std::string wads_topic_;
+
+  // Stats
+  double read_max_;
+  double read_min_;
 	
   void onMsg(const msgs::serial::ConstPtr& msg)
   {
-    std::string str = msg->data.substr(6);
+    // Find starting position of value
+    int startpos = msg->data.length();
+    for (std::string::const_iterator it = msg->data.end(); it > msg->data.begin(); it--)
+      {
+	if (isdigit(*it))
+	  {
+	    startpos--;
+	  }
+      }
+
+    std::string str = msg->data.substr(startpos);
     std_msgs::Float64 outvalue;
     int value = atoi(str.c_str());
-    ROS_INFO("String: %s Int: %i", str.c_str(), value);
-    outvalue.data = 0;
+    
+    // Stats
+    if ((read_min_ == 0) || (read_min_ > value))
+      read_min_ = value;
+    if ((read_max_ == 0) || (read_max_ < value))
+      read_max_ = value;
+
+    //outvalue.data = offset_ + value * gain_;
+    outvalue.data = value;
     this->pub_.publish(outvalue);
+  }
+  void showStats(const ros::TimerEvent&)
+  {
+    ROS_INFO("was here...");
+    ROS_INFO("WADS Values - min: %f \t max: %f", read_min_, read_max_);
+  }
+  void setupParametersAll()
+  {
+    read_max_ = 0;
+    read_min_ = 0;
+    nh_.param<double>("gain", this->gain_, 1);
+    nh_.param<double>("offset", this->offset_, 0.0);
+    nh_.param<std::string>("rx_topic", this->rx_topic_, "/fmData/wads_rx");
+    nh_.param<std::string>("wads_topic", this->wads_topic_, "/wads");
+    ROS_INFO("Gain: %f", gain_);
+    ROS_INFO("Offset: %f", offset_);
   }
 
 public:
   WADSImplementCommunicator() : n_("~")
   {
-    pub_ = nh_.advertise<std_msgs::Float64>("/wads", 10);
-    sub_ = nh_.subscribe("/fmData/wads_rx", 10, &WADSImplementCommunicator::onMsg, this);
+    setupParametersAll();
+    pub_ = nh_.advertise<std_msgs::Float64>(wads_topic_, 10);
+    sub_ = nh_.subscribe(rx_topic_, 10, &WADSImplementCommunicator::onMsg, this);
+
+    ros::Timer timer = nh_.createTimer(ros::Duration(1), &WADSImplementCommunicator::showStats, this);
   }
   void spin()
   {
