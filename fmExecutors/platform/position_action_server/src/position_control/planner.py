@@ -113,9 +113,6 @@ class PositionPlanner():
         self.quaternion = np.empty((4, ), dtype=np.float64)
           
         # Setup Publishers and subscribers
-        self.use_tf = False 
-        if not self.use_tf :
-            self.odom_sub = rospy.Subscriber(self.odometry_topic, Odometry, self.onOdometry )
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         
     def execute(self,goal):

@@ -56,14 +56,45 @@ namespace occupancy_grid_utils
 /// Assumes all grids lie on the xy plane, and will fail in weird ways if that's not true
 nav_msgs::OccupancyGrid::Ptr combineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids, double resolution);
 
+
+ nav_msgs::OccupancyGrid::Ptr getAlignedGrid (const nav_msgs::OccupancyGrid::ConstPtr& toBeAlignedGrid, const double resolution);
 /// Version of combineGrids that uses the resolution of the first grid.
 nav_msgs::OccupancyGrid::Ptr combineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
 
 nav_msgs::OccupancyGrid::Ptr minCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids, double resolution);
 nav_msgs::OccupancyGrid::Ptr minCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
+void combineToGrid( boost::shared_ptr<nav_msgs::OccupancyGrid>& targetGrid, const nav_msgs::OccupancyGrid::ConstPtr& applyGrid );
 nav_msgs::OccupancyGrid::Ptr zeroCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids, double resolution);
 nav_msgs::OccupancyGrid::Ptr zeroCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
+void floatingCombineToEmptyGrid(
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& combined_grid, 
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& overlap_grid, 
+				const nav_msgs::OccupancyGrid::ConstPtr& combine_from
+				);
 
+void binaryCombineToEmptyGrid(
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& combined_grid, 
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& overlap_grid, 
+				const nav_msgs::OccupancyGrid::ConstPtr& combine_from
+				);
+
+boost::shared_ptr<nav_msgs::OccupancyGrid> informationCombineAlignedGrids
+  (
+   const nav_msgs::OccupancyGrid::ConstPtr& primary, 
+   const nav_msgs::OccupancyGrid::ConstPtr& primary_overlap, 
+   const nav_msgs::OccupancyGrid::ConstPtr& secondary,
+   const nav_msgs::OccupancyGrid::ConstPtr& secondary_overlap,
+   const double gain_divide_enter_area_increase,
+   const double gain_divide_enter_area_decrease,
+   const double gain_divide_overlap_area_increase,
+   const double gain_divide_overlap_area_decrease,
+   const double gain_divide_left_area_increase,
+   const double gain_divide_left_area_decrease
+   );
+
+nav_msgs::OccupancyGrid::Ptr generousZeroCombineGrids (const nav_msgs::OccupancyGrid::ConstPtr& primary, const nav_msgs::OccupancyGrid::ConstPtr& secondary);
+
+boost::shared_ptr<nav_msgs::OccupancyGrid> averagePassGrid (const nav_msgs::OccupancyGrid::ConstPtr& grid, int kernelsize);
 
 } // namespace occupancy_grid_utils
 

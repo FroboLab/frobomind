@@ -1,0 +1,7 @@
+\subsubsection usage Usage
+\verbatim
+<node name="dynamic_reconfigure_node" pkg="occupancy_grid_assembler" type="dynamic_reconfigure_node">
+  <param name="gain_divide_enter_area_increase" type="double" value="20.0" />
+</node>
+\endverbatim
+

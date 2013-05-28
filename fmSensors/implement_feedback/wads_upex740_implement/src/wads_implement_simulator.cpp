@@ -144,6 +144,9 @@ void WADSImplementSimulator::sensorEstimation(const sensor_msgs::PointCloud& sca
       if (sensor_value_ > sensor_max_)
 	sensor_value_ = sensor_max_;
 
+      if (sensor_value_ < 0)
+	sensor_value_ = 0;
+
       // Resolution fit
       sensor_value_ -= std::fmod(sensor_value_,scan_resolution_step_);
     }

@@ -34,8 +34,8 @@ define laser_scanner ranger
    sensor
    ( 		
       range [ 0.0  3 ]
-      fov 180
-      samples 180
+      fov 360
+      samples 360
    )
 )
 
@@ -48,7 +48,7 @@ position
    drive "diff"
    gui_nose 1
    scount 2
-   laser_scanner(pose [ 0 0 0 0 ])
+   laser_scanner(pose [ 1.1 0 0 0 ])
    obstacle_return 1
 
    polygons 1

@@ -1,0 +1,130 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(occupancy_grid_assembler)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS rospy roscpp occupancy_grid_utils dynamic_reconfigure)
+
+## System dependencies are found with CMake's conventions
+# find_package(Boost REQUIRED COMPONENTS system)
+
+## Uncomment this if the package has a setup.py. This macro ensures
+## modules and scripts declared therein get installed
+catkin_python_setup()
+
+#######################################
+## Declare ROS messages and services ##
+#######################################
+
+
+generate_dynamic_reconfigure_options(cfg/MyStuff.cfg)
+
+
+## Generate messages in the 'msg' folder
+# add_message_files(
+#   FILES
+#   occupancy_grid_assembler_parameters.msg
+#   Message1.msg
+#   Message2.msg
+# )
+
+## Generate services in the 'srv' folder
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
+
+## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
+
+
+###################################################
+## Declare things to be passed to other projects ##
+###################################################
+
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+#  INCLUDE_DIRS include
+  LIBRARIES occupancy_grid_utils
+#  CATKIN_DEPENDS message_runtime
+#  CATKIN_DEPENDS rospy
+#  DEPENDS system_lib
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+ include_directories(include ${catkin_INCLUDE_DIRS} )
+ #${Boost_INCLUDE_DIRS})
+
+## Declare a cpp library
+# add_library(twist_stamped_to_twist
+#   src/${PROJECT_NAME}/twist_stamped_to_twist.cpp
+# )
+
+## Declare a cpp executable
+ add_executable(grid_assembler_node src/grid_assembler.cpp)
+
+## Add dependencies to the executable
+ add_dependencies(grid_assembler_node ${PROJECT_NAME} LocalizedCloud_gencpp NavigationFunction_gencpp OverlayClouds_gencpp nav_msgs_gencpp)
+
+## Specify libraries to link a library or executable target against
+ target_link_libraries(grid_assembler_node
+   ${catkin_LIBRARIES}
+ )
+
+#############
+## Install ##
+#############
+
+## Mark executable scripts (Python etc.) for installation
+## not required for python when using catkin_python_setup()
+# install(PROGRAMS
+#   scripts/ocga
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark executables and/or libraries for installation
+# install(TARGETS twist_stamped_to_twist twist_stamped_to_twist_node
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark cpp header files for installation
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
+
+#############
+## Testing ##
+#############
+
+## Add gtest based cpp test target and link libraries
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_twist_stamped_to_twist.cpp)
+# if(TARGET ${PROJECT_NAME}-test)
+#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)
+
+

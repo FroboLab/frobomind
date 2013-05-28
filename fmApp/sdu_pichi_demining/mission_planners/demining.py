@@ -107,7 +107,7 @@ class Mission():
         rospy.loginfo("A pressed")
 
 def mine_detect_cb(userdata, msg):
-    if (msg.data > 4):
+    if (msg.data > 1):
         return False # terminate
     else:
         return True # Continue searching for mines

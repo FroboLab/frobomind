@@ -10,9 +10,9 @@ from std_msgs.msg import Float64
 def build():
     behaviour = smach.StateMachine(outcomes=['inspectionDone','preempted','aborted'], input_keys=['next_x', 'next_y'])
     # Wrigle goals
-    wriggle_left_goal = make_turnGoal(amount=1 , vel=0.5, forward_vel=0)
-    wriggle_right_goal = make_turnGoal(amount=-2, vel=0.5, forward_vel=0)
-    wriggle_center_goal = make_turnGoal(amount=1, vel=0.5, forward_vel=0)
+    wriggle_left_goal = make_turnGoal(amount=1 , vel=0.3, forward_vel=0)
+    wriggle_right_goal = make_turnGoal(amount=-2, vel=0.3, forward_vel=0)
+    wriggle_center_goal = make_turnGoal(amount=1, vel=0.3, forward_vel=0)
 
     with behaviour:
          smach.StateMachine.add('get_next_search_point', get_step_towards_point.getStepTowardsPoint(),transitions={'succeeded':'wriggle_left'})
