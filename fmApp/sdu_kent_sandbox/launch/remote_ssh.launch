@@ -3,6 +3,22 @@
 	<param name="diff_steer_wheel_radius" value="0.051"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
 	<param name="diff_steer_wheel_distance" value="0.21"/>
+	
+	<group ns="transforms">
+		<node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0.18 0 0 0 0 0 base_link imu_link 10"/>   
+	</group>
+	
+	<group ns="fmSensors">
+		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="true"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
+		</node>
+	</group>
 
 	<group ns="fmProcessors">
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
