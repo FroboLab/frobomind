@@ -10,6 +10,7 @@ fmDocs/*
 # Ignore top-level symbolic link to CMakeLists.txt
 /CMakeLists.txt
 
+.bag
 .project
 .pydevproject
 .cproject
