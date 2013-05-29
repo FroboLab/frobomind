@@ -1,0 +1,170 @@
+<!--
+This launch file allows Wiimote control of the Frobit robot while recording sensor data
+from wehicle odometry, SparkFun Razor IMU and RTK-GNSS.
+
+2013-05-21 Kjeld Jensen <kjeld@frobomind.org>
+-->
+
+<launch>
+	<!-- Frobit robot parameters -->
+	<param name="robot_max_velocity" value="1.0"/>
+	<param name="diff_steer_wheel_radius" value="0.051"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
+	<param name="diff_steer_wheel_distance" value="0.215"/>
+
+	<group ns="fmSim">
+	</group>
+
+	<group ns="fmSensors">
+		<!-- extract IMU data from SparkFun Razor NMEA messages -->
+		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="true"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
+		 </node>
+
+		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
+		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen">
+		    <param name="subscribe_topic_id" value="/fmData/gps_rx" />
+			<param name="publish_topic_id" value="/fmInformation/gpgga" />
+		</node>
+
+		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
+		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/gpgga" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+	</group>
+
+	<group ns="fmProcessors">
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_pub" value="/fmKnowledge/odom" />
+			<param name="encoder_output" value="relative"></param>  
+			<param name="yaw_angle_source" value="imu_angular_velocity"></param>  
+			<param name="imu_angular_velocity_yaw_axis" value="-z"></param> 
+			<param name="vehicle_frame" value="base_footprint"></param>      
+			<param name="odom_estimate_frame" value="/odom_combined"></param>      
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_kjen_sandbox" name="frobit_remote_control" type="remote_control_mission.py" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="max_linear_velocity" value="1.5"/>
+			<param name="max_angular_velocity" value="1.8"/>
+			<param name="deadband" value="0.001"/>
+			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
+			<param name="joy_topic" value="/fmLib/joy" />
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="publish_frequency" value="10"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+		<!-- differential steered kinematics node -->
+		<node pkg="differential_ifk" name="differential_kinematics" type="differential_ifk_node" output="screen" >
+			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
+			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left"/>
+			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right"/>
+			<!-- param name="distance_center_to_wheel" value="0.1075" / -->
+		</node>
+	</group>
+
+	<group ns="fmSafety">
+	</group>
+
+	<group ns="fmLib">
+		<!-- Frobit interface node -->
+		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" output="screen" >
+			<param name="cmd_vel_left_sub" value="/fmSignals/cmd_vel_left"/>
+			<param name="cmd_vel_right_sub" value="/fmSignals/cmd_vel_right"/>
+			<param name="deadman_sub" value="/fmSignals/deadman"/>
+			<param name="nmea_sub" value="/fmData/nmea_from_frobit"/>
+			<param name="nmea_pub" value="/fmData/nmea_to_frobit"/>
+			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
+			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
+			<param name="castor_front" value="true"/>
+			<param name="nmea_to_frobit_interval" value="0.1"/>          
+			<param name="cmd_vel_timeout" value="1"/>          
+        	</node>
+
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<!-- <param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/> --> <!-- Leon -->
+			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/> <!-- Kjeld -->
+		</node>
+
+		<!-- extract NMEA messages from SparkFun Razor serial stream -->
+		<node pkg="serial_nmea" name="imu_nmea_node" type="nmea_node" output="screen">
+			<param name="str_to_msg_sub" value="/fmData/imu_rx" />   
+			<param name="str_to_msg_pub" value="/fmData/nmea_from_imu" />
+			<param name="msg_to_str_sub" value="/fmData/nmea_to_imu" />   
+			<param name="msg_to_str_pub" value="/fmData/imu_tx" />         
+			<!-- <param name="use_nmea_checksum" value="true" /> -->
+		</node>
+
+		<!-- extract NMEA messages from the Frobit platform interface -->
+		<node pkg="serial_nmea" name="frobit_nmea_node" type="nmea_node" output="screen">
+			<param name="str_to_msg_sub" value="/fmData/frobit_rx" />   
+			<param name="str_to_msg_pub" value="/fmData/nmea_from_frobit" />
+			<param name="msg_to_str_sub" value="/fmData/nmea_to_frobit" />   
+			<param name="msg_to_str_pub" value="/fmData/frobit_tx" />           
+			<param name="use_nmea_checksum" value="true" />
+		</node>
+
+		<!-- serial communication with the RTK-GNSS -->
+		<node pkg="serial_string" name="gnss_serial_string_node" type="serial_string_node" output="screen" >
+			<param name="publisher_topic" value="/fmData/rtk-gnss_rx" />	 
+			<param name="subscriber_topic" value="/fmData/rtk-gnss_tx" />
+			<param name="device" value="/dev/ttyUSB2" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+
+		<!-- serial communication with the IMU -->
+		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" >
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/ttyUSB1" />	
+			<param name="baudrate" value="57600" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+
+		<!-- serial communication with the Frobit platform interface -->
+		<node pkg="serial_string" name="frobit_serial_string_node" type="serial_string_node" output="screen" >
+			<param name="publisher_topic" value="/fmData/frobit_rx" />	 
+			<param name="subscriber_topic" value="/fmData/frobit_tx" />
+			<param name="device" value="/dev/ttyUSB0" />	
+			<param name="baudrate" value="57600" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+	</group>
+
+	<group ns="transforms">
+		<node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0 0 0 0 0 base_link imu_link 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="laser_link_broadcaster" args="0.1 0 0.1 0 0 0 base_footprint laser_link 100"/>
+	</group>
+
+	<!-- Put nodes not related to FroboMind in here -->
+	<group ns="external">
+	</group>
+</launch>
+
