@@ -10,3 +10,16 @@ fmDocs/*
 # Ignore top-level symbolic link to CMakeLists.txt
 /CMakeLists.txt
 
+.project
+.pydevproject
+.cproject
+.settings/*
+CATKIN_IGNORE
+CMakeFiles/*
+CMakeCache.txt
+Makefile
+catkin/*
+catkin_generated/*
+cmake_install.cmake
+devel/*
+gtest/*
