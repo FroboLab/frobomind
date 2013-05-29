@@ -60,6 +60,9 @@ private:
 	lr_double_t speed,setpoint,error,previous,integrator,differentiator;
 	lr_int_t encoder;
 
+	ros::Time last_time;
+	double period;
+
 public:
 	struct
 	{
