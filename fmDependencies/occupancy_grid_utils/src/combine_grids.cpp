@@ -44,12 +44,6 @@
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
-//#include <boost/geometry/geometry.hpp>
-//#include <boost/geometry/geometries/geometries.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-//#include <boost/polygon/polygon.hpp>
 #include <set>
 #include "gcc_version.h"
 
@@ -59,7 +53,6 @@ namespace occupancy_grid_utils
 
 namespace nm=nav_msgs;
 namespace gm=geometry_msgs;
-  namespace bg=boost::geometry;
 
 using boost::bind;
 using boost::ref;
@@ -72,13 +65,6 @@ using std::max;
 typedef boost::shared_ptr<nm::OccupancyGrid> GridPtr;
 typedef boost::shared_ptr<nm::OccupancyGrid const> GridConstPtr;
 
-  // Boost types
-  //typedef boost::polygon::polygon_data<double> BPolygon;
-  //typedef boost::polygon::polygon_traits<BPolygon>::point_type BPoint;
-  typedef bg::model::d2::point_xy< double > BPoint;
-  typedef bg::model::polygon< BPoint >  BPolygon;
-  typedef bg::model::ring< BPoint > BRing;
-  //typedef boost::geometry::model::d2::point_xy<double> BPoint;
 
 
 inline Cell point32Cell (const nm::MapMetaData& info, const gm::Point32& p)
@@ -678,121 +664,6 @@ GridPtr zeroCombineGrids (const vector<GridConstPtr>& grids)
 }
 
 
-  
-BPolygon cellToBoostPolygon(const nm::MapMetaData& info, const Cell& cell)
-{
-  // Find corners
-  const gm::Polygon poly=cellPolygon(info, cell);
-
-  // Convert all points in polygon
-  BPolygon boostpoly;
-  if (poly.points.size() > 0)
-    {
-      BOOST_FOREACH (const gm::Point32& point, poly.points)
-	{
-	  bg::append(boostpoly, BPoint(point.x,point.y));
-	}
-      bg::append(boostpoly, BPoint(poly.points[0].x, poly.points[0].y));
-    }
-
-
-  return boostpoly;
-}
-BRing cellToBoostRing(const nm::MapMetaData& info, const Cell& cell)
-{
-  // Find corners
-  const gm::Polygon poly=cellPolygon(info, cell);
-
-  // Convert all points in polygon
-  BRing boostpoly;
-  if (poly.points.size() > 0)
-    {
-      BOOST_FOREACH (const gm::Point32& point, poly.points)
-	{
-	  bg::append(boostpoly, BPoint(point.x,point.y));
-	}
-      bg::append(boostpoly, BPoint(poly.points[0].x, poly.points[0].y));
-    }
-
-
-  return boostpoly;
-}
-
-/*
- * Find information about how the secondary grid overlaps the main grid.
- */
-void overlapInformation(
-			double& overlap_area,
-			double& combined_value,
-			const nav_msgs::OccupancyGrid::ConstPtr& main_grid, 
-			const Cell& main_grid_cell, 
-			const nav_msgs::OccupancyGrid::ConstPtr& overlap_grid
-			)
-{
-  // Create boost polygon
-  //BPolygon main_polygon = cellToBoostPolygon(main_grid->info, main_grid_cell);
-  BRing main_ring = cellToBoostRing(main_grid->info, main_grid_cell);
-
-  // Find a starting cell on grid
-  geometry_msgs::Point centerpoint = cellCenter(main_grid->info, main_grid_cell); // World coordinate
-
-  // Reset values
-  overlap_area = 0;
-  combined_value = 0;
-      
-  // Find a corrospoding cell on the overlap grid
-  Cell init_cell;
-  init_cell = pointCell (overlap_grid->info, centerpoint);
-
-  // Extend field of search
-  coord_t min_x = init_cell.x-1;
-  coord_t min_y = init_cell.y-1;
-  coord_t max_x = init_cell.x+1;
-  coord_t max_y = init_cell.y+1;
-
-  // Out of grid checks
-  if (min_x < 0) min_x = 0;
-  if (min_y < 0) min_y = 0;
-  if (max_x >= overlap_grid->info.width) max_x = overlap_grid->info.width -1;
-  if (max_y >= overlap_grid->info.height) max_y = overlap_grid->info.height -1;
-
-  for (coord_t cx=min_x; cx <= max_x; cx++) 
-    {
-      for (coord_t cy=min_y; cy <= max_y; cy++) 
-	{
-	  Cell intersecting_cell = Cell(cx, cy);
-	  const index_t local_ind = cellIndex(overlap_grid->info, intersecting_cell);
-
-	  // Only find overlap if cell contains data
-	  if (overlap_grid->data[local_ind] != -1)
-	    {
-	      //BPolygon cell_polygon = cellToBoostPolygon(overlap_grid->info, intersecting_cell);
-	      BRing cell_ring = cellToBoostRing(overlap_grid->info, intersecting_cell);
-	  
-	      // Find overlap with this cell
-	      std::deque<BPolygon> overlap;
-	      double cell_overlap_area = 0;
-	      try
-		{
-		  bg::intersection(cell_ring, main_ring, overlap);
-		  //bg::intersection(cell_polygon, main_polygon, overlap);
-		  BOOST_FOREACH(BPolygon const& p, overlap)
-		    {
-		      double area = boost::geometry::area(p);
-		      //ROS_INFO("Main: %i %i  Overlap: %i %i   Area: %f", main_grid_cell.x, main_grid_cell.y, intersecting_cell.x, intersecting_cell.y, area);
-		      cell_overlap_area += area; 
-		    }
-		  overlap_area += cell_overlap_area;
-		  combined_value += cell_overlap_area*overlap_grid->data[local_ind]; 
-		}
-	      catch (boost::geometry::overlay_invalid_input_exception e)
-		{
-		  ROS_ERROR("ERROR!!!\n");
-		}
-	    }
-	}
-    }
-}
 void binaryOverlapInformation(
 			      double& overlap_area, // Due to compatibility with overlapInformation method
 			      double& combined_value,
@@ -801,9 +672,6 @@ void binaryOverlapInformation(
 			      const nav_msgs::OccupancyGrid::ConstPtr& overlap_grid
 			)
 {
-  // Create boost ring
-  BRing main_ring = cellToBoostRing(main_grid->info, main_grid_cell);
-
   // Find a starting cell on grid
   geometry_msgs::Point centerpoint = cellCenter(main_grid->info, main_grid_cell); // World coordinate
 
@@ -837,10 +705,9 @@ void binaryOverlapInformation(
 	  // Only find overlap if cell contains data
 	  if (overlap_grid->data[local_ind] != -1)
 	    {
-	      BRing cell_ring = cellToBoostRing(overlap_grid->info, intersecting_cell);
 	      
 	      // Collect intersection information
-	      if (bg::intersects(main_ring, cell_ring))
+	      if (cellsIntersect (main_grid->info, main_grid_cell, overlap_grid->info, intersecting_cell))
 		{
 		  overlap_area++;
 		  combined_value += overlap_grid->data[local_ind];
@@ -879,60 +746,6 @@ void binaryCombineToEmptyGrid(GridPtr& combined_grid, GridPtr& overlap_grid, con
     }
 }
 
-void floatingCombineToEmptyGrid(GridPtr& combined_grid, GridPtr& overlap_grid, const nav_msgs::OccupancyGrid::ConstPtr& combine_from)
-{
-  // Assuming there will be space on the new grid..
-
-  // Area of one cell
-  double unit_area;
-  {
-    Cell unit_cell(0,0);
-    BPolygon unit_polygon = cellToBoostPolygon(combined_grid->info, unit_cell);
-    unit_area = bg::area(unit_polygon);
-  }
-
-  for (coord_t x=0; x<(int)combined_grid->info.width; x++) 
-    {
-      for (coord_t y=0; y<(int)combined_grid->info.height; y++) 
-	{
-	  const Cell cell(x, y); // Coordinate in new grid
-	  const index_t combined_ind = cellIndex(combined_grid->info, cell);
-	  double overlap_area = 0;
-	  double cell_value = 0;
-
-	  // Get overlapping information
-	  binaryOverlapInformation(overlap_area,cell_value, combined_grid, cell, combine_from);
-
-	  // Limits
-	  if (overlap_area > unit_area)
-	    overlap_area = unit_area;
-
-
-	  // Calculate combined cell value
-	  // The returned value only tells about the covered area. Normalize to the value corrosponding to a covered field.
-	  cell_value /= overlap_area;
-
-	  // Normalize overlap area
-	  overlap_area /= unit_area;
-	  
-	  overlap_grid->data[combined_ind] = overlap_area * 100;
-	  combined_grid->data[combined_ind] = cell_value;
-
-	  /*
-	  // Fit to interval [0;50]
-	  double covered = 50 * overlap_area;
-
-	  // Fit to interval [-1;1]
-	  cell_value -= 50;
-	  cell_value /= 50;
-
-	  // Write to grid
-	  if (covered > 1)
-	    combined_grid->data[combined_ind] = 50+covered*cell_value;
-	  */
-	}
-    }
-}
 
 GridPtr informationCombineAlignedGrids
 (
@@ -1108,170 +921,6 @@ GridPtr informationCombineAlignedGrids
   return combined_grid;
 }
 
-GridPtr generousZeroCombineGrids (const nav_msgs::OccupancyGrid::ConstPtr& primary, const nav_msgs::OccupancyGrid::ConstPtr& secondary)
-{
-  // Test for compatible grids
-  /*
-  if (
-      (primary->info.resolution != secondary->info.resolution) ||
-      (primary->info.width != secondary->info.width) ||
-      (primary->info.height != secondary->info.height)
-      )
-    ROS_ASSERT("Incompatible grids");
-  */
-
-  // Get new dimmensions
-  std::vector<nav_msgs::OccupancyGrid::ConstPtr> grids;
-  grids.push_back(primary);
-  grids.push_back(secondary);
-
-  GridPtr combined_grid(new nm::OccupancyGrid());
-  combined_grid->info = getCombinedGridInfo(grids, primary->info.resolution);
-  combined_grid->data.resize(combined_grid->info.width*combined_grid->info.height);
-  fill(combined_grid->data.begin(), combined_grid->data.end(), -1);
-
-  // Area of one cell
-  double unit_area;
-  {
-    Cell unit_cell(0,0);
-    BPolygon unit_polygon = cellToBoostPolygon(combined_grid->info, unit_cell);
-    unit_area = bg::area(unit_polygon);
-  }
-
-  // FOREACH combined grid cell
-  for (coord_t x=0; x<(int)combined_grid->info.width; x++) {
-    for (coord_t y=0; y<(int)combined_grid->info.height; y++) {
-      const Cell cell(x, y); // Coordinate in new grid
-
-      const index_t combined_ind = cellIndex(combined_grid->info, cell);
-
-      double primary_overlap_area = 0;
-      double primary_cell_value = 0;
-      double secondary_overlap_area = 0;
-      double secondary_cell_value = 0;
-      int intersecting_cells = 0;
-      
-      overlapInformation(primary_overlap_area, primary_cell_value, combined_grid, cell, primary);
-      overlapInformation(secondary_overlap_area, secondary_cell_value, combined_grid, cell, secondary);
-
-      double primary_overlap_pct = 50 * primary_overlap_area / unit_area;
-      double secondary_overlap_pct = 50 * secondary_overlap_area / unit_area;
-      double combined_pct = 50 + primary_overlap_pct - secondary_overlap_pct;
-
-      if (combined_pct > 100)
-	combined_pct = 100;
-      else if (combined_pct < 0)
-	combined_pct = 0;
-      combined_grid->data[combined_ind] = combined_pct;
-
-      /*
-      BOOST_FOREACH (const Cell& intersecting_cell,
-		     intersectingCells(primary->info, combined_grid->info, cell)) 
-	{
-	  BPolygon cell_polygon = cellToBoostPolygon(primary->info, intersecting_cell);
-	  const index_t local_ind = cellIndex(primary->info, intersecting_cell);
-	  intersecting_cells++;
-	  
-	  // Find overlap with this cell
-	  std::deque<BPolygon> overlap;
-	  double cell_overlap_area = 0;
-	  
-	  try
-	    {
-	      bg::intersection(cell_polygon, combined_polygon, overlap);
-	      BOOST_FOREACH(BPolygon const& p, overlap)
-		{
-		  cell_overlap_area += boost::geometry::area(p);
-		}
-	    }
-	  catch (boost::geometry::overlay_invalid_input_exception e)
-	    {
-	      ROS_ERROR("ERROR!!!\n");
-	    }
-	  
-	  primary_overlap_area += cell_overlap_area;
-	  primary_overlap_area = 100;
-
-	  //if (primary_overlap_area > unit_area)
-	  //primary_overlap_area = unit_area;
-	    
-	  primary_cell_value += cell_overlap_area*primary->data[local_ind]; 
-	}
-      */
-      //double primary_overlap_pct = 50 * primary_overlap_area / unit_area;
-
-
-      // Decreased area
-      /*
-      BOOST_FOREACH (const Cell& intersecting_cell,
-		     intersectingCells(secondary->info, combined_grid->info, cell)) 
-	{
-	  BPolygon cell_polygon = cellToBoostPolygon(secondary->info, intersecting_cell);
-	  const index_t local_ind = cellIndex(primary->info, intersecting_cell);
-	  intersecting_cells++;
-
-	  // Find overlap
-	  std::deque<BPolygon> overlap;
-	  double cell_overlap_area = 0;
-	  try
-	    {
-	      bg::intersection(cell_polygon, combined_polygon, overlap);
-	      BOOST_FOREACH(BPolygon const& p, overlap)
-		{
-		  cell_overlap_area += boost::geometry::area(p); 
-
-		  if (secondary_overlap_area > unit_area)
-		    ROS_ERROR("SECONDARY OVERLAP BIGGER THAN CELL? %f %f", secondary_overlap_area, unit_area);
-		}
-	    }
-	  catch (boost::geometry::overlay_invalid_input_exception e)
-	    {
-	      ROS_ERROR("ERROR!!!\n");
-	    }
-	  secondary_overlap_area += cell_overlap_area;
-	  secondary_cell_value += cell_overlap_area*primary->data[local_ind];
-	}
-      */
- 
-      //combined_grid->data[combined_ind] = 50 + primary_overlap_pct/2 - secondary_overlap_pct/2;
-
-      /*      
-      if (std::abs(primary_overlap_pct + secondary_overlap_pct) < 1)
-	{
-	  // This area is not covered by any maps
-	  combined_grid->data[combined_ind] = -1;
-	}
-      else if (std::abs(primary_overlap_pct - secondary_overlap_pct) < 1)
-	{
-	  // No new information in this cell
-	  combined_grid->data[combined_ind] = 50;
-	}
-      else
-	{
-	  double delta_value; // = 100* ((primary_cell_value / primary_overlap_pct) - (secondary_cell_value / secondary_overlap_pct));
-	  delta_value = primary_cell_value - secondary_cell_value;
-	  if (primary_overlap_pct > secondary_overlap_pct)
-	    {
-	      // Covering new area
-	      if (delta_value > 0)
-		combined_grid->data[combined_ind] = 100; //50+delta_value;
-	    }
-	  else
-	    {
-	      // Leaving area
-	      if (delta_value < 0)
-		combined_grid->data[combined_ind] = 0; //50+delta_value;
-	    }
-	}
-      */
-
-    }
-  }
-  
-
-  
-  return combined_grid;
-}
 
 GridPtr averagePassGrid (const nav_msgs::OccupancyGrid::ConstPtr& grid, int kernelsize)
 {
