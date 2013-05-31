@@ -34,7 +34,7 @@ int main (int argc, char** argv)
 		{
 			dead.data = true;
 			twist.twist.linear.x = .5;
-			twist.twist.angular.z = .0;
+			twist.twist.angular.z = .2;
 		}
 		else
 		{
