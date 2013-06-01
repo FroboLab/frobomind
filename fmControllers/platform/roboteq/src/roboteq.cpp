@@ -35,7 +35,12 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 
 	va_end(arguments);
 }
-
+void RoboTeQ::transmit(std::string cmd)
+{
+	serial_out.data = cmd;
+	serial_out.header.stamp = ros::Time::now();
+	serial_publisher.publish(serial_out);
+}
 void RoboTeQ::registerHallCb(int channel, void (*callback)(ros::Time time , int value))
 {
 	if(channel == 1)

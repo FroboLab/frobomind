@@ -12,82 +12,82 @@
 hbl2350::hbl2350( )
 :local_node_handler("~"),global_node_handler()
 {
+	ch1.ch = 1;
+	ch2.ch = 2;
+	ch1.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
+	ch2.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
+
 	// Variables for parsing parameters
-	std::string
-	cmd_vel_ch1_topic,
-	cmd_vel_ch2_topic,
-	serial_tx_topic,
-	serial_rx_topic,
-	command_relay_topic,
-	deadman_topic,
-	encoder_ch1_topic,
-	encoder_ch2_topic,
-	power_ch1_topic,
-	power_ch2_topic,
-	status_topic,
-	temperature_topic;
-
 	double max_time_diff_input;
-
-	// Initialise states and object variables
-	deadman_pressed = false;
-	last_deadman_received = ros::Time::now();
-	initialised = false;
-	online = false;
-	emergency_stop = true;
-	last_serial_msg = ros::Time::now();
-	cmd_vel_publishing = false;
-	controller_responding = true;
-	velocity_ch1 = velocity_ch2 = 0;
+	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
+	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic;
 
 	// Parse from parameter server
-	local_node_handler.param<std::string>("cmd_vel_ch1_topic",	cmd_vel_ch1_topic,		"/fmActuators/cmd_vel_ch1");
-	local_node_handler.param<std::string>("cmd_vel_ch2_topic",	cmd_vel_ch2_topic,		"/fmActuators/cmd_vel_ch2");
-	local_node_handler.param<std::string>("serial_rx_topic",	serial_rx_topic,		"/fmCSP/S0_rx");
-	local_node_handler.param<std::string>("serial_tx_topic",	serial_tx_topic,		"/fmCSP/S0_tx");
-	local_node_handler.param<std::string>("command_relay_topic",command_relay_topic,	"/fmData/command");
-	local_node_handler.param<std::string>("deadman_topic",		deadman_topic,			"/fmHMI/joy");
-	local_node_handler.param<std::string>("encoder_ch1_topic",	encoder_ch1_topic,		"/fmSensors/encoder_ch1");
-	local_node_handler.param<std::string>("encoder_ch2_topic",	encoder_ch2_topic,		"/fmSensors/encoder_ch2");
-	local_node_handler.param<std::string>("power_ch1_topic",	power_ch1_topic,		"/fmSensors/power_ch1");
-	local_node_handler.param<std::string>("power_ch2_topic",	power_ch2_topic,		"/fmSensors/power_ch2");
-	local_node_handler.param<std::string>("status_topic",		status_topic,			"/fmActuators/status");
-	//	local_node_handler.param<std::string>("temperature_topic",	temperature_topic,		"/fmActuators/temperature");
+	local_node_handler.param<std::string>("cmd_vel_ch1_topic", cmd_vel_ch1_topic, "/fmActuators/cmd_vel_ch1");
+	local_node_handler.param<std::string>("cmd_vel_ch2_topic", cmd_vel_ch2_topic, "/fmActuators/cmd_vel_ch2");
+	local_node_handler.param<std::string>("serial_rx_topic", serial_rx_topic, "/fmCSP/S0_rx");
+	local_node_handler.param<std::string>("serial_tx_topic", serial_tx_topic, "/fmCSP/S0_tx");
+	local_node_handler.param<std::string>("command_relay_topic", command_relay_topic, "/fmData/command");
+	local_node_handler.param<std::string>("deadman_topic", deadman_topic, "/fmHMI/joy");
+	local_node_handler.param<std::string>("encoder_ch1_topic", encoder_ch1_topic, "/fmSensors/encoder_ch1");
+	local_node_handler.param<std::string>("encoder_ch2_topic", encoder_ch2_topic, "/fmSensors/encoder_ch2");
+	local_node_handler.param<std::string>("power_ch1_topic", power_ch1_topic, "/fmSensors/power_ch1");
+	local_node_handler.param<std::string>("power_ch2_topic", power_ch2_topic, "/fmSensors/power_ch2");
+	local_node_handler.param<std::string>("status_topic", status_topic, "/fmActuators/status");
+	local_node_handler.param<std::string>("temperature_topic", temperature_topic, "/fmActuators/temperature");
 
-	local_node_handler.param<int>("p_gain",	p_gain_ch1,	1);
-	local_node_handler.param<int>("i_gain",	i_gain_ch1,	0);
-	local_node_handler.param<int>("d_gain",	d_gain_ch1,	0);
-	local_node_handler.param<bool>("closed_loop_operation",	closed_loop_operation,	false);
-	p_gain_ch2 = p_gain_ch1;
-	i_gain_ch2 = i_gain_ch1;
-	d_gain_ch2 = d_gain_ch1;
-
+	// Init channels
+	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
+	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
+	local_node_handler.param<double>("d_gain", ch1.d_gain, 0);
+	ch2.p_gain = ch1.p_gain;
+	ch2.i_gain = ch1.i_gain;
+	ch2.d_gain = ch1.d_gain;
+	local_node_handler.param<int>("max_acceleration",ch1.max_acceleration,20000);
+	ch2.max_acceleration = ch1.max_acceleration;
+	local_node_handler.param<int>("max_deceleration",ch1.max_deceleration,20000);
+	ch2.max_acceleration = ch1.max_acceleration;
+	local_node_handler.param<int>("max_rpm",ch1.max_rpm,4000);
+	ch2.max_rpm = ch1.max_rpm;
+	local_node_handler.param<int>("anti_windup_percent",ch1.anti_windup_percent,50);
+	ch2.anti_windup_percent = ch1.anti_windup_percent;
+	ch1.velocity_max = ch2.velocity_max = 1000; //Motor controller constant
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
-	max_time_diff = ros::Duration(max_time_diff_input);
-	local_node_handler.param<double>("mps_to_rpm",mps_to_rpm,5);
+	ch1.max_time_diff = ch2.max_time_diff = ros::Duration(max_time_diff_input);
+	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5);
+	ch2.mps_to_rpm = ch1.mps_to_rpm;
+	ch1.last_deadman_received = ch2.last_deadman_received = ros::Time::now();
+	status.initialised = false;
+	online = false;
+	ch1.velocity = ch2.velocity = 0;
+	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,100 , 1000);
+	ch2.regulator.set_params(ch2.p_gain , ch2.i_gain , ch2.d_gain ,100 , 1000);
 
-	local_node_handler.param<int>("max_acceleration",max_acceleration,20000);
-	local_node_handler.param<int>("max_deceleration",max_deceleration,20000);
-	local_node_handler.param<int>("max_rpm",max_rpm,4000);
-	local_node_handler.param<int>("anti_windup_percent",anti_windup_percent,50);
-	velocity_max = 1000; //Motor controller constant
 
-	// Set publisher topics
-	setSerialPub( 		local_node_handler.advertise<msgs::serial>(		serial_tx_topic,	10) );
-	setEncoderCh1Pub( 	local_node_handler.advertise<msgs::IntStamped>(	encoder_ch1_topic,	10) );
-	setEncoderCh2Pub( 	local_node_handler.advertise<msgs::IntStamped>(	encoder_ch2_topic,	10) );
-	setPowerCh1Pub( 	local_node_handler.advertise<msgs::IntStamped>(	power_ch1_topic,	10) );
-	setPowerCh2Pub( 	local_node_handler.advertise<msgs::IntStamped>(	power_ch2_topic,	10) );
-	setStatusPub(		local_node_handler.advertise<msgs::StringStamped>(status_topic,		10) );
-	//	setTemperaturePub(	local_node_handler.advertise<fmMsgs::StringStamped>(temperature_topic,	10) );
+	// Init RoboTeq
+	last_serial_msg = ros::Time::now();
+	local_node_handler.param<bool>("closed_loop_operation", closed_loop_operation, false);
+
+	// Init publisher topics
+	setSerialPub( local_node_handler.advertise<msgs::serial>( serial_tx_topic,10 ));
+	setEncoderCh1Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch1_topic, 10));
+	setEncoderCh2Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch2_topic, 10));
+	setPowerCh1Pub( local_node_handler.advertise<msgs::IntStamped>( power_ch1_topic, 10));
+	setPowerCh2Pub( local_node_handler.advertise<msgs::IntStamped>( power_ch2_topic, 10));
+	setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
+	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
+	ch2.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
+	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
 
 	// Set subscriber topics
 	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl2350::onSerial,this);
-	command_relay_sub = local_node_handler.subscribe<msgs::serial>(command_relay_topic,10,&hbl2350::onCommand,this);
-	cmd_vel_ch1_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&hbl2350::onCmdVelCh1,this);
-	cmd_vel_ch2_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&hbl2350::onCmdVelCh2,this);
+	//command_relay_sub = local_node_handler.subscribe<msgs::serial>(command_relay_topic,10,&hbl2350::onCommand,this);
+	ch1.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&Channel::onCmdVel,&ch1);
+	ch2.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&Channel::onCmdVel,&ch2);
 	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl2350::onDeadman,this);
 
+//	ch1.register_hall_cb1(ch1.hall_feedback);
+//	ch1.register_hall_cb2(ch2.hall_feedback);
 }
 
 void hbl2350::spin(void)
@@ -105,6 +105,14 @@ void hbl2350::spin(void)
 	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.1),&hbl2350::onTimer,this);
 
 	ros::spin();
+}
+
+void hbl2350::updateStatus(void)
+{
+	status.deadman_pressed = ((ros::Time::now() - ch1.last_deadman_received) < max_time_diff) || ((ros::Time::now() - ch2.last_deadman_received) < max_time_diff);
+	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.last_twist_received) < max_time_diff) || ( (ros::Time::now() - ch2.last_twist_received) < max_time_diff);
+	status.responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
+	status.online = online;
 }
 
 void hbl2350::initController(void)
@@ -181,124 +189,124 @@ void hbl2350::initController(void)
 */	sleep(2);
 
 	ROS_INFO("Initialization finished");
-	initialised = true;
-	controller_responding = false;
+	status.initialised = true;
+	status.responding = false;
 }
-
-void hbl2350::onCmdVelCh1(const geometry_msgs::TwistStamped::ConstPtr& msg)
-{
-	last_twist_received_ch1 = ros::Time::now();
-	velocity_ch1 = (int)(msg->twist.linear.x * mps_to_rpm);
-}
-
-void hbl2350::onCmdVelCh2(const geometry_msgs::TwistStamped::ConstPtr& msg)
-{
-	last_twist_received_ch2 = ros::Time::now();
-	velocity_ch2 = (int)(msg->twist.linear.x * mps_to_rpm);
-}
-
-void hbl2350::onDeadman(const std_msgs::Bool::ConstPtr& msg)
-{
-	deadman_pressed = msg->data;
-	if(deadman_pressed)
-		last_deadman_received = ros::Time::now();
-}
-
-/*!Callback for relaying command strings*/
-void hbl2350::onCommand(const msgs::serial::ConstPtr& msg)
-{
-	ROS_WARN("Command callback");
-	serial_out.header.stamp = ros::Time::now();
-	serial_out.data = msg->data;
-	serial_publisher.publish(serial_out);
-}
-
-void hbl2350::onTimer(const ros::TimerEvent& e)
-{
-	/* Update state variables */
-	deadman_pressed = ((ros::Time::now() - last_deadman_received) < max_time_diff);
-	cmd_vel_publishing = ( (ros::Time::now() - last_twist_received_ch1) < max_time_diff) ||
-			((ros::Time::now() - last_twist_received_ch2) < max_time_diff);
-	controller_responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
-
-	std::stringstream ss;
-
-	if(online) /* is set when controller answers to FID request */
-	{
-		ss << "controller_online ";
-		if(initialised) /* is set when initController function completes */
-		{
-			ss << "controller_initialised ";
-			if(controller_responding) /* is set if the controller publishes serial messages */
-			{
-				ss << "controller_responding ";
-				if(cmd_vel_publishing) /* is set if someone publishes twist messages */
-				{
-					ss << "cmd_vel_publishing ";
-					if(deadman_pressed) /* is set if someone publishes true on deadman topic */
-					{
-						if(emergency_stop)
-						{
-							transmit(1,"!MG");
-							emergency_stop = false;
-						}
-
-						ss << "deadman_pressed ";
-						/* All is good - send speeds */
-						int out_ch1 = (velocity_ch1*velocity_max)/max_rpm,
-							out_ch2 = (velocity_ch2*velocity_max)/max_rpm;
-
-						if(out_ch1 < - velocity_max)
-							out_ch1 = -velocity_max;
-						else if(out_ch1 > velocity_max)
-							out_ch1 = velocity_max;
-
-						if(out_ch2 < - velocity_max)
-							out_ch2 = -velocity_max;
-						else if(out_ch2 > velocity_max)
-							out_ch2 = velocity_max;
-
-						transmit(3,"!G",1,out_ch1);
-						transmit(3,"!G",2,out_ch2);
-					}
-					else /* deadman not pressed */
-					{
-//						ROS_INFO("%s: Deadman button is not pressed",ros::this_node::getName().c_str());
-						/* Set speeds to 0 */
-						transmit(1,"!EX");
-						emergency_stop = true;
-						transmit(3,"!G",1,0);
-						transmit(3,"!G",2,0);
-					}
-				}
-				else /* Cmd_vel is not publishing */
-				{
-//					ROS_INFO("%s: Cmd_vel is not publishing",ros::this_node::getName().c_str());
-					/* Set speeds to 0 */
-					transmit(1,"!EX");
-					emergency_stop = true;
-					transmit(3,"!G",1,0);
-					transmit(3,"!G",2,0);
-				}
-			}
-			else /* controller is not responding */
-			{
-				ROS_INFO("%s: Controller is not responding",ros::this_node::getName().c_str());
-				transmit(1,"?FID");
-			}
-		}
-		else /* Controller is not initialised */
-		{
-			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
-			initController();
-		}
-	}
-	else /* controller is not online */
-	{
-		ROS_INFO("%s: Controller is not yet online",ros::this_node::getName().c_str());
-		transmit(1,"?FID");
-	}
-	status_out.header.stamp = ros::Time::now();
-	status_out.data = ss.str();
-	status_publisher.publish(status_out);
-}
+//
+//void hbl2350::onCmdVelCh1(const geometry_msgs::TwistStamped::ConstPtr& msg)
+//{
+//	last_twist_received_ch1 = ros::Time::now();
+//	velocity_ch1 = (int)(msg->twist.linear.x * mps_to_rpm);
+//}
+//
+//void hbl2350::onCmdVelCh2(const geometry_msgs::TwistStamped::ConstPtr& msg)
+//{
+//	last_twist_received_ch2 = ros::Time::now();
+//	velocity_ch2 = (int)(msg->twist.linear.x * mps_to_rpm);
+//}
+//
+//void hbl2350::onDeadman(const std_msgs::Bool::ConstPtr& msg)
+//{
+//	deadman_pressed = msg->data;
+//	if(deadman_pressed)
+//		last_deadman_received = ros::Time::now();
+//}
+//
+///*!Callback for relaying command strings*/
+//void hbl2350::onCommand(const msgs::serial::ConstPtr& msg)
+//{
+//	ROS_WARN("Command callback");
+//	serial_out.header.stamp = ros::Time::now();
+//	serial_out.data = msg->data;
+//	serial_publisher.publish(serial_out);
+//}
+//
+//void hbl2350::onTimer(const ros::TimerEvent& e)
+//{
+//	/* Update state variables */
+//	deadman_pressed = ((ros::Time::now() - last_deadman_received) < max_time_diff);
+//	cmd_vel_publishing = ( (ros::Time::now() - last_twist_received_ch1) < max_time_diff) ||
+//			((ros::Time::now() - last_twist_received_ch2) < max_time_diff);
+//	controller_responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
+//
+//	std::stringstream ss;
+//
+//	if(online) /* is set when controller answers to FID request */
+//	{
+//		ss << "controller_online ";
+//		if(initialised) /* is set when initController function completes */
+//		{
+//			ss << "controller_initialised ";
+//			if(controller_responding) /* is set if the controller publishes serial messages */
+//			{
+//				ss << "controller_responding ";
+//				if(cmd_vel_publishing) /* is set if someone publishes twist messages */
+//				{
+//					ss << "cmd_vel_publishing ";
+//					if(deadman_pressed) /* is set if someone publishes true on deadman topic */
+//					{
+//						if(emergency_stop)
+//						{
+//							transmit(1,"!MG");
+//							emergency_stop = false;
+//						}
+//
+//						ss << "deadman_pressed ";
+//						/* All is good - send speeds */
+//						int out_ch1 = (velocity_ch1*velocity_max)/max_rpm,
+//							out_ch2 = (velocity_ch2*velocity_max)/max_rpm;
+//
+//						if(out_ch1 < - velocity_max)
+//							out_ch1 = -velocity_max;
+//						else if(out_ch1 > velocity_max)
+//							out_ch1 = velocity_max;
+//
+//						if(out_ch2 < - velocity_max)
+//							out_ch2 = -velocity_max;
+//						else if(out_ch2 > velocity_max)
+//							out_ch2 = velocity_max;
+//
+//						transmit(3,"!G",1,out_ch1);
+//						transmit(3,"!G",2,out_ch2);
+//					}
+//					else /* deadman not pressed */
+//					{
+////						ROS_INFO("%s: Deadman button is not pressed",ros::this_node::getName().c_str());
+//						/* Set speeds to 0 */
+//						transmit(1,"!EX");
+//						emergency_stop = true;
+//						transmit(3,"!G",1,0);
+//						transmit(3,"!G",2,0);
+//					}
+//				}
+//				else /* Cmd_vel is not publishing */
+//				{
+////					ROS_INFO("%s: Cmd_vel is not publishing",ros::this_node::getName().c_str());
+//					/* Set speeds to 0 */
+//					transmit(1,"!EX");
+//					emergency_stop = true;
+//					transmit(3,"!G",1,0);
+//					transmit(3,"!G",2,0);
+//				}
+//			}
+//			else /* controller is not responding */
+//			{
+//				ROS_INFO("%s: Controller is not responding",ros::this_node::getName().c_str());
+//				transmit(1,"?FID");
+//			}
+//		}
+//		else /* Controller is not initialised */
+//		{
+//			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
+//			initController();
+//		}
+//	}
+//	else /* controller is not online */
+//	{
+//		ROS_INFO("%s: Controller is not yet online",ros::this_node::getName().c_str());
+//		transmit(1,"?FID");
+//	}
+//	status_out.header.stamp = ros::Time::now();
+//	status_out.data = ss.str();
+//	status_publisher.publish(status_out);
+//}

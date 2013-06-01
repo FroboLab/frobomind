@@ -69,6 +69,7 @@ public:
 	void					power_feedback(ros::Time time, int fb1){power_ch1_callback(time,fb1);}
 
 	void					transmit(int, std::string , ...);
+	void					transmit(std::string);
 };
 
 #endif /* ROBOTEQ_HPP_ */

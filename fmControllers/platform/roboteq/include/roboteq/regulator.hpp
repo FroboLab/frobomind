@@ -28,55 +28,20 @@
 #ifndef REGULATOR_HPP_
 #define REGULATOR_HPP_
 
-#include <ros/ros.h>
-#include <iostream>
-#include <msgs/serial.h>
-#include <msgs/IntStamped.h>
-#include <msgs/StringStamped.h>
-
-
 class Regulator
 {
-	struct gain_t
-	{
-	  double p;
-	  double i;
-	  double d;
-	};
-
-	struct lr_double_t
-	{
-	  double left;
-	  double right;
-	};
-
-	struct lr_int_t
-	{
-	  double left;
-	  double right;
-	};
-
 private:
-	lr_double_t speed,setpoint,error,previous,integrator,differentiator;
-	lr_int_t encoder;
-
-	ros::Time last_time;
-	double period;
+	double previous,integrator;
 
 public:
-	struct
-	{
-	  gain_t left;
-	  gain_t right;
-	} gain;
-
-	double antiwindup;
+	double p,i,d,i_max,out_max;
 
 	Regulator();
 
-	bool get_speeds( double , double , int , int , int * , int * );
-	double ticks_to_mps(int);
-	int mps_to_ticks(double);
+	double output_from_input( double , double , double);
+	void reset_integrator(){integrator = 0;}
+	void set_params( double p_gain , double i_gain , double d_gain , double imax , double outmax)
+	{p = p_gain; i = i_gain; d = d_gain; i_max = imax; out_max = outmax; }
 };
 
 #endif /* REGULATOR_HPP_ */

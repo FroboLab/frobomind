@@ -12,6 +12,29 @@
 #include "roboteq/roboteq.hpp"
 #include "roboteq/regulator.hpp"
 
+//Abstract class overloading the function call operator
+class BaseCB
+{
+public:
+	virtual void operator()(std::string)=0;
+};
+
+// Callback placeholder
+template<class ClassT>
+class CallbackHandler : public BaseCB
+{
+public:
+	typedef void(ClassT::* FuncT)(std::string);
+	FuncT _fn;
+	ClassT* _c;
+
+	CallbackHandler(ClassT* c, FuncT fn):_fn(fn),_c(c){}
+	void operator()(std::string str)
+	{
+		return (_c->*_fn )(str);
+	}
+};
+
 class Channel
 {
 public:
@@ -26,22 +49,34 @@ public:
 		ros::Publisher power, hall, temperature;
 	} publisher;
 
-//	bool deadman_pressed,cmd_vel_publishing,initialised,controller_responding, emergency_stop;
-//	int	max_rpm, anti_windup_percent, max_acceleration, max_deceleration, velocity_max;
-//	double velocity,mps_to_rpm,p_gain, i_gain, d_gain;
-//	ros::Time last_twist_received, last_deadman_received;
-//	ros::Duration max_time_diff;
-//	ros::Subscriber cmd_vel_sub;
-//	Regulator regulator;
+	struct status_t
+	{
+		bool online, deadman_pressed, cmd_vel_publishing, initialised, responding, emergency_stop;
+	};
+
+	int	ch, max_rpm, anti_windup_percent, max_acceleration, max_deceleration, velocity_max;
+	double velocity,mps_to_rpm,p_gain, i_gain, d_gain;
+	ros::Time last_twist_received, last_deadman_received;
+	ros::Duration max_time_diff;
+	ros::Subscriber cmd_vel_sub;
+	ros::Publisher status_publisher;
+	msgs::StringStamped	status_out;
+	Regulator regulator;
+
+	BaseCB* transmit_cb;
+	void transmit(std::string str){(*transmit_cb)(str);}
 
 	Channel();
 	void onHallFeedback(ros::Time time, int feedback);
 	void onPowerFeedback(ros::Time time, int feedback);
 	void onTemperatureFeedback(ros::Time time, int feedback);
-//	bool initController(void);
-//	void CmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
-//	void Deadman(const std_msgs::Bool::ConstPtr&);
-//	void Timer(const ros::TimerEvent&);
+
+	//bool initController(void);
+
+	void onCmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
+	void onDeadman(const std_msgs::Bool::ConstPtr&);
+	void onTimer(const ros::TimerEvent&, status_t);
+	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
 //	void Command(const msgs::serial::ConstPtr& msg);
 //	void Feedback(const msgs::serial::ConstPtr& msg);
 };
