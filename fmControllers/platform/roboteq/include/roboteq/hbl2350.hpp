@@ -5,6 +5,7 @@
 
 #include <ros/ros.h>
 #include "roboteq/roboteq.hpp"
+#include "roboteq/channel.hpp"
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
 #include <msgs/StringStamped.h>
@@ -14,6 +15,8 @@
 class hbl2350 : public RoboTeQ
 {
 private:
+	Channel ch1,ch2;
+
 	ros::NodeHandle 		local_node_handler;
 	ros::NodeHandle 		global_node_handler;
 
@@ -71,10 +74,10 @@ public:
 	void					setSerialPub(ros::Publisher pub){serial_publisher = pub;}
 	void					setStatusPub(ros::Publisher pub){status_publisher = pub;}
 	void					setTemperaturePub(ros::Publisher pub){temperature_publisher = pub;}
-	void					setPowerCh1Pub(ros::Publisher pub){power_ch1_publisher = pub;}
-	void					setPowerCh2Pub(ros::Publisher pub){power_ch2_publisher = pub;}
-	void					setEncoderCh1Pub(ros::Publisher pub){encoder_ch1_publisher = pub;}
-	void					setEncoderCh2Pub(ros::Publisher pub){encoder_ch2_publisher = pub;}
+	void					setPowerCh1Pub(ros::Publisher pub){ch1.publisher.power = pub;}
+	void					setPowerCh2Pub(ros::Publisher pub){ch2.publisher.power = pub;}
+	void					setEncoderCh1Pub(ros::Publisher pub){ch1.publisher.hall = pub;}
+	void					setEncoderCh2Pub(ros::Publisher pub){ch2.publisher.hall = pub;}
 
 	int						subscribers(){return serial_publisher.getNumSubscribers();}
 

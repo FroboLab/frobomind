@@ -4,6 +4,9 @@ RoboTeQ::RoboTeQ()
 {
 	ff = fs = 0;
 	two_channel = true;
+	hall_cb1_initialised = hall_cb2_initialised = false;
+	power_cb1_initialised = power_cb2_initialised = false;
+	temperature_cb1_initialised = temperature_cb2_initialised = false;
 }
 
 /*!Takes number of arguments, command string and an arbitrary number of integer arguments*/
@@ -33,6 +36,39 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 	va_end(arguments);
 }
 
+void RoboTeQ::registerHallCb(int channel, void (*callback)(ros::Time time , int value))
+{
+	if(channel == 1)
+	{
+		hall_ch1_callback = callback;
+		hall_cb1_initialised = true;
+	}
+	else if(channel == 2 && two_channel)
+	{
+		hall_ch2_callback = callback;
+		hall_cb2_initialised = true;
+	}
+	else
+		ROS_WARN("%s: Error registering callback",ros::this_node::getName().c_str());
+}
+
+void RoboTeQ::registerPowerCb(int channel, void (*callback)(ros::Time time , int value))
+{
+	if(channel == 1)
+	{
+		power_ch1_callback = callback;
+		power_cb1_initialised = true;
+	}
+	else if(channel == 2 && two_channel)
+	{
+		power_ch2_callback = callback;
+		power_cb2_initialised = true;
+	}
+	else
+		ROS_WARN("%s: Error registering callback",ros::this_node::getName().c_str());
+}
+
+
 /*!Callback for handling serial message*/
 void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 {
@@ -44,35 +80,23 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 
 	else if(two_channel && sscanf(msg->data.c_str(),"CB=%d:%d",	&cb1,&cb2))
 	{
-		encoder_out.header.stamp = msg->header.stamp;
-
-		encoder_out.data = cb1;
-		encoder_ch1_publisher.publish(encoder_out);
-
-		encoder_out.data = cb2;
-		encoder_ch2_publisher.publish(encoder_out);
+		if(hall_cb1_initialised && hall_cb2_initialised)
+			hall_feedback(msg->header.stamp, cb1, cb2);
 	}
 	else if(two_channel && sscanf(msg->data.c_str(),"P=%d:%d",		&p1,&p2))
 	{
-		power_out.header.stamp = msg->header.stamp;
-		power_out.data = p1;
-		power_ch1_publisher.publish(power_out);
-
-		power_out.data = p2;
-		power_ch2_publisher.publish(power_out);
+		if(power_cb1_initialised && power_cb2_initialised)
+			power_feedback(msg->header.stamp, cb1, cb2);
 	}
 	else if((!two_channel) && sscanf(msg->data.c_str(),"CB=%d",	&cb1))
 	{
-		encoder_out.header.stamp = msg->header.stamp;
-
-		encoder_out.data = cb1;
-		encoder_ch1_publisher.publish(encoder_out);
+		if(hall_cb1_initialised)
+			hall_feedback(msg->header.stamp, cb1);
 	}
 	else if((!two_channel) && sscanf(msg->data.c_str(),"P=%d",		&p1))
 	{
-		power_out.header.stamp = msg->header.stamp;
-		power_out.data = p1;
-		power_ch1_publisher.publish(power_out);
+		if(power_cb1_initialised)
+			power_feedback(msg->header.stamp, cb1);
 	}
 	else if(sscanf(msg->data.c_str(),"FF=%d",		&ff))
 	{

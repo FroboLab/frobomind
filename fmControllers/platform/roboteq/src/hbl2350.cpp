@@ -27,7 +27,7 @@ hbl2350::hbl2350( )
 	status_topic,
 	temperature_topic;
 
-	double 			max_time_diff_input;
+	double max_time_diff_input;
 
 	// Initialise states and object variables
 	deadman_pressed = false;
