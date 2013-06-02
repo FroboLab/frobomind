@@ -25,7 +25,7 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************
- #
+ # 2013-06-02 Leon: Implemented regulator
  #
  #
  ****************************************************************************/
@@ -35,75 +35,56 @@
 #define TIME_BETWEEN_COMMANDS 0.2
 
 #include <ros/ros.h>
-#include "roboteq/roboteq.hpp"
-#include "roboteq/channel.hpp"
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
 #include <msgs/StringStamped.h>
 #include <msgs/IntStamped.h>
+#include <msgs/serial.h>
+#include "roboteq/roboteq.hpp"
+#include "roboteq/channel.hpp"
 #include <cstdarg>
 
 class hbl1650 : public RoboTeQ
 {
+/*
+ * Class inheriting from the RoboTeQ base class and implementing the one channel
+ * RoboTeQ HBL1650 motor controller model.
+ * */
 private:
-	Channel controller;
-
-	ros::NodeHandle 		local_node_handler;
-	ros::NodeHandle 		global_node_handler;
-
-	bool 					deadman_pressed,
-							cmd_vel_publishing,
-							initialised,
-							controller_responding;
-
-	int 					velocity;
-
-	std_msgs::Bool 			prev_joy;
-
-	ros::Time 				last_deadman_received;
-	ros::Time 				last_twist_received;
+	Channel ch1;
+	ros::NodeHandle local_node_handler,global_node_handler;
 
 public:
-	bool 					closed_loop_operation,
-							emergency_stop;
+	bool closed_loop_operation;
+	double mps_to_rpm;
 
-	int						p_gain,
-							i_gain,
-							d_gain,
-							max_rpm,
-							anti_windup_percent,
-							max_acceleration,
-							max_deceleration,
-							velocity_max;
+	ros::Subscriber serial_sub, command_relay_sub, deadman_sub;
 
-	double 					mps_to_rpm;
+	ros::Duration max_time_diff;
 
-	ros::Subscriber 		serial_sub,
-							command_relay_sub,
-							cmd_vel_sub,
-							deadman_sub;
+	hbl1650();
+	void spin(void);
+	void initController(std::string);
+	void updateStatus(void);
 
-	ros::Duration 			max_time_diff;
+	// Methods overriding virtual methods in base class
+	void hall_feedback(ros::Time time, int fb1){ch1.onHallFeedback(time,fb1);}
+	void power_feedback(ros::Time time, int fb1){ch1.onPowerFeedback(time,fb1);}
 
-							hbl1650();
-	void					spin(void);
-	void 					initController(void);
+	// Callback methods
+	void onDeadman(const std_msgs::Bool::ConstPtr& msg){ch1.onDeadman(msg);}
+	void onTimer(const ros::TimerEvent& event){updateStatus(); ch1.onTimer(event,status);}
+	void onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
 
-	void					onCmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
+	// Mutator methods for setting up publishers
+	void setSerialPub(ros::Publisher pub){serial_publisher = pub;}
+	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
+	void setTemperaturePub(ros::Publisher pub){temperature_publisher = pub;}
+	void setPowerCh1Pub(ros::Publisher pub){ch1.publisher.power = pub;}
+	void setEncoderCh1Pub(ros::Publisher pub){ch1.publisher.hall = pub;}
 
-	void					onDeadman(const std_msgs::Bool::ConstPtr&);
-	void					onTimer(const ros::TimerEvent&);
-	void 					onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
-	void 					onCommand(const msgs::serial::ConstPtr& msg);
-
-	void 					setChannels(bool ch){two_channel = ch;}
-	void					setSerialPub(ros::Publisher pub){serial_publisher = pub;}
-	void					setStatusPub(ros::Publisher pub){status_publisher = pub;}
-	void					setTemperaturePub(ros::Publisher pub){temperature_publisher = pub;}
-	void					setPowerPub(ros::Publisher pub){controller.publisher.power = pub;}
-	void					setEncoderPub(ros::Publisher pub){controller.publisher.hall = pub;}
-	int						subscribers(){return serial_publisher.getNumSubscribers();}
-
+	// Accessor method to block on during startup
+	int	subscribers(){return serial_publisher.getNumSubscribers();}
 };
 
-#endif /* HBL1650_HPP_ */
+#endif /* HBL2350_HPP_ */
