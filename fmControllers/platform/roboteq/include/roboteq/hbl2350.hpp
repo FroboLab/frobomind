@@ -21,7 +21,7 @@ private:
 	ros::NodeHandle 		local_node_handler;
 	ros::NodeHandle 		global_node_handler;
 
-	Channel::status_t 		status;
+	//Channel::status_t 		status;
 //
 //	int 					velocity_ch1,
 //							velocity_ch2;

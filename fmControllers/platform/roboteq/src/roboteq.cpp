@@ -77,8 +77,10 @@ void RoboTeQ::registerPowerCb(int channel, void (*callback)(ros::Time time , int
 /*!Callback for handling serial message*/
 void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 {
-	ROS_DEBUG("Message received %s",msg->data.c_str());
+	//ROS_WARN("Message received %s",msg->data.c_str());
 	last_serial_msg = ros::Time::now();
+	status.online = true;
+
 	char dummy[25];
 
 	if(sscanf(msg->data.c_str(),"+%s",dummy)){}
@@ -129,7 +131,8 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 //	else if(sscanf(msg->data.c_str(),"F=%d:%d",		&f1,&f2))		{ }
 	else if(sscanf(msg->data.c_str(),"FID=%s", 		dummy))
 	{
-		online = true;
+		//status.online = true;
+		status.initialised = false;
 		ROS_WARN("Found %s",msg->data.c_str());
 	}
 	else if(sscanf(msg->data.c_str(),"-%s",			dummy))

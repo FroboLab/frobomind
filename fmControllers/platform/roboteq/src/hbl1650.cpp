@@ -33,7 +33,7 @@ hbl1650::hbl1650( )
 	deadman_pressed = false;
 	last_deadman_received = ros::Time::now();
 	initialised = false;
-	online = false;
+	//online = false;
 	emergency_stop = true;
 	last_serial_msg = ros::Time::now();
 	cmd_vel_publishing = false;
@@ -209,7 +209,7 @@ void hbl1650::onTimer(const ros::TimerEvent& e)
 
 	std::stringstream ss;
 
-	if(online) /* is set when controller answers to FID request */
+	if(1/*online*/) /* is set when controller answers to FID request */
 	{
 		ss << "controller_online ";
 		if(initialised) /* is set when initController function completes */

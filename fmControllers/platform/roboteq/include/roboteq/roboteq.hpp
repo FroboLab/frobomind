@@ -17,7 +17,12 @@
 class RoboTeQ
 {
 public:
-	bool					online,
+	struct status_t
+	{
+		bool online, deadman_pressed, cmd_vel_publishing, initialised, responding, emergency_stop;
+	}status;
+
+	bool
 							two_channel,
 							hall_cb1_initialised,
 							hall_cb2_initialised,

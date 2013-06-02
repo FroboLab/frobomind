@@ -12,12 +12,18 @@
 hbl2350::hbl2350( )
 :local_node_handler("~"),global_node_handler()
 {
+	two_channel = true;
 	ch1.ch = 1;
 	ch2.ch = 2;
 	ch1.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
 	ch2.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
 	ch1.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 	ch2.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
+	ch1.ticks_to_mps = 1/1320;
+	ch2.ticks_to_mps = 1/(1320/1.88); // 1.88 RoboTeQ hack
+
+	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
+	status.emergency_stop = true;
 
 	// Variables for parsing parameters
 	double max_time_diff_input;
@@ -57,12 +63,10 @@ hbl2350::hbl2350( )
 	ch2.anti_windup_percent = ch1.anti_windup_percent;
 	ch1.roboteq_max = ch2.roboteq_max = 1000; //Motor controller constant
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
-	ch1.max_time_diff = ch2.max_time_diff = ros::Duration(max_time_diff_input);
+	max_time_diff = ros::Duration(max_time_diff_input);
 	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5);
 	ch2.mps_to_rpm = ch1.mps_to_rpm;
 	ch1.last_deadman_received = ch2.last_deadman_received = ros::Time::now();
-	status.initialised = false;
-	online = false;
 	ch1.velocity = ch2.velocity = 0;
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,100 , 1000);
 	ch2.regulator.set_params(ch2.p_gain , ch2.i_gain , ch2.d_gain ,100 , 1000);
@@ -90,8 +94,11 @@ hbl2350::hbl2350( )
 	ch2.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&Channel::onCmdVel,&ch2);
 	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl2350::onDeadman,this);
 
-//	ch1.register_hall_cb1(ch1.hall_feedback);
-//	ch1.register_hall_cb2(ch2.hall_feedback);
+
+
+//	registerHallCb(1,&ch1.onHallFeedback);
+//	registerHallCb(2,&ch2.onHallFeedback);
+
 }
 
 void hbl2350::spin(void)
@@ -116,7 +123,6 @@ void hbl2350::updateStatus(void)
 	status.deadman_pressed = ((ros::Time::now() - ch1.last_deadman_received) < max_time_diff) || ((ros::Time::now() - ch2.last_deadman_received) < max_time_diff);
 	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.last_twist_received) < max_time_diff) || ( (ros::Time::now() - ch2.last_twist_received) < max_time_diff);
 	status.responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
-	status.online = online;
 }
 
 void hbl2350::initController(std::string config)

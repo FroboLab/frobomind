@@ -2,16 +2,24 @@
 
 Channel::Channel( )
 {
+	down_time = 0;
 //	deadman_pressed = cmd_vel_publishing = initialised = controller_responding =false;
+
 //	emergency_stop = true;
 //	mps_to_rpm = p_gain = i_gain = d_gain = velocity = anti_windup_percent = velocity_max = max_rpm = max_acceleration = max_deceleration = 0;
-
 }
 
 void Channel::onHallFeedback(ros::Time time, int feedback)
 {
 	message.hall.header.stamp = time;
-	message.hall.data = hall_value = feedback;
+	message.hall.data = feedback;
+
+	// TODO: This is a temporary hack to make hall values relative
+	hall_value = feedback - last_hall;
+	last_hall = feedback;
+	// end hack..
+	std::cout << "Hall value: " << feedback << " Relative: " << hall_value << std::endl;
+
 	publisher.hall.publish(message.hall);
 }
 
@@ -43,7 +51,7 @@ void Channel::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 }
 
 
-void Channel::onTimer(const ros::TimerEvent& e, status_t status)
+void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 {
 	std::stringstream ss, out;
 
@@ -70,14 +78,18 @@ void Channel::onTimer(const ros::TimerEvent& e, status_t status)
 						ss << "deadman_pressed ";
 
 						/* Get new output */
-						double setpoint = regulator.output_from_input(velocity, hall_value*ticks_to_mps, (ros::Time::now() - last_regulation).toSec());
+						double period = (ros::Time::now() - last_regulation).toSec();
+						double feedback = hall_value*ticks_to_mps;
+						double setpoint = regulator.output_from_input(velocity, feedback , period);
 						last_regulation = ros::Time::now();
 
 						// Convert to roboteq format
-						int output = (setpoint*roboteq_max)/max_velocity_mps;
+						int output = ( (velocity)*roboteq_max)/max_velocity_mps;
 
 						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
+
+						std::cout << "Channel: " << ch << " Cmd vel: " << velocity << " Setpoint: "<< setpoint << " Feedback(" << hall_value << "): " <<  feedback << " Period: " << period << std::endl;
 					}
 					else /* deadman not pressed */
 					{
@@ -100,7 +112,13 @@ void Channel::onTimer(const ros::TimerEvent& e, status_t status)
 			else /* controller is not responding */
 			{
 				ROS_INFO("%s: Controller is not responding",ros::this_node::getName().c_str());
-				transmit("?FID\r");
+				down_time++;
+				if(down_time > 20)
+				{
+					transmit("?FID\r");
+					down_time = 0;
+				}
+
 			}
 		}
 		else /* Controller is not initialised */
