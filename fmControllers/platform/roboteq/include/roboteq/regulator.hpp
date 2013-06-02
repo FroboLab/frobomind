@@ -1,5 +1,5 @@
 /****************************************************************************
- # FroboMind regulator.cpp
+ # FroboMind
  # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
  # All rights reserved.
  #
@@ -24,12 +24,21 @@
  # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ****************************************************************************
+ # 2013-06-02 Leon: Implemented regulator
+ #
+ #
  ****************************************************************************/
 #ifndef REGULATOR_HPP_
 #define REGULATOR_HPP_
 
 class Regulator
 {
+/*
+ * Class implementing the concept of a PID controller simplified to work on any
+ * numbers of equal units
+ * */
+
 private:
 	double previous,integrator;
 

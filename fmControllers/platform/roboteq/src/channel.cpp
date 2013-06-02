@@ -3,10 +3,6 @@
 Channel::Channel( )
 {
 	down_time = 0;
-//	deadman_pressed = cmd_vel_publishing = initialised = controller_responding =false;
-
-//	emergency_stop = true;
-//	mps_to_rpm = p_gain = i_gain = d_gain = velocity = anti_windup_percent = velocity_max = max_rpm = max_acceleration = max_deceleration = 0;
 }
 
 void Channel::onHallFeedback(ros::Time time, int feedback)
@@ -18,8 +14,8 @@ void Channel::onHallFeedback(ros::Time time, int feedback)
 	hall_value = feedback - last_hall;
 	last_hall = feedback;
 	// end hack..
-	std::cout << "Hall value: " << feedback << " Relative: " << hall_value << std::endl;
 
+	std::cout << "Hall value: " << feedback << " Relative: " << hall_value << std::endl;
 	publisher.hall.publish(message.hall);
 }
 
@@ -43,17 +39,15 @@ void Channel::onCmdVel(const geometry_msgs::TwistStamped::ConstPtr& msg)
 	last_twist_received = ros::Time::now();
 }
 
-
 void Channel::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 {
 	if(msg->data)
 		last_deadman_received = ros::Time::now();
 }
 
-
 void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 {
-	std::stringstream ss, out;
+	std::stringstream ss, out; /* streams for holding status message and command output */
 
 	if(status.online) /* is set when controller answers to FID request */
 	{
@@ -69,13 +63,14 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 					ss << "cmd_vel_publishing ";
 					if(status.deadman_pressed) /* is set if someone publishes true on deadman topic */
 					{
+						ss << "deadman_pressed ";
+
 						if(status.emergency_stop)
 						{
+							/* release emergency stop */
 							transmit("!MG\r");
 							status.emergency_stop = false;
 						}
-
-						ss << "deadman_pressed ";
 
 						/* Get new output */
 						double period = (ros::Time::now() - last_regulation).toSec();
@@ -83,17 +78,16 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 						double setpoint = regulator.output_from_input(velocity, feedback , period);
 						last_regulation = ros::Time::now();
 
-						// Convert to roboteq format
-						int output = ( (velocity)*roboteq_max)/max_velocity_mps;
+						/* Convert to roboteq format */
+						int output = ((setpoint)*roboteq_max)/max_velocity_mps;
 
+						/* Send motor speed */
 						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
-
-						std::cout << "Channel: " << ch << " Cmd vel: " << velocity << " Setpoint: "<< setpoint << " Feedback(" << hall_value << "): " <<  feedback << " Period: " << period << std::endl;
 					}
 					else /* deadman not pressed */
 					{
-						/* Set speeds to 0 */
+						/* Set speeds to 0 and activate emergency stop */
 						transmit("!EX\r");
 						status.emergency_stop = true;
 						transmit("!G 1 0\r");
@@ -102,7 +96,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 				}
 				else /* Cmd_vel is not publishing */
 				{
-					/* Set speeds to 0 */
+					/* Set speeds to 0 and activate emergency stop */
 					transmit("!EX\r");
 					status.emergency_stop = true;
 					transmit("!G 1 0\r");
@@ -113,26 +107,29 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 			{
 				ROS_INFO("%s: Controller is not responding",ros::this_node::getName().c_str());
 				down_time++;
-				if(down_time > 20)
+				if(down_time > 10)
 				{
+					/* Try to re-connect and re-initialise */
 					transmit("?FID\r");
 					down_time = 0;
 				}
-
 			}
 		}
 		else /* Controller is not initialised */
 		{
-			ROS_INFO("%s: ControlleChannel::r is not initialised",ros::this_node::getName().c_str());
-			initController("pichi");
+			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
+			initController("standard");
 			status.initialised = true;
 		}
 	}
 	else /* controller is not online */
 	{
 		ROS_INFO("%s: Controller is not yet online",ros::this_node::getName().c_str());
+		/* Try to re-connect and re-initialise */
 		transmit("?FID\r");
 	}
+
+	/* Publish the status message */
 	status_out.header.stamp = ros::Time::now();
 	status_out.data = ss.str();
 	status_publisher.publish(status_out);

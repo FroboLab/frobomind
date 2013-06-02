@@ -4,12 +4,9 @@ RoboTeQ::RoboTeQ()
 {
 	ff = fs = 0;
 	two_channel = true;
-	hall_cb1_initialised = hall_cb2_initialised = false;
-	power_cb1_initialised = power_cb2_initialised = false;
-	temperature_cb1_initialised = temperature_cb2_initialised = false;
 }
 
-/*!Takes number of arguments, command string and an arbitrary number of integer arguments*/
+/* Takes number of arguments, command string and an arbitrary number of integer arguments */
 void RoboTeQ::transmit(int args, std::string cmd , ...)
 {
 	int number;
@@ -41,43 +38,11 @@ void RoboTeQ::transmit(std::string cmd)
 	serial_out.header.stamp = ros::Time::now();
 	serial_publisher.publish(serial_out);
 }
-void RoboTeQ::registerHallCb(int channel, void (*callback)(ros::Time time , int value))
-{
-	if(channel == 1)
-	{
-		hall_ch1_callback = callback;
-		hall_cb1_initialised = true;
-	}
-	else if(channel == 2 && two_channel)
-	{
-		hall_ch2_callback = callback;
-		hall_cb2_initialised = true;
-	}
-	else
-		ROS_WARN("%s: Error registering callback",ros::this_node::getName().c_str());
-}
 
-void RoboTeQ::registerPowerCb(int channel, void (*callback)(ros::Time time , int value))
-{
-	if(channel == 1)
-	{
-		power_ch1_callback = callback;
-		power_cb1_initialised = true;
-	}
-	else if(channel == 2 && two_channel)
-	{
-		power_ch2_callback = callback;
-		power_cb2_initialised = true;
-	}
-	else
-		ROS_WARN("%s: Error registering callback",ros::this_node::getName().c_str());
-}
-
-
-/*!Callback for handling serial message*/
+/* Callback for handling serial message*/
 void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 {
-	//ROS_WARN("Message received %s",msg->data.c_str());
+	ROS_DEBUG("Message received %s",msg->data.c_str());
 	last_serial_msg = ros::Time::now();
 	status.online = true;
 
@@ -85,27 +50,15 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 
 	if(sscanf(msg->data.c_str(),"+%s",dummy)){}
 
-	else if(two_channel && sscanf(msg->data.c_str(),"CB=%d:%d",	&cb1,&cb2))
-	{
-		if(hall_cb1_initialised && hall_cb2_initialised)
-			hall_feedback(msg->header.stamp, cb1, cb2);
-	}
-	else if(two_channel && sscanf(msg->data.c_str(),"P=%d:%d",		&p1,&p2))
-	{
-		if(power_cb1_initialised && power_cb2_initialised)
-			power_feedback(msg->header.stamp, cb1, cb2);
-	}
-	else if((!two_channel) && sscanf(msg->data.c_str(),"CB=%d",	&cb1))
-	{
-		if(hall_cb1_initialised)
-			hall_feedback(msg->header.stamp, cb1);
-	}
-	else if((!two_channel) && sscanf(msg->data.c_str(),"P=%d",		&p1))
-	{
-		if(power_cb1_initialised)
-			power_feedback(msg->header.stamp, cb1);
-	}
-	else if(sscanf(msg->data.c_str(),"FF=%d",		&ff))
+	else if(two_channel && sscanf(msg->data.c_str(),"CB=%d:%d", &cb1,&cb2))
+		hall_feedback(msg->header.stamp, cb1, cb2);
+	else if(two_channel && sscanf(msg->data.c_str(),"P=%d:%d",&p1,&p2))
+		power_feedback(msg->header.stamp, cb1, cb2);
+	else if((!two_channel) && sscanf(msg->data.c_str(),"CB=%d",&cb1))
+		hall_feedback(msg->header.stamp, cb1);
+	else if((!two_channel) && sscanf(msg->data.c_str(),"P=%d",&p1))
+		power_feedback(msg->header.stamp, cb1);
+	else if(sscanf(msg->data.c_str(),"FF=%d",&ff))
 	{
 		std::stringstream ss;
 		ss << statusFlagsToString(fs) << faultFlagsToString(ff) <<
@@ -116,11 +69,11 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 		status_out.data = ss.str();
 		status_publisher.publish(status_out);
 	}
-	else if(sscanf(msg->data.c_str(),"V=%d:%d:%d",	&v1,&v2,&v3))
+	else if(sscanf(msg->data.c_str(),"V=%d:%d:%d",&v1,&v2,&v3))
 	{ }
-	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",	&t1,&t2,&t3))
+	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",&t1,&t2,&t3))
 	{ }
-	else if(sscanf(msg->data.c_str(),"FS=%d",		&fs))
+	else if(sscanf(msg->data.c_str(),"FS=%d",&fs))
 	{ }
 //	else if(sscanf(msg->data.c_str(),"A=%d:%d",		&a1,&a2))		{ }
 //	else if(sscanf(msg->data.c_str(),"BA=%d:%d",	&ba1,&ba2))		{ }
@@ -129,13 +82,13 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 //	else if(sscanf(msg->data.c_str(),"CBR=%d:%d",	&cbr1,&cbr2))	{ }
 //	else if(sscanf(msg->data.c_str(),"E=%d:%d",		&e1,&e2))		{ }
 //	else if(sscanf(msg->data.c_str(),"F=%d:%d",		&f1,&f2))		{ }
-	else if(sscanf(msg->data.c_str(),"FID=%s", 		dummy))
+	else if(sscanf(msg->data.c_str(),"FID=%s",dummy))
 	{
 		//status.online = true;
 		status.initialised = false;
 		ROS_WARN("Found %s",msg->data.c_str());
 	}
-	else if(sscanf(msg->data.c_str(),"-%s",			dummy))
+	else if(sscanf(msg->data.c_str(),"-%s",dummy))
 	{
 		ROS_WARN("RoboTeQ did not acknowledge the transmit");
 	}

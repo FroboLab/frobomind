@@ -1,31 +1,30 @@
 #include "roboteq/hbl2350.hpp"
 
-//int main (int argc, char** argv)
-//{
-//	ros::init(argc,argv,"roboteq_controller");
-//	hbl2350 controller;
-//	controller.spin();
-//
-//	return 0;
-//}
-
 hbl2350::hbl2350( )
 :local_node_handler("~"),global_node_handler()
 {
+	// Two channel operation
 	two_channel = true;
-	ch1.ch = 1;
-	ch2.ch = 2;
+
+	// Setup Channels
+	ch1.ch = LEFT;
+	ch2.ch = RIGHT;
+
+	// Register callbacks
 	ch1.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
 	ch2.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
 	ch1.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 	ch2.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
-	ch1.ticks_to_mps = 1/1320;
-	ch2.ticks_to_mps = 1/(1320/1.88); // 1.88 RoboTeQ hack
 
+	// Set conversion factors
+	ch1.ticks_to_mps = 1/1320;
+	ch2.ticks_to_mps = 1/(1320/1.88); // TODO: Crappy 1.88 RoboTeQ hack
+
+	// Initialise status
 	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
 	status.emergency_stop = true;
 
-	// Variables for parsing parameters
+	// Declare variables for parsing parameters
 	double max_time_diff_input;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
 	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic;
@@ -44,7 +43,7 @@ hbl2350::hbl2350( )
 	local_node_handler.param<std::string>("status_topic", status_topic, "/fmActuators/status");
 	local_node_handler.param<std::string>("temperature_topic", temperature_topic, "/fmActuators/temperature");
 
-	// Init channels
+	// Init channel parameters
 	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
 	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
 	local_node_handler.param<double>("d_gain", ch1.d_gain, 0);
@@ -62,8 +61,6 @@ hbl2350::hbl2350( )
 	local_node_handler.param<int>("anti_windup_percent",ch1.anti_windup_percent,50);
 	ch2.anti_windup_percent = ch1.anti_windup_percent;
 	ch1.roboteq_max = ch2.roboteq_max = 1000; //Motor controller constant
-	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
-	max_time_diff = ros::Duration(max_time_diff_input);
 	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5);
 	ch2.mps_to_rpm = ch1.mps_to_rpm;
 	ch1.last_deadman_received = ch2.last_deadman_received = ros::Time::now();
@@ -71,12 +68,13 @@ hbl2350::hbl2350( )
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,100 , 1000);
 	ch2.regulator.set_params(ch2.p_gain , ch2.i_gain , ch2.d_gain ,100 , 1000);
 
-
-	// Init RoboTeq
+	// Init general parameters
+	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
+	max_time_diff = ros::Duration(max_time_diff_input);
 	last_serial_msg = ros::Time::now();
 	local_node_handler.param<bool>("closed_loop_operation", closed_loop_operation, false);
 
-	// Init publisher topics
+	// Setup publishers
 	setSerialPub( local_node_handler.advertise<msgs::serial>( serial_tx_topic,10 ));
 	setEncoderCh1Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch1_topic, 10));
 	setEncoderCh2Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch2_topic, 10));
@@ -87,18 +85,11 @@ hbl2350::hbl2350( )
 	ch2.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
 
-	// Set subscriber topics
+	// Set up subscribers
 	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl2350::onSerial,this);
-	//command_relay_sub = local_node_handler.subscribe<msgs::serial>(command_relay_topic,10,&hbl2350::onCommand,this);
 	ch1.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&Channel::onCmdVel,&ch1);
 	ch2.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch2_topic,10,&Channel::onCmdVel,&ch2);
 	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl2350::onDeadman,this);
-
-
-
-//	registerHallCb(1,&ch1.onHallFeedback);
-//	registerHallCb(2,&ch2.onHallFeedback);
-
 }
 
 void hbl2350::spin(void)
@@ -120,6 +111,7 @@ void hbl2350::spin(void)
 
 void hbl2350::updateStatus(void)
 {
+	// Update time based status variables.
 	status.deadman_pressed = ((ros::Time::now() - ch1.last_deadman_received) < max_time_diff) || ((ros::Time::now() - ch2.last_deadman_received) < max_time_diff);
 	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.last_twist_received) < max_time_diff) || ( (ros::Time::now() - ch2.last_twist_received) < max_time_diff);
 	status.responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
@@ -127,10 +119,13 @@ void hbl2350::updateStatus(void)
 
 void hbl2350::initController(std::string config)
 {
+	/*
+	 * Temporary simple implementation. Should in time be implemented as a config file parser. In time...
+	 */
 	ROS_INFO("Initializing...");
+
 	sleep(1);
 	transmit(2,	"^ECHOF", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Echo is disabled
-
 	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
 	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
 	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
@@ -138,185 +133,10 @@ void hbl2350::initController(std::string config)
 	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
 	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
-//	transmit(1, "?CBR"); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(1,	"# 10" ); sleep(TIME_BETWEEN_COMMANDS);							// Repeat buffer every 10 ms
-
-/*	transmit(4, "^CPRI", 1,	0, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Serial is first and only priority
-	transmit(2, "^RWD",	1000 ); sleep(TIME_BETWEEN_COMMANDS);						// One second watchdog
-
-	transmit(3, "^BLFB", 1, 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
-	transmit(3, "^BLFB", 2, 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Use hall sensors as motor feedback
-
-	transmit(3, "^BLSTD", 1, 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
-	transmit(3, "^BLSTD", 2, 2 ); sleep(TIME_BETWEEN_COMMANDS);						// Stall detection 500ms@25%
-
-	transmit(3, "^BPOL", 1, 9 ); sleep(TIME_BETWEEN_COMMANDS);						// M12980-1 motor has 9 pole-pairs
-	transmit(3, "^BPOL", 2, 9 ); sleep(TIME_BETWEEN_COMMANDS);						// M12980-1 motor has 9 pole-pairs
-
-	transmit(2, "^OVL",	550 ); sleep(TIME_BETWEEN_COMMANDS);						// Over voltage alerts if >55V
-	transmit(2, "^UVL",	480 ); sleep(TIME_BETWEEN_COMMANDS);						// Under voltage alerts if <48.5V
-	transmit(2, "^PWMF", 200 ); sleep(TIME_BETWEEN_COMMANDS);						// 20 kHz PWM
-	transmit(2, "^THLD", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Medium sensitive short circuit detection
-
-	if(closed_loop_operation)
-	{
-		transmit(3, "^MMOD", 1,	1 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in closed-loop mode
-		transmit(3, "^MMOD", 2,	1 ); sleep(TIME_BETWEEN_COMMANDS);
-		transmit(3, "^ICAP", 1,	anti_windup_percent	); sleep(TIME_BETWEEN_COMMANDS);	// Integral cap anti-windup
-		transmit(3, "^ICAP ", 2, anti_windup_percent ); sleep(TIME_BETWEEN_COMMANDS);
-		transmit(3, "^KP", 1, p_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Proportional gain for closed-loop control
-		transmit(3, "^KP", 2, p_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-		transmit(3, "^KI", 1, i_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Integral gain for closed-loop control
-		transmit(3, "^KI", 2, i_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-		transmit(3, "^KD", 1, d_gain_ch1 ); sleep(TIME_BETWEEN_COMMANDS);				// Differential gain for closed-loop control
-		transmit(3, "^KD", 2, d_gain_ch2 ); sleep(TIME_BETWEEN_COMMANDS);
-	}
-	else
-	{
-		transmit(3, "^MMOD", 1,	0 ); sleep(TIME_BETWEEN_COMMANDS);					// Both channels in open-loop mode
-		transmit(3, "^MMOD", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
-	}
-	transmit(3, "^DFC",	1, 0 ); sleep(TIME_BETWEEN_COMMANDS);						// Emergency causes motors to stop
-	transmit(3, "^DFC ", 2,	0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^ALIM", 1, 400 ); sleep(TIME_BETWEEN_COMMANDS);					// Maximum current is 40A for both channels
-	transmit(3, "^ALIM", 2, 400 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^CLERD", 1, 0 ); sleep(TIME_BETWEEN_COMMANDS);					// Closed-loop error detection disabled
-	transmit(3, "^CLERD", 2, 0 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MAC",	1, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed acceleration
-	transmit(3, "^MAC",	2, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MDEC", 1,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed deceleration
-	transmit(3, "^MDEC", 2,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "!AC",	1, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed acceleration
-	transmit(3, "!AC",	2, max_acceleration	); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "!DC", 1,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);		// Maximum allowed deceleration
-	transmit(3, "!DC", 2,	max_deceleration ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MXPF", 1, 95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors forward
-	transmit(3, "^MXPF", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MXPR", 1,	95 ); sleep(TIME_BETWEEN_COMMANDS);					// 95% of battery voltage can be applied to motors reverse
-	transmit(3, "^MXPR", 2,	95 ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(3, "^MXRPM", 1,	max_rpm ); sleep(TIME_BETWEEN_COMMANDS);			// Set maximum rounds per minute
-	transmit(3, "^MXRPM", 2,	max_rpm );
-*/	sleep(2);
+	transmit(1,	"# 10" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 10 ms
+	sleep(2);
 
 	ROS_INFO("Initialization finished");
 	status.initialised = true;
-	status.responding = false;
 }
-//
-//void hbl2350::onCmdVelCh1(const geometry_msgs::TwistStamped::ConstPtr& msg)
-//{
-//	last_twist_received_ch1 = ros::Time::now();
-//	velocity_ch1 = (int)(msg->twist.linear.x * mps_to_rpm);
-//}
-//
-//void hbl2350::onCmdVelCh2(const geometry_msgs::TwistStamped::ConstPtr& msg)
-//{
-//	last_twist_received_ch2 = ros::Time::now();
-//	velocity_ch2 = (int)(msg->twist.linear.x * mps_to_rpm);
-//}
-//
-//void hbl2350::onDeadman(const std_msgs::Bool::ConstPtr& msg)
-//{
-//	deadman_pressed = msg->data;
-//	if(deadman_pressed)
-//		last_deadman_received = ros::Time::now();
-//}
-//
-///*!Callback for relaying command strings*/
-//void hbl2350::onCommand(const msgs::serial::ConstPtr& msg)
-//{
-//	ROS_WARN("Command callback");
-//	serial_out.header.stamp = ros::Time::now();
-//	serial_out.data = msg->data;
-//	serial_publisher.publish(serial_out);
-//}
-//
-//void hbl2350::onTimer(const ros::TimerEvent& e)
-//{
-//	/* Update state variables */
-//	deadman_pressed = ((ros::Time::now() - last_deadman_received) < max_time_diff);
-//	cmd_vel_publishing = ( (ros::Time::now() - last_twist_received_ch1) < max_time_diff) ||
-//			((ros::Time::now() - last_twist_received_ch2) < max_time_diff);
-//	controller_responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
-//
-//	std::stringstream ss;
-//
-//	if(online) /* is set when controller answers to FID request */
-//	{
-//		ss << "controller_online ";
-//		if(initialised) /* is set when initController function completes */
-//		{
-//			ss << "controller_initialised ";
-//			if(controller_responding) /* is set if the controller publishes serial messages */
-//			{
-//				ss << "controller_responding ";
-//				if(cmd_vel_publishing) /* is set if someone publishes twist messages */
-//				{
-//					ss << "cmd_vel_publishing ";
-//					if(deadman_pressed) /* is set if someone publishes true on deadman topic */
-//					{
-//						if(emergency_stop)
-//						{
-//							transmit(1,"!MG");
-//							emergency_stop = false;
-//						}
-//
-//						ss << "deadman_pressed ";
-//						/* All is good - send speeds */
-//						int out_ch1 = (velocity_ch1*velocity_max)/max_rpm,
-//							out_ch2 = (velocity_ch2*velocity_max)/max_rpm;
-//
-//						if(out_ch1 < - velocity_max)
-//							out_ch1 = -velocity_max;
-//						else if(out_ch1 > velocity_max)
-//							out_ch1 = velocity_max;
-//
-//						if(out_ch2 < - velocity_max)
-//							out_ch2 = -velocity_max;
-//						else if(out_ch2 > velocity_max)
-//							out_ch2 = velocity_max;
-//
-//						transmit(3,"!G",1,out_ch1);
-//						transmit(3,"!G",2,out_ch2);
-//					}
-//					else /* deadman not pressed */
-//					{
-////						ROS_INFO("%s: Deadman button is not pressed",ros::this_node::getName().c_str());
-//						/* Set speeds to 0 */
-//						transmit(1,"!EX");
-//						emergency_stop = true;
-//						transmit(3,"!G",1,0);
-//						transmit(3,"!G",2,0);
-//					}
-//				}
-//				else /* Cmd_vel is not publishing */
-//				{
-////					ROS_INFO("%s: Cmd_vel is not publishing",ros::this_node::getName().c_str());
-//					/* Set speeds to 0 */
-//					transmit(1,"!EX");
-//					emergency_stop = true;
-//					transmit(3,"!G",1,0);
-//					transmit(3,"!G",2,0);
-//				}
-//			}
-//			else /* controller is not responding */
-//			{
-//				ROS_INFO("%s: Controller is not responding",ros::this_node::getName().c_str());
-//				transmit(1,"?FID");
-//			}
-//		}
-//		else /* Controller is not initialised */
-//		{
-//			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
-//			initController();
-//		}
-//	}
-//	else /* controller is not online */
-//	{
-//		ROS_INFO("%s: Controller is not yet online",ros::this_node::getName().c_str());
-//		transmit(1,"?FID");
-//	}
-//	status_out.header.stamp = ros::Time::now();
-//	status_out.data = ss.str();
-//	status_publisher.publish(status_out);
-//}
+
