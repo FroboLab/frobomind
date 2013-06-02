@@ -11,7 +11,7 @@ Channel::Channel( )
 void Channel::onHallFeedback(ros::Time time, int feedback)
 {
 	message.hall.header.stamp = time;
-	message.hall.data = feedback;
+	message.hall.data = hall_value = feedback;
 	publisher.hall.publish(message.hall);
 }
 
@@ -47,7 +47,7 @@ void Channel::onTimer(const ros::TimerEvent& e, status_t status)
 {
 	std::stringstream ss, out;
 
-	if(status.online) /* is set when contrChannel::oller answers to FID request */
+	if(status.online) /* is set when controller answers to FID request */
 	{
 		ss << "controller_online ";
 		if(status.initialised) /* is set when init function completes */
@@ -68,26 +68,19 @@ void Channel::onTimer(const ros::TimerEvent& e, status_t status)
 						}
 
 						ss << "deadman_pressed ";
+
 						/* Get new output */
-						//double setpoint = regulator.output_from_input(velocity, ticks_to_mps(encoder), (ros::Time::now() - last_reg_time).to_sec());
+						double setpoint = regulator.output_from_input(velocity, hall_value*ticks_to_mps, (ros::Time::now() - last_regulation).toSec());
+						last_regulation = ros::Time::now();
 
-						// Convert to rpm
-						//setpoint *= mps_to_rpm;
+						// Convert to roboteq format
+						int output = (setpoint*roboteq_max)/max_velocity_mps;
 
-						//Convert to RoboTeQ
-						int vel = 0;//(setpoint*velocity_max)/max_rpm;
-
-						if(vel < - velocity_max)
-							vel = -Channel::velocity_max;
-						else if(vel > velocity_max)
-							vel = velocity_max;
-
-						out << "!G " << ch << " " << vel << "\r";
+						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
 					}
 					else /* deadman not pressed */
 					{
-//						ROS_INFO("%s: Deadman button is not pressed",ros::this_node::getName().c_str());
 						/* Set speeds to 0 */
 						transmit("!EX\r");
 						status.emergency_stop = true;
@@ -97,7 +90,6 @@ void Channel::onTimer(const ros::TimerEvent& e, status_t status)
 				}
 				else /* Cmd_vel is not publishing */
 				{
-//					ROS_INFO("%s: Cmd_vel is not publishing",ros::this_node::getName().c_str());
 					/* Set speeds to 0 */
 					transmit("!EX\r");
 					status.emergency_stop = true;
@@ -114,7 +106,8 @@ void Channel::onTimer(const ros::TimerEvent& e, status_t status)
 		else /* Controller is not initialised */
 		{
 			ROS_INFO("%s: ControlleChannel::r is not initialised",ros::this_node::getName().c_str());
-			//status.initialised = initController();
+			initController("pichi");
+			status.initialised = true;
 		}
 	}
 	else /* controller is not online */

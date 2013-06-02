@@ -60,7 +60,7 @@ public:
 
 							hbl2350();
 	void					spin(void);
-	void 					initController(void);
+	void 					initController(std::string);
 	void					updateStatus(void);
 
 	void					onDeadman(const std_msgs::Bool::ConstPtr& msg){ch1.onDeadman(msg); ch2.onDeadman(msg);}

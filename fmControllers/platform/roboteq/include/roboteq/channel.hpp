@@ -54,9 +54,9 @@ public:
 		bool online, deadman_pressed, cmd_vel_publishing, initialised, responding, emergency_stop;
 	};
 
-	int	ch, max_rpm, anti_windup_percent, max_acceleration, max_deceleration, velocity_max;
-	double velocity,mps_to_rpm,p_gain, i_gain, d_gain;
-	ros::Time last_twist_received, last_deadman_received;
+	int	ch, max_rpm, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value;
+	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_mps, max_velocity_mps;
+	ros::Time last_twist_received, last_deadman_received, last_regulation;
 	ros::Duration max_time_diff;
 	ros::Subscriber cmd_vel_sub;
 	ros::Publisher status_publisher;
@@ -64,7 +64,9 @@ public:
 	Regulator regulator;
 
 	BaseCB* transmit_cb;
+	BaseCB* init_cb;
 	void transmit(std::string str){(*transmit_cb)(str);}
+	void initController(std::string str){(*init_cb)(str);}
 
 	Channel();
 	void onHallFeedback(ros::Time time, int feedback);

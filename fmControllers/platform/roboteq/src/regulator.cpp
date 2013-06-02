@@ -9,6 +9,10 @@ Regulator::Regulator()
 /* PID regulator. Input and output must be in equal units */
 double Regulator::output_from_input( double setpoint , double input , double period)
 {
+	// Implement max period
+	if(period > 0.5)
+		period = 0.5;
+
 	// Calculate errors
 	double error = setpoint - input;
 

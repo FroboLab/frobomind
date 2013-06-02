@@ -16,6 +16,8 @@ hbl2350::hbl2350( )
 	ch2.ch = 2;
 	ch1.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
 	ch2.transmit_cb = new CallbackHandler<hbl2350>(this,&hbl2350::transmit);
+	ch1.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
+	ch2.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 
 	// Variables for parsing parameters
 	double max_time_diff_input;
@@ -49,9 +51,11 @@ hbl2350::hbl2350( )
 	ch2.max_acceleration = ch1.max_acceleration;
 	local_node_handler.param<int>("max_rpm",ch1.max_rpm,4000);
 	ch2.max_rpm = ch1.max_rpm;
+	local_node_handler.param<double>("/robot_max_velocity",ch1.max_velocity_mps,1.0);
+	ch2.max_velocity_mps = ch1.max_velocity_mps;
 	local_node_handler.param<int>("anti_windup_percent",ch1.anti_windup_percent,50);
 	ch2.anti_windup_percent = ch1.anti_windup_percent;
-	ch1.velocity_max = ch2.velocity_max = 1000; //Motor controller constant
+	ch1.roboteq_max = ch2.roboteq_max = 1000; //Motor controller constant
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
 	ch1.max_time_diff = ch2.max_time_diff = ros::Duration(max_time_diff_input);
 	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5);
@@ -115,7 +119,7 @@ void hbl2350::updateStatus(void)
 	status.online = online;
 }
 
-void hbl2350::initController(void)
+void hbl2350::initController(std::string config)
 {
 	ROS_INFO("Initializing...");
 	sleep(1);
