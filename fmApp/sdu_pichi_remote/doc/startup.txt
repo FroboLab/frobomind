@@ -1,0 +1,21 @@
+Statup procedure 
+Mount the TOPCON GR-3 receiver and connect the serial cable
+1. 	Connect lenovo laptop to the usb hub
+2.	Make sure the bluetooth dongle is connected to the laptop
+3.	Connect battery and check that the motor controller LED’s are lit.
+4.	Connect to the frobit_master ad hoc network (192.168.1.x /24)
+5.	sync FroboMind with:
+	rsync -avz ~/[your src] robot@192.168.1.1:/home/robot/roswork/src/
+6. 	ssh to the laptop with ssh robot@192.168.1.1
+7.	run: 
+	export ROS_MASTER_URI=http://192.168.1.1:11311
+	export ROS_HOSTNAME=192.168.1.1
+8.	launch with roslaunch sdu_pichi_remote test2013-06-03.launch
+9.	in a new terminal run: 
+	export ROS_MASTER_URI=http://192.168.1.1:11311
+	export ROS_IP=192.168.1.2 (if thats your IP)
+	export ROS_HOSTNAME=localhost
+
+You are now connected to the pichi roscore and can run rviz, reconfigure etc.
+
+The wiimote will rumble whenever a fault condition arises and details will be printed in the terminal.
