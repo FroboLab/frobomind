@@ -27,7 +27,7 @@
 #****************************************************************************/
 import rospy
 import math
-from msgs.msg import StringStamped
+from msgs.msg import StringStamped, BoolStamped
 from sensor_msgs.msg import Joy,JoyFeedback,JoyFeedbackArray
 from std_msgs.msg import Bool
 from geometry_msgs.msg import TwistStamped
@@ -84,14 +84,14 @@ class WiiInterface():
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic",'cmd_vel')
         self.feedback_topic = rospy.get_param("~feedback_topic",'joy/set_feedback') 
         self.joy_topic = rospy.get_param("~joy_topic",'joy')
-        self.status_topic = rospy.get_param("~status_topic",'status')     
+        self.status_topic = rospy.get_param("~all_ok_topic",'/fmSafety/all_ok')     
 
         # Setup topics
         self.deadman_pub = rospy.Publisher(self.deadman_topic, Bool)
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         self.fb_pub = rospy.Publisher(self.feedback_topic, JoyFeedbackArray)
         self.joy_sub = rospy.Subscriber(self.joy_topic, Joy, self.onJoy )
-        self.status_sub = rospy.Subscriber(self.status_topic, StringStamped , self.onStatus)
+        self.status_sub = rospy.Subscriber(self.status_topic, BoolStamped , self.onAllOk)
 
     def no_callback_registered(self):
         rospy.loginfo("Button pressed but no corresponding callback was registered")
@@ -151,14 +151,14 @@ class WiiInterface():
         if self.ptr >= self.filter :
             self.ptr = 0
 
-    def onStatus(self,msg):
+    def onAllOk(self,msg):
         """
-            Callback method to translate status string into user feedback
+            Callback method to translate All OK signal into user feedback
         """
-        if "under voltage" in msg.data :
-            self.warning = True
-        else:
+        if msg.data :
             self.warning = False
+        else:
+            self.warning = True
                         
     def publishCmdVel(self): 
         """

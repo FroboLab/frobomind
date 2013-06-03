@@ -29,62 +29,91 @@
  #
  #
  ****************************************************************************/
-#ifndef HBL1650_HPP_
-#define HBL1650_HPP_
-
-#define TIME_BETWEEN_COMMANDS 0.2
+#ifndef CHANNEL_HPP_
+#define CHANNEL_HPP_
 
 #include <ros/ros.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
 #include <msgs/StringStamped.h>
 #include <msgs/IntStamped.h>
-#include <msgs/serial.h>
 #include "roboteq/roboteq.hpp"
-#include "roboteq/channel.hpp"
-#include <cstdarg>
+#include "roboteq/regulator.hpp"
 
-class hbl1650 : public RoboTeQ
+class BaseCB
 {
 /*
- * Class inheriting from the RoboTeQ base class and implementing the one channel
- * RoboTeQ HBL1650 motor controller model.
+ * Abstract class overloading the function call operator with a pure virtual function
  * */
-private:
-	Channel ch1;
-	ros::NodeHandle local_node_handler,global_node_handler;
-
 public:
-	bool closed_loop_operation;
-	double mps_to_rpm;
-
-	ros::Subscriber serial_sub, command_relay_sub, deadman_sub;
-
-	ros::Duration max_time_diff;
-
-	hbl1650();
-	void spin(void);
-	void initController(std::string);
-	void updateStatus(void);
-
-	// Methods overriding virtual methods in base class
-	void hall_feedback(ros::Time time, int fb1){ch1.onHallFeedback(time,fb1);}
-	void power_feedback(ros::Time time, int fb1){ch1.onPowerFeedback(time,fb1);}
-
-	// Callback methods
-	void onDeadman(const std_msgs::Bool::ConstPtr& msg){ch1.onDeadman(msg);}
-	void onTimer(const ros::TimerEvent& event){updateStatus(); ch1.onTimer(event,status);}
-	void onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
-
-	// Mutator methods for setting up publishers
-	void setSerialPub(ros::Publisher pub){serial_publisher = pub;}
-	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
-	void setTemperaturePub(ros::Publisher pub){temperature_publisher = pub;}
-	void setPowerCh1Pub(ros::Publisher pub){ch1.publisher.power = pub;}
-	void setEncoderCh1Pub(ros::Publisher pub){ch1.publisher.hall = pub;}
-
-	// Accessor method to block on during startup
-	int	subscribers(){return serial_publisher.getNumSubscribers();}
+	virtual void operator()(std::string)=0;
 };
 
-#endif /* HBL2350_HPP_ */
+
+template<class ClassT>
+class CallbackHandler : public BaseCB
+{
+/*
+ * Templated placeholder class for handling callbacks to member functions
+ * */
+public:
+	typedef void(ClassT::* FuncT)(std::string);
+	FuncT _fn;
+	ClassT* _c;
+
+	CallbackHandler(ClassT* c, FuncT fn):_fn(fn),_c(c){}
+	void operator()(std::string str)
+	{
+		return (_c->*_fn )(str);
+	}
+};
+
+class Channel
+{
+/*
+ * Class implementing the concept of a motor controller channel
+ * */
+public:
+	// Convenience structs for holding related variables
+	struct
+	{
+		msgs::IntStamped hall, power, temperature;
+		msgs::StringStamped status;
+	} message;
+
+	struct
+	{
+		ros::Publisher power, hall, temperature;
+	} publisher;
+
+	int	ch, max_rpm, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time;
+	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_mps, max_velocity_mps, last_hall;
+	ros::Time last_twist_received, last_deadman_received, last_regulation;
+	ros::Subscriber cmd_vel_sub;
+	ros::Publisher status_publisher;
+	msgs::StringStamped	status_out;
+	Regulator regulator;
+	BaseCB* transmit_cb;
+	BaseCB* init_cb;
+
+	Channel();
+
+	// Callbacks to RoboTeQ derived class
+	void transmit(std::string str){(*transmit_cb)(str);}
+	void initController(std::string str){(*init_cb)(str);}
+
+	// Callbacks from RoboTeQ derived class
+	void onHallFeedback(ros::Time time, int feedback);
+	void onPowerFeedback(ros::Time time, int feedback);
+	void onTemperatureFeedback(ros::Time time, int feedback);
+
+	// Subscriber callbacks
+	void onCmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
+	void onDeadman(const std_msgs::Bool::ConstPtr&);
+	void onTimer(const ros::TimerEvent&, RoboTeQ::status_t);
+
+	// Mutator method for setting up publisher
+	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
+};
+
+#endif /* CHANNEL_HPP_ */

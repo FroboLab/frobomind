@@ -1,0 +1,6 @@
+<launch>
+	<group ns="fmSensors">
+		<node pkg="wads_implement" name="wads_converter" type="wads_implement_communication" output="screen">
+        </node>
+    </group>
+</launch>

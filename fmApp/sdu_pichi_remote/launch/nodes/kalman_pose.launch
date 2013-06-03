@@ -1,0 +1,15 @@
+<launch>	
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="frame_id" value="/pose" />
+			<param name="child_frame_id" value="/map" />
+			<param name="ekf_initial_guess_easting" value="588784.0" />
+			<param name="ekf_initial_guess_northing" value="6137262.0" />
+			<param name="ekf_initial_guess_yaw" value="0.0" />
+			<param name="odometry_distance_variance" value="0.000001" />
+			<param name="odometry_angular_variance" value="0.0001" />
+		</node>
+</launch>

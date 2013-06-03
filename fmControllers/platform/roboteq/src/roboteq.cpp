@@ -6,7 +6,7 @@ RoboTeQ::RoboTeQ()
 	two_channel = true;
 }
 
-/*!Takes number of arguments, command string and an arbitrary number of integer arguments*/
+/* Takes number of arguments, command string and an arbitrary number of integer arguments */
 void RoboTeQ::transmit(int args, std::string cmd , ...)
 {
 	int number;
@@ -32,49 +32,33 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 
 	va_end(arguments);
 }
+void RoboTeQ::transmit(std::string cmd)
+{
+	serial_out.data = cmd;
+	serial_out.header.stamp = ros::Time::now();
+	serial_publisher.publish(serial_out);
+}
 
-/*!Callback for handling serial message*/
+/* Callback for handling serial message*/
 void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 {
 	ROS_DEBUG("Message received %s",msg->data.c_str());
 	last_serial_msg = ros::Time::now();
+	status.online = true;
+
 	char dummy[25];
 
 	if(sscanf(msg->data.c_str(),"+%s",dummy)){}
 
-	else if(two_channel && sscanf(msg->data.c_str(),"CB=%d:%d",	&cb1,&cb2))
-	{
-		encoder_out.header.stamp = msg->header.stamp;
-
-		encoder_out.data = cb1;
-		encoder_ch1_publisher.publish(encoder_out);
-
-		encoder_out.data = cb2;
-		encoder_ch2_publisher.publish(encoder_out);
-	}
-	else if(two_channel && sscanf(msg->data.c_str(),"P=%d:%d",		&p1,&p2))
-	{
-		power_out.header.stamp = msg->header.stamp;
-		power_out.data = p1;
-		power_ch1_publisher.publish(power_out);
-
-		power_out.data = p2;
-		power_ch2_publisher.publish(power_out);
-	}
-	else if((!two_channel) && sscanf(msg->data.c_str(),"CB=%d",	&cb1))
-	{
-		encoder_out.header.stamp = msg->header.stamp;
-
-		encoder_out.data = cb1;
-		encoder_ch1_publisher.publish(encoder_out);
-	}
-	else if((!two_channel) && sscanf(msg->data.c_str(),"P=%d",		&p1))
-	{
-		power_out.header.stamp = msg->header.stamp;
-		power_out.data = p1;
-		power_ch1_publisher.publish(power_out);
-	}
-	else if(sscanf(msg->data.c_str(),"FF=%d",		&ff))
+	else if(two_channel && sscanf(msg->data.c_str(),"CB=%d:%d", &cb1,&cb2))
+		hall_feedback(msg->header.stamp, cb1, cb2);
+	else if(two_channel && sscanf(msg->data.c_str(),"P=%d:%d",&p1,&p2))
+		power_feedback(msg->header.stamp, cb1, cb2);
+	else if((!two_channel) && sscanf(msg->data.c_str(),"CB=%d",&cb1))
+		hall_feedback(msg->header.stamp, cb1);
+	else if((!two_channel) && sscanf(msg->data.c_str(),"P=%d",&p1))
+		power_feedback(msg->header.stamp, cb1);
+	else if(sscanf(msg->data.c_str(),"FF=%d",&ff))
 	{
 		std::stringstream ss;
 		ss << statusFlagsToString(fs) << faultFlagsToString(ff) <<
@@ -85,11 +69,11 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 		status_out.data = ss.str();
 		status_publisher.publish(status_out);
 	}
-	else if(sscanf(msg->data.c_str(),"V=%d:%d:%d",	&v1,&v2,&v3))
+	else if(sscanf(msg->data.c_str(),"V=%d:%d:%d",&v1,&v2,&v3))
 	{ }
-	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",	&t1,&t2,&t3))
+	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",&t1,&t2,&t3))
 	{ }
-	else if(sscanf(msg->data.c_str(),"FS=%d",		&fs))
+	else if(sscanf(msg->data.c_str(),"FS=%d",&fs))
 	{ }
 //	else if(sscanf(msg->data.c_str(),"A=%d:%d",		&a1,&a2))		{ }
 //	else if(sscanf(msg->data.c_str(),"BA=%d:%d",	&ba1,&ba2))		{ }
@@ -98,12 +82,13 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 //	else if(sscanf(msg->data.c_str(),"CBR=%d:%d",	&cbr1,&cbr2))	{ }
 //	else if(sscanf(msg->data.c_str(),"E=%d:%d",		&e1,&e2))		{ }
 //	else if(sscanf(msg->data.c_str(),"F=%d:%d",		&f1,&f2))		{ }
-	else if(sscanf(msg->data.c_str(),"FID=%s", 		dummy))
+	else if(sscanf(msg->data.c_str(),"FID=%s",dummy))
 	{
-		online = true;
+		//status.online = true;
+		status.initialised = false;
 		ROS_WARN("Found %s",msg->data.c_str());
 	}
-	else if(sscanf(msg->data.c_str(),"-%s",			dummy))
+	else if(sscanf(msg->data.c_str(),"-%s",dummy))
 	{
 		ROS_WARN("RoboTeQ did not acknowledge the transmit");
 	}

@@ -62,7 +62,7 @@ include_directories(include
 
 ## Declare a cpp library
  add_library(roboteq
-   src/roboteq.cpp src/hbl2350.cpp src/hbl1650.cpp
+   src/roboteq.cpp src/channel.cpp src/hbl2350.cpp src/hbl1650.cpp src/regulator.cpp
  )
 
 ## Declare a cpp executable

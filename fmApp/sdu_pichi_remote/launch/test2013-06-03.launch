@@ -1,0 +1,28 @@
+<launch>
+	<param name="robot_max_velocity" value="2.0"/>
+	<param name="diff_steer_wheel_radius" value="0.10"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="1320"/>
+	<param name="diff_steer_wheel_distance" value="0.85"/>
+	
+	<!-- Mission -->
+	<include file="$(find sdu_pichi_remote)/launch/missions/abtest_mission.launch"/>
+
+	<!-- Sensors -->
+	<!--include file="$(find sdu_pichi_remote)/launch/nodes/web_cam.launch"/-->
+	<include file="$(find sdu_pichi_remote)/launch/nodes/topcon_gps.launch"/>
+	<include file="$(find sdu_pichi_remote)/launch/nodes/vectornav_imu.launch"/>
+	<include file="$(find sdu_pichi_remote)/launch/nodes/wads.launch"/>
+	
+	<!-- Interface -->
+	<include file="$(find sdu_pichi_remote)/launch/nodes/interface.launch"/>
+	
+	<!-- Belts -->
+	<include file="$(find sdu_pichi_remote)/launch/nodes/pichi_robot.launch"/>
+	
+	<!-- Executors -->
+	<include file="$(find sdu_pichi_remote)/launch/nodes/ab_line.launch"/>
+	
+	<!-- Processors -->
+	<include file="$(find sdu_pichi_remote)/launch/nodes/kalman_pose.launch"/>
+	<include file="$(find sdu_pichi_remote)/launch/nodes/differential_odometry.launch"/>
+</launch>

@@ -1,0 +1,55 @@
+<launch>
+		<node pkg="sdu_pichi_remote" name="mission_control" type="remote.py" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="feedback_topic" value="/joy/set_feedback" />
+			<param name="joy_topic" value="/joy" />
+			<param name="max_linear_velocity" value="1.0"/>
+			<param name="max_angular_velocity" value="3.0"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="50"/>
+			<param name="publish_frequency" value="10"/>
+			<param name="filter" value="50"/>
+		</node>
+
+	
+		<node pkg="differential_ifk" name="diff" type="differential_ifk_node" output="screen" >
+			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
+			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left"/>
+			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right"/>
+			<param name="distance_center_to_wheel" value="0.42" />
+		</node>
+
+		<node pkg="sdu_pichi" name="sdu_pichi_node" type="sdu_pichi_node" output="screen" >
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
+			<param name="cmd_vel_ch2_topic" value="/fmSignals/cmd_vel_right"/>
+			<param name="serial_rx_topic" value="/fmData/rx"/>
+			<param name="serial_tx_topic" value="/fmData/tx"/>
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
+			<param name="encoder_ch2_topic" value="/fmInformation/encoder_right"/>	
+			<param name="power_ch1_topic" value="/fmData/power_left"/>
+			<param name="power_ch2_topic" value="/fmData/power_right"/>
+			<param name="status_topic" value="/fmData/status"/>	
+			<param name="mps_to_rpm" value="1432"/>
+			<param name="closed_loop_operation" value="true"/>
+			<param name="p_gain" value="0.1"/>
+			<param name="i_gain" value="0"/>
+			<param name="d_gain" value="0"/>         
+        </node>
+
+		
+        <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
+        	<!--param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/-->
+		</node> 
+		
+	    <node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" respawn="true" >
+	        <param name="publisher_topic" value="/fmData/rx" />	 
+	        <param name="subscriber_topic" value="/fmData/tx" />	
+	        <param name="device" value="/dev/ttyACM0" />	
+	        <param name="baudrate" value="115200" />
+	        <param name="termination_character" value="13"/>
+		</node>	
+
+</launch>
