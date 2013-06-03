@@ -1,0 +1,7 @@
+<launch>	
+	<group ns="fmTools">
+		<node pkg="tf" type="static_transform_publisher" name="gps_broadcaster" args="-588784.0 -6137262.0 0 0 0 0 world map 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="base_broadcaster" args="0 0 0 3.14 0 0 pose base_footprint 100"/>
+		<node pkg="tf" type="static_transform_publisher" name="imu_broadcaster" args="0 0 0 0 0 0 pose imu_link 100"/>
+	</group>
+</launch>

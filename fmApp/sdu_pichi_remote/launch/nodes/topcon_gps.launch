@@ -1,0 +1,20 @@
+<launch>	
+	<group ns="fmSensors">
+		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" respawn="true" output="screen">
+	        <param name="subscribe_topic_id" value="/fmData/gps_rx" />
+			<param name="publish_topic_id" value="/fmInformation/gpgga" />
+		</node>
+	
+		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/gpgga" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" />
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+	</group>
+</launch>

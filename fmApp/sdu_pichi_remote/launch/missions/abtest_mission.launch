@@ -1,0 +1,27 @@
+<launch>
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_pichi_remote" name="mission_control" type="line_demo.py" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="all_ok_topic" value="/fmSafety/all_ok"/>
+			<param name="feedback_topic" value="/fmHMI/joy/set_feedback" />
+			<param name="joy_topic" value="/fmHMI/joy" />
+			<param name="max_linear_velocity" value="1.2"/>
+			<param name="max_angular_velocity" value="2.0"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="50"/>
+			<param name="publish_frequency" value="10"/>
+			<param name="filter" value="50"/>
+		</node>
+	</group>
+	
+	<group ns="fmHMI">
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<!--param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/-->
+		</node>
+	</group>
+	
+	<group ns="fmSafety">
+		<node pkg="sdu_pichi_remote" type="fault_detector.py" name="fault_detector_node" respawn="true" output="screen"/>
+	</group>
+</launch>

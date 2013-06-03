@@ -1,0 +1,13 @@
+<launch>	
+	<group ns="fmSensors">
+		<node pkg="vectornav_vn100" name="imu_converter"  type="vectornav_vn100_node" output="screen" >
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="/imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
+		</node>	
+	</group>
+</launch>

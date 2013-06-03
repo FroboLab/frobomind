@@ -1,0 +1,16 @@
+<launch>	
+	<group ns="fmProcessors">
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/enc_left" />
+			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<param name="encoder_output" value="absolute"/>
+			<!--param name="yaw_angle_source" value="imu_orientation"/-->
+			<param name="yaw_angle_source" value="imu_angular_velocity"/>  
+			<param name="imu_angular_velocity_yaw_axis" value="y" /> 
+			<param name="vehicle_frame" value="wheel_odom" />      
+			<param name="odom_estimate_frame" value="/map" />      
+		</node>
+	</group>
+</launch>
