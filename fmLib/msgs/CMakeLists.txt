@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
  add_message_files(
    FILES
 	adc.msg
+	BoolStamped.msg
 	can.msg
 	claas_row_cam.msg
 	encoder.msg
