@@ -13,15 +13,15 @@ this software useful please let me know.
 The simulation directory contains files that allow testing the pose_2d_estimator
 in a simulated environment without ROS. 
 
-Edit the file generate_sim_bag.launch to load the rosbag you want to work with.
+Edit the file  generate_simulation_data.launch to load the rosbag you want to work with.
 Then run:
 
-	roslaunch gen_sim_bag_armadillo_iv.launch
+	roslaunch generate_simulation_data.launch
 
 to once make sure that all sensor data are available for the simulation. You will
 have to quit manually when the rosbag doesn't publish more messages. Then run:
 
-	export_odom_imu_gps_to_file.py
+	export_simulation_bag.py
 
 once to export rosbag data to a suitable comma delimited format. Now you may run 
 

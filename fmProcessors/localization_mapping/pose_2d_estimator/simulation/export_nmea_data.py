@@ -41,9 +41,12 @@ bag = rosbag.Bag ('../bags/survey.bag')
 # extract left encoder data
 f = open ('sim_nmea.txt', 'w')
 for topic, msg, t in bag.read_messages(topics=['/fmData/gps_rx']):
+	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	f.write ('%d.%03d,%s\n' % (msg.header.stamp.secs,msecs, \
-		msg.data))
+	if msecs == 1000:
+		secs += 1 
+		msecs = 0		
+	f.write ('%d.%03d,%s\n' % (secs, msecs, msg.data))
 
 
 bag.close()

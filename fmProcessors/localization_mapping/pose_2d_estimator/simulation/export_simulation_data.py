@@ -37,20 +37,41 @@ from geometry_msgs.msg import Quaternion
 
 bag = rosbag.Bag ('sim.bag')
 
-
-# extract left encoder data
-f = open ('sim_enc_left.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_left']):
+# extract odometry data
+f = open ('sim_odometry.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/encoder_odom_sim']):
+	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	f.write ('%d.%03d,%d\n' % (msg.header.stamp.secs,msecs, \
-		msg.encoderticks))
+	if msecs == 1000:
+		secs += 1 
+		msecs = 0		
+	(roll,pitch,yaw) = euler_from_quaternion([msg.pose.pose.orientation.x, \
+		msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
+	f.write ('%d.%03d,%.3f,%.3f,%.6f\n' % (secs, msecs, msg.pose.pose.position.x, msg.pose.pose.position.y, yaw))
+f.close()
 
-# extract right encoder data
-f = open ('sim_enc_right.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_right']):
+# extract IMU data
+f = open ('sim_imu.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/imu']):
+	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	f.write ('%d.%03d,%d\n' % (msg.header.stamp.secs,msecs, \
-		msg.encoderticks))
+	if msecs == 1000:
+		secs += 1 
+		msecs = 0		
+	(roll,pitch,yaw) = euler_from_quaternion([msg.orientation.x, \
+		msg.orientation.y, msg.orientation.z, msg.orientation.w])
+	f.write ('%d.%03d,%.9f,%.9f\n' % (secs, msecs, msg.angular_velocity.z, yaw))
+f.close()
+
+# extract GPGGA data
+f = open ('sim_gnss.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga_tranmerc_sim']):
+	secs = msg.header.stamp.secs
+	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
+	if msecs == 1000:
+		secs += 1 
+		msecs = 0		
+	f.write ('%d.%03d,%.10f,%.10f,%.4f,%.4f,%d,%d,%.2f\n' % (secs, msecs, msg.lat, msg.lon, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop))
 
 bag.close()
 

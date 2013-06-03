@@ -98,13 +98,13 @@ class pose_2d_preprocessor():
 		if self.gnss != []:
 
 			### !!!!! THIS IS TEMPORARILY DISABLED UNTIL ROSBAGS WITH CORRECT time_recv DATA HAVE BEEN RECORDED.
-			# dtime = time_stamp - self.gnss[-1][0]
-			dtime = 0.200
+			dtime = time_stamp - self.gnss[-1][0]
+			# dtime = 0.200
 			ddist = sqrt((easting - self.gnss[-1][2])**2 + (northing - self.gnss[-1][3])**2)
 			max_dist = self.max_speed *dtime
 			if ddist > max_dist: # if distance larger than possible when driving at maximum speed
 				error = 1
-				print "  GNSS position error at time stamp: %.3f: E%.3f, N%.3f" % (time_stamp, easting, northing)
+				print "  GNSS unexpected position jump %.1f m at time stamp: %.3f: E%.3f, N%.3f" % (ddist, time_stamp, easting, northing)
 		return error
 
 	def estimate_orientation_from_gnss_positions (self):

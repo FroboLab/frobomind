@@ -8,15 +8,21 @@ This launch file generates a simulation bag which contains output from:
 <launch>
 	<!-- Armadillo IV parameters --> 
 	<param name="diff_steer_wheel_radius" value="0.159"/>
-	<!-- param name="diff_steer_wheel_ticks_per_rev" value="1562"/-->
-	<param name="diff_steer_wheel_ticks_per_rev" value="625"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="625"/> <!-- experimentally determined should be much higher? -->
 	<param name="diff_steer_wheel_distance" value="3.175"/>
+
+	<!-- Armadillo Pichi parameters --> 
+	<param name="robot_max_velocity" value="2.0"/>
+	<param name="diff_steer_wheel_radius" value="0.10"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="829"/>
+	<param name="diff_steer_wheel_distance" value="0.85"/>
+
 
 	<param name="/use_sim_time" value="true"/> 
 
 	<group ns="rosbag">
 		<!-- launch a bag from the SDU Pichi robot to emulate sensor input -->
-		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find pose_2d_estimator)/bags/armadillo_iv_square.bag">
+		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find pose_2d_estimator)/simulation/test.bag">
 			<remap from="/rosbag/clock" to="/clock"/> <!-- should not be necessary but it is...!!! -->
 		</node>
 
@@ -27,7 +33,7 @@ This launch file generates a simulation bag which contains output from:
 	<group ns="fmSensors">
 		<!-- launch conversion node to convert IntStamped messages to encoder messages -->
 		<!-- (this is a temporary fix until we get all encoder messages changed to IntStamped) -->
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
+		<!-- node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" /-->
 
 		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
 		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen">
