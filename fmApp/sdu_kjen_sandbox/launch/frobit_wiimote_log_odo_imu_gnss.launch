@@ -29,7 +29,7 @@ from wehicle odometry, SparkFun Razor IMU and RTK-GNSS.
 
 		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
 		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen">
-		    <param name="subscribe_topic_id" value="/fmData/gps_rx" />
+		    <param name="subscribe_topic_id" value="/fmData/rtk_gnss_rx" />
 			<param name="publish_topic_id" value="/fmInformation/gpgga" />
 		</node>
 
@@ -131,8 +131,8 @@ from wehicle odometry, SparkFun Razor IMU and RTK-GNSS.
 
 		<!-- serial communication with the RTK-GNSS -->
 		<node pkg="serial_string" name="gnss_serial_string_node" type="serial_string_node" output="screen" >
-			<param name="publisher_topic" value="/fmData/rtk-gnss_rx" />	 
-			<param name="subscriber_topic" value="/fmData/rtk-gnss_tx" />
+			<param name="publisher_topic" value="/fmData/rtk_gnss_rx" />	 
+			<param name="subscriber_topic" value="/fmData/rtk_gnss_tx" />
 			<param name="device" value="/dev/ttyUSB2" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
