@@ -138,5 +138,6 @@ void hbl2350::initController(std::string config)
 
 	ROS_INFO("Initialization finished");
 	status.initialised = true;
+	//status.responding = false;
 }
 

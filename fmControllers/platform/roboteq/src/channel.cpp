@@ -15,7 +15,7 @@ void Channel::onHallFeedback(ros::Time time, int feedback)
 	last_hall = feedback;
 	// end hack..
 
-	std::cout << "Hall value: " << feedback << " Relative: " << hall_value << std::endl;
+	//std::cout << "Hall value: " << feedback << " Relative: " << hall_value << std::endl;
 	publisher.hall.publish(message.hall);
 }
 
@@ -79,7 +79,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 						last_regulation = ros::Time::now();
 
 						/* Convert to roboteq format */
-						int output = ((setpoint)*roboteq_max)/max_velocity_mps;
+						int output = ((setpoint)*roboteq_max)/8; //TODO: Hard coded max for Pichi
 
 						/* Send motor speed */
 						out << "!G " << ch << " " << output << "\r";
@@ -92,6 +92,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 						status.emergency_stop = true;
 						transmit("!G 1 0\r");
 						transmit("!G 2 0\r");
+						regulator.reset_integrator();
 					}
 				}
 				else /* Cmd_vel is not publishing */
@@ -101,6 +102,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 					status.emergency_stop = true;
 					transmit("!G 1 0\r");
 					transmit("!G 2 0\r");
+					regulator.reset_integrator();
 				}
 			}
 			else /* controller is not responding */
