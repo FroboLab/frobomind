@@ -18,7 +18,7 @@ hbl2350::hbl2350( )
 
 	// Set conversion factors
 	ch1.ticks_to_mps = 1/1320;
-	ch2.ticks_to_mps = 1/(1320/1.88); // TODO: Crappy 1.88 RoboTeQ hack
+	ch2.ticks_to_mps = 1/(1320/2.0); // TODO: Crappy 1.88 RoboTeQ hack
 
 	// Initialise status
 	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
