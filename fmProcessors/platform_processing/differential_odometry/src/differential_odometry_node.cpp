@@ -230,7 +230,11 @@ public:
 		if(l_updated && r_updated)
 		{
 			l_updated = r_updated = false;
-			encoder_timeout = false;
+			if (encoder_timeout == true)
+			{
+				encoder_timeout = false;
+				ROS_INFO("%s: Receiving data from encoders", IDENT);
+			}
 
 			// check if we are receiving IMU updates
 			if (yaw_source != YAW_SOURCE_ODOMETRY) 
