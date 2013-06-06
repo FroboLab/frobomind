@@ -12,7 +12,7 @@ This launch file allows Wiimote control of the Frobit robot in a simulated envir
 	<param name="diff_steer_wheel_distance" value="0.215"/>
 
 	<group ns="fmSim">
-	 	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_kjen_sandbox)/sim/frobit.world"/>	
+	 	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_kjen_sandbox)/stage/frobit.world"/>	
 		<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args=""/>
 		<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
 	</group>
