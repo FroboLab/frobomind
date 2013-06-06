@@ -89,7 +89,7 @@ class pose_2d_preprocessor():
 		self.odo_measurement_interval = -1 # [s]
 		self.odo_buffer_size = buffer_initial_size_odo
 		self.absolute_orientation_timeout = 0.0
-		self.absolute_orientation_period = 1.0
+		self.absolute_orientation_timeout_period = 1.0
 		self.gnss_heading_min_dist = 0.5
 		self.orientation_odo_gnss_dist_max_diff_percent = 10.0
 		self.orientation_odo_max_angle = 5.0 * self.deg_to_rad
@@ -179,7 +179,7 @@ class pose_2d_preprocessor():
 		if valid == False: # dischard the entire buffer
 			self.gnss = []
 			self.gnss_latest_invalid = time_stamp
-			self.absolute_orientation_timeout = time_stamp + self.absolute_orientation_timeout_period
+			self.absolute_orientation_timeout = time_stamp + self.absolute_orientation_timeout_period 
 		return valid
 
 	def imu_new_measurement(self, time_stamp, yaw_rate, yaw_orientation):

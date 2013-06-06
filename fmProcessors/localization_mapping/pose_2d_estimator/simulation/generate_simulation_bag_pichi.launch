@@ -9,7 +9,7 @@ This launch file generates a simulation bag which contains output from:
 	<!-- Armadillo Pichi parameters --> 
 	<param name="robot_max_velocity" value="2.0"/>
 	<param name="diff_steer_wheel_radius" value="0.159"/>
-	<param name="diff_steer_wheel_ticks_per_rev" value="1320"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="1285"/>
 	<param name="diff_steer_wheel_distance" value="0.85"/>
 
 
