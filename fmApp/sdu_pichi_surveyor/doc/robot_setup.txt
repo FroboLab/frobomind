@@ -37,4 +37,12 @@ Now /dev/gps and /dev/imu can be used to open the ports.
 	sudo ln -s ~/remote.sh /etc/init.d/pichi	# Creates a link to the remote.sh file
 	sudo chmod 754 ~/remote.sh					# Makes the script executable
 	sudo update-rc.d pichi start 50 4 .			# Start when all GUI stuff is ready (4)
-	
+
+
+6) Initialize TopCon GPS
+	Turn on the GPS
+	Turn the Topcon Pocket PC on
+	Launch Topsurv app
+	Open SDU jobliste
+	Click Tilslut
+		
