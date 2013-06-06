@@ -128,11 +128,11 @@ void hbl2350::initController(std::string config)
 	sleep(1);
 	transmit(2,	"^ECHOF", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Echo is disabled
 	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
-//	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
-//	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
-//	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
-//	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
-//	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
+	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
+	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
+	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
+	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
+	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
 	transmit(1,	"# 50" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 10 ms
 	sleep(2);

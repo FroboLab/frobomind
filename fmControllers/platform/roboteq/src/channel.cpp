@@ -90,7 +90,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
 
-						std::cout << ch << "," << velocity << "," << feedback << "," << period << std::endl;
+						//std::cout << ch << "," << velocity << "," << feedback << "," << period << std::endl;
 
 					}
 					else /* deadman not pressed */
