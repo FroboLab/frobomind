@@ -110,7 +110,7 @@ class Pose2DEstimatorNode():
 			time_recv = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
 			delta_dist =  sqrt((x-self.odometry_x_prev)**2 + (y-self.odometry_y_prev)**2)
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
-			self.pp.add_odometry (time_recv, delta_dist, delta_angle)
+			self.pp.odometry_new_feedback (time_recv, delta_dist, delta_angle)
 			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
 			self.pose[2] = self.yawekf.system_update (delta_angle, self.odometry_var_angle) # !!! TEMPORARY HACK
 
@@ -141,16 +141,16 @@ class Pose2DEstimatorNode():
 		if msg.fix > 0: # if satellite fix
 			# GNSS data preprocessing
 			time_recv = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
-			error = self.pp.add_gnss_measurement (time_recv, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
-			if error == False: # if we have a valid position 
-				var_pos = self.pp.estimate_variance_gnss()
+			valid = self.pp.gnss_new_measurement (time_recv, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
+			if valid == True: # if we have a valid position 
+				var_pos = self.pp.gnss_estimate_variance_pos()
 
 				# EKF measurement update (GNSS)
 				self.pose = self.ekf.measurement_update_pos ([msg.easting, msg.northing], var_pos)
-				(error, gnss_yaw) = self.pp.estimate_orientation_from_gnss_positions()
-				if error == False:
-					var_gnss_yaw = 0.1
-					self.pose[2] = self.yawekf.measurement_update (gnss_yaw, var_gnss_yaw) # !!! TEMPORARY HACK
+				(valid, yaw) = self.pp.estimate_absolute_orientation()
+				if valid == True:
+					var_yaw = 0.1
+					self.pose[2] = self.yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
 	
 	def multiply(self,q1,q2):
 		"""

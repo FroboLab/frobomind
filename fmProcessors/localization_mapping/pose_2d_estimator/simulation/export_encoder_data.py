@@ -40,7 +40,7 @@ bag = rosbag.Bag ('sim.bag')
 
 # extract left encoder data
 f = open ('sim_enc_left.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_left']):
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_left_sim']):
 	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
 	if msecs == 1000:
@@ -50,7 +50,7 @@ for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_left']):
 
 # extract right encoder data
 f = open ('sim_enc_right.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_right']):
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/enc_right_sim']):
 	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
 	if msecs == 1000:

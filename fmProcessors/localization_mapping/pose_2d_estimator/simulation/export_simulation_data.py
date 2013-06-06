@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# sim_bag_to_csv
+# export_simulation_data
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #

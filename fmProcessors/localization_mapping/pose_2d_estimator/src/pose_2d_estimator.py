@@ -68,7 +68,7 @@ from math import sqrt, pi, sin, cos, atan2, fabs
 from numpy import matrix, array, linalg, mat
 
 # defines
-buffer_initial_size_gnss = 200
+buffer_initial_size_gnss = 100
 buffer_initial_size_imu = 100
 buffer_initial_size_odo = 100
 
@@ -78,127 +78,142 @@ class pose_2d_preprocessor():
 		self.rad_to_deg = 180.0/pi
 		self.pi2 = 2.0*pi
 		self.max_speed = max_speed
+		self.buffer_period = 2.0 # [s] PARAMETER
 		self.gnss = []
-		self.gnss_buffer_time = 2 # [s]
 		self.gnss_measurement_interval = -1 # [s]
 		self.gnss_buffer_size = buffer_initial_size_gnss
 		self.imu = []
-		self.imu_buffer_time = 2 # [s]
 		self.imu_measurement_interval = -1 # [s]
 		self.imu_buffer_size = buffer_initial_size_imu
 		self.odo = []
-		self.odo_buffer_time = 2 # [s]
 		self.odo_measurement_interval = -1 # [s]
 		self.odo_buffer_size = buffer_initial_size_odo
-		self.gnss_orientation_timeout = 0.0
+		self.absolute_orientation_timeout = 0.0
+		self.absolute_orientation_period = 1.0
+		self.gnss_heading_min_dist = 0.5
+		self.orientation_odo_gnss_dist_max_diff_percent = 10.0
+		self.orientation_odo_max_angle = 5.0 * self.deg_to_rad
 		self.gnss_orientation_prev_yaw = -10.0
-	
-	def validate_new_gnss_position(self, time_stamp, easting, northing):
-		error = 0
-		if self.gnss != []:
+		self.gnss_std_dev_max = 20000000.0
+		self.gnss_latest_invalid = 0.0
 
-			### !!!!! THIS IS TEMPORARILY DISABLED UNTIL ROSBAGS WITH CORRECT time_recv DATA HAVE BEEN RECORDED.
-			dtime = time_stamp - self.gnss[-1][0]
-			# dtime = 0.200
-			ddist = sqrt((easting - self.gnss[-1][2])**2 + (northing - self.gnss[-1][3])**2)
-			max_dist = self.max_speed *dtime
-			if ddist > max_dist: # if distance larger than possible when driving at maximum speed
-				error = 1
-				print "  GNSS unexpected position jump %.1f m at time stamp: %.3f: E%.3f, N%.3f" % (ddist, time_stamp, easting, northing)
-		return error
-
-	def estimate_orientation_from_gnss_positions (self):
-		err = True
-		yaw = 0.0
-		buflen = len (self.gnss)
-		if buflen >= 2:
-			time_stamp = 0
-			fix = 1
-			E = 2
-			N = 3
-			sat = 4
-			hdop = 5
-			if self.gnss[-1][fix] == 4  and self.gnss_orientation_timeout < self.gnss[-1][time_stamp]: # if latest position is based on a fixed solution
-				i = 1
-				distance = 0.0
-				while i<buflen and distance < 0.5:
-					i += 1
-					if self.gnss[-i][fix] == 4: 
-						distance = sqrt ((self.gnss[-1][E]- self.gnss[-i][E])**2 + (self.gnss[-1][N]- self.gnss[-i][N])**2)
-				if distance >= 0.5: # if we found two coordinates at the required distance
-				
+	def gnss_estimate_heading (self):
+		valid = False
+		heading = 0.0
+		dist = 0.0
+		var_heading = pi
+		E = 1
+		N = 2
+		if len(self.gnss) == self.gnss_buffer_size: # if we have a full gnss buffer
+			if self.gnss[-1][3] == 4 and self.gnss[0][3] == 4: # if we have a RTK fixed solution
+				dist = sqrt ((self.gnss[-1][E]- self.gnss[0][E])**2 + (self.gnss[-1][N]- self.gnss[0][N])**2)
+				if dist >= self.gnss_heading_min_dist: # if we have travelled a configurable minimum distance 
 					# calc gnss coordinate vector heading
-					easting_axis_vector_len = self.gnss[-1][E] - self.gnss[-i][E]
-					northing_axis_vector_len = self.gnss[-1][N] - self.gnss[-i][N]
-					psi = atan2 (northing_axis_vector_len, easting_axis_vector_len)				
+					easting_axis_vector_len = self.gnss[-1][E] - self.gnss[0][E]
+					northing_axis_vector_len = self.gnss[-1][N] - self.gnss[0][N]
+					heading = self.angle_limit(atan2 (northing_axis_vector_len, easting_axis_vector_len))
 
-					# OI OI hack alert!!! vehicle orientation yaw angle is not necessarily the same as gnss heading but for how it is
-					yaw = psi
+					var_heading = 0.0 # OI OI MUST BE CALCULATED !!!			
 
-					# check for irregular "jumps" due to gnss signal interruptions
-					err = False
-					if self.gnss_orientation_prev_yaw != -10 and fabs(self.angle_diff(yaw, self.gnss_orientation_prev_yaw)) > 30/180.0*pi:
-						err = True
-						self.gnss_orientation_timeout = self.gnss[-1][0] + 3.0 # dont rely on estimates the next 3 seconds
-						
-					self.gnss_orientation_prev_yaw = yaw
+					valid = True
+		return (valid, heading, var_heading, dist)
+	
+	def estimate_absolute_orientation (self):
+		valid = False
+		yaw = 0.0
+		if self.gnss[-1][0] > self.absolute_orientation_timeout:
+ 			self.absolute_orientation_timeout = self.gnss[-1][0] + 0.2
 
-		return (err, self.angle_limit(yaw))
+			# estimate heading based on gnss waypoints
+			(heading_valid, heading, var_heading, gnss_dist) = self.gnss_estimate_heading()
+			if heading_valid == True:
+				(odo_valid, odo_dist, odo_angle) = self.odometry_buffer_distance_angle() # calc traversed dist and angle in odo sliding window buffer
+				if odo_valid == True:
+					if fabs (odo_angle) <= self.orientation_odo_max_angle:
+						if fabs(gnss_dist-odo_dist) < self.orientation_odo_gnss_dist_max_diff_percent/100.0*odo_dist:
+							yaw = heading
+							valid = True
+		return (valid, self.angle_limit(yaw))
 
-	def add_gnss_measurement (self, time_stamp, easting, northing, solution, sat, hdop):
-		err = True
+	def gnss_estimate_variance_pos(self):
+		std_dev = self.gnss_std_dev_max
+		if len(self.gnss) > 0:
+			if self.gnss[-1][3] == 4: # rtk fixed solution
+				std_dev = 0.02 * self.gnss[-1][5]
+			elif self.gnss[-1][3] == 5: # rtk float solution
+				std_dev = 2.0
+				std_dev = 2.0 * self.gnss[-1][5]*20
+			elif self.gnss[-1][3] == 2: # dgps solution
+				std_dev = 7.0
+				std_dev = 7.0 * self.gnss[-1][5]*20
+			elif self.gnss[-1][3] == 1: # sps solution
+				std_dev = 15.0
+		return std_dev**2
+
+	def gnss_validate_new_position(self, time_stamp, easting, northing):
+		valid = 1
+		if self.gnss != []: # if we have previous positions to validate against
+			# check for sudden position jumps
+			dtime = time_stamp - self.gnss[-1][0]
+			ddist = sqrt((easting - self.gnss[-1][1])**2 + (northing - self.gnss[-1][2])**2)
+			max_dist = self.max_speed *dtime
+			if ddist > 2*max_dist: # if distance larger than 2 * theoretical maximum distance
+				valid = 0
+				print "  GNSS unexpected position jump %.1f m at time stamp: %.3f: E%.3f, N%.3f" % (ddist, time_stamp, easting, northing)
+		return valid
+
+	def gnss_new_measurement (self, time_stamp, easting, northing, solution, sat, hdop):
+		valid = False
 		if solution > 0: # if satellite fix
-			if not self.validate_new_gnss_position(time_stamp, easting, northing):
-				self.gnss.append([time_stamp, solution, easting, northing, sat, hdop])
-				err = False
+			if self.gnss_validate_new_position (time_stamp, easting, northing): 
+				self.gnss.append([time_stamp, easting, northing, solution, sat, hdop]) # add measurement to sliding window
+				valid = True
 				if len(self.gnss) > self.gnss_buffer_size: # trim buffer length to size
 					self.gnss.pop(0)
 				elif len(self.gnss) == 50 and self.gnss_measurement_interval == -1: # update buffer size based on gnss update interval
 					self.gnss_measurement_interval = (self.gnss[-1][0] - self.gnss[0][0])/50.0
 					print "  Estimated GNSS measurement interval: %.3fs" % (self.gnss_measurement_interval)
-					self.gnss_buffer_size = self.gnss_buffer_time / self.gnss_measurement_interval
-		if err:
+					self.gnss_buffer_size = int(self.buffer_period / self.gnss_measurement_interval)
+					while len(self.gnss) > self.gnss_buffer_size: # trim buffer length to size
+						self.gnss.pop(0)	
+		if valid == False: # dischard the entire buffer
 			self.gnss = []
-		return err
+			self.gnss_latest_invalid = time_stamp
+			self.absolute_orientation_timeout = time_stamp + self.absolute_orientation_timeout_period
+		return valid
 
-	def add_imu_measurement(self, time_stamp, yaw_rate, yaw_orientation):
+	def imu_new_measurement(self, time_stamp, yaw_rate, yaw_orientation):
 		self.imu.append([time_stamp, yaw_rate, yaw_orientation])
 		if len(self.imu) > self.imu_buffer_size: # trim buffer length to size
 			self.imu.pop(0)
 		elif len(self.imu) == 50: # update buffer size based on gnss update interval
 			self.imu_measurement_interval = (self.imu[-1][0] - self.imu[0][0])/50.0
 			print "  Estimated IMU measurement interval: %.3fs" % (self.imu_measurement_interval)
-			self.imu_buffer_size = self.imu_buffer_time / self.imu_measurement_interval
+			self.imu_buffer_size = self.buffer_period / self.imu_measurement_interval
 			while len(self.imu) > self.imu_buffer_size:
 				self.imu.pop(0)
 
-	def add_odometry(self, time_stamp, delta_dist, delta_angle):
+	def odometry_new_feedback(self, time_stamp, delta_dist, delta_angle):
 		self.odo.append([time_stamp, delta_dist, delta_angle])
 		if len(self.odo) > self.odo_buffer_size: # trim buffer length to size
 			self.odo.pop(0)
 		elif len(self.odo) == 50: # update buffer size based on gnss update interval
 			self.odo_measurement_interval = (self.odo[-1][0] - self.odo[0][0])/50.0
 			print "  Estimated odometry update interval: %.3fs" % (self.odo_measurement_interval)
-			self.odo_buffer_size = self.odo_buffer_time / self.odo_measurement_interval
+			self.odo_buffer_size = int(self.buffer_period / self.odo_measurement_interval)
 			while len(self.odo) > self.odo_buffer_size:
 				self.odo.pop(0)
 
-	def estimate_variance_gnss(self):
-		# estimate speed
-		# use known speed to increase variance
-		std_dev = 20000000.0
-		if len(self.gnss) > 0:
-			if self.gnss[-1][1] == 4: # rtk fixed solution
-				std_dev = 0.02 * self.gnss[-1][5]
-			elif self.gnss[-1][1] == 5: # rtk float solution
-				std_dev = 2.0
-				std_dev = 2.0 * self.gnss[-1][5]*20
-			elif self.gnss[-1][1] == 2: # dgps solution
-				std_dev = 7.0
-				std_dev = 7.0 * self.gnss[-1][5]*20
-			elif self.gnss[-1][1] == 1: # sps solution
-				std_dev = 15.0
-		return std_dev**2
+	def odometry_buffer_distance_angle (self):
+		valid = False
+		buffer_dist = 0.0
+		buffer_angle = 0.0
+		if  len(self.odo) == self.odo_buffer_size: # if we have a full odometry buffer
+			valid = True
+			for i in xrange(self.odo_buffer_size):
+				buffer_dist += self.odo[i][1]
+				buffer_angle += self.odo[i][2]
+		return (valid, buffer_dist, buffer_angle)
 
 	def estimate_yaw(self):
 		pass

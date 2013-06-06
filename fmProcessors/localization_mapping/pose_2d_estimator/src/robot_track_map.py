@@ -79,6 +79,16 @@ class track_map():
 			axis('equal')
 			grid (True)
 
+			# this is a temporary hack to show the SDU test field
+			sdu_test_field = [[588787.7447,6137275.3330], [588795.7513,6137275.1412], [588795.9340,6137283.1338], [588787.9458,6137283.3454], [588788.1267,6137291.3197], [588796.1145,6137291.1133]]
+			sdu_test_field.pop (-1)
+			sdu_test_field.pop (-1)
+			for i in xrange(len(sdu_test_field)):
+				sdu_test_field[i][0] += self.offset_e
+				sdu_test_field[i][1] += self.offset_n
+			sdu_test_fieldT = zip(*sdu_test_field)
+			plot (sdu_test_fieldT[0], sdu_test_fieldT[1], 'bo')
+
 		if self.plot_odometry:
 			self.fig2 = plt.figure(num=2, figsize=(map_window_size, \
 				map_window_size), dpi=80, facecolor='w', edgecolor='w')

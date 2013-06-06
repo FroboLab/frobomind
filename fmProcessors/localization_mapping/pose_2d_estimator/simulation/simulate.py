@@ -33,6 +33,7 @@ feedback and sensor data from FroboMind rosbags
 Revision
 2013-05-10 KJ First alpha release
 2013-05-15 KJ Added AHRS support
+2013-06-05 KJ Improved pre-processing algorithms 
 """
 
 # imports
@@ -51,7 +52,7 @@ plot_odometry = True
 plot_yaw = True
 plot_pose_yaw = True # used only in this simulation to determine which values to append
 plot_gnss_yaw = True # used only in this simulation to determine which values to append
-plot_ahrs_yaw = True # used only in this simulation to determine which values to append
+plot_ahrs_yaw =  False # used only in this simulation to determine which values to append
 plot_odo_yaw = True # used only in this simulation to determine which values to append
 plot_relative_coordinates = True
 odo_file = 'sim_odometry.txt'
@@ -63,9 +64,10 @@ gnss_max_lines = 0
 sim_step_interval = 0.01 # 100 Hz
 steps_btw_plot_updates = 250 # 2.5 seconds
 steps_btw_yaw_plot_points = 10
+min_gnss_fix_msg_before_pose_plot = 5 # used to avoid the high initial variance causes odd plots
 var_dist = 0.001**2 # per meter
 var_angle = (0.003*2*pi)**2 # per 2*pi
-var_gnss_yaw = 0.1
+var_yaw = 0.1
 pi2 = 2.0*pi
 
 # return angle within [0;2pi[
@@ -108,9 +110,10 @@ else:
 plot = track_map(plot_pose, plot_gnss, plot_odometry, plot_yaw, \
 	"Robot track", 5.0, plot_easting_offset, plot_northing_offset)
 latest_pose_yaw = 0.0
-latest_gnss_yaw = 0.0
+latest_absolute_yaw = 0.0
 latest_ahrs_yaw = 0.0
 latest_odo_yaw = 0.0
+gnss_fix_msg_count = 0 
 
 # import simulation data
 odo_sim = odometry_data(odo_file, odo_max_lines)
@@ -151,7 +154,7 @@ for step in xrange ((int(sim_steps)+1)):
 		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
 		delta_angle = angle_diff (odometry[3], prev_odometry[3])
 		prev_odometry = odometry
-		pp.add_odometry (time_recv, delta_dist, delta_angle)
+		pp.odometry_new_feedback (time_recv, delta_dist, delta_angle)
 		
 		# EKF system update (odometry)
 		pose = ekf.system_update (delta_dist, var_dist, delta_angle, var_angle)
@@ -163,46 +166,48 @@ for step in xrange ((int(sim_steps)+1)):
 		plot.append_odometry_position(odometry[1], odometry[2])
 
 		# pose plot update
-		plot.append_pose_position (pose[0], pose[1])
+		if gnss_fix_msg_count >= min_gnss_fix_msg_before_pose_plot:
+			plot.append_pose_position (pose[0], pose[1])
 		latest_pose_yaw = angle_limit(pose[2])
 
-    # update IMU position
+    # update IMU data
 	(imu_updates, imu_data) = imu_sim.get_latest(log_time) 
 	if imu_updates > 0:		
 		# EKF measurement update (IMU)
 		time_recv = imu_data[0]
 		rate_yaw = imu_data[1]
 		orientation_yaw = angle_limit(imu_data[2])
-		pos = pp.add_imu_measurement (time_recv, rate_yaw, orientation_yaw)
+		pos = pp.imu_new_measurement (time_recv, rate_yaw, orientation_yaw)
 	
 		# plot update
 		latest_ahrs_yaw = orientation_yaw
 
-    # update GNSS position
+    # update GNSS data
 	(gnss_updates, gnss_data) = gnss_sim.get_latest(log_time)
 	if gnss_updates > 0: # if new data available
 		solution = gnss_data[5]
-		if solution > 0: # if satellite fix
+		if solution > 0: # if the new data has a satellite fix
+			gnss_fix_msg_count += 1
 			time_recv = gnss_data[0]
 			easting = gnss_data[3] 
 			northing = gnss_data[4]
 			satellites = gnss_data[6]
 			hdop = gnss_data[7]
 			# GNSS data preprocessing
-			error = pp.add_gnss_measurement (time_recv, easting, northing, solution, satellites, hdop)
-			if error == False: # if no error
-				var_pos = pp.estimate_variance_gnss()
+			valid = pp.gnss_new_measurement (time_recv, easting, northing, solution, satellites, hdop)
+			if valid == True: # if position is validated
+				var_pos = pp.gnss_estimate_variance_pos() # estimate the position variance
+				pose = ekf.measurement_update_pos ([easting, northing], var_pos) # EKF measurement update
 
-				# EKF measurement update (GNSS)
-				pose = ekf.measurement_update_pos ([easting, northing], var_pos)
+				(valid, yaw) = pp.estimate_absolute_orientation()
+				if valid == True:
+					latest_absolute_yaw = yaw
+					# pose = ekf.measurement_update_yaw (yaw, 5)
+					yaw = yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
 
 				# plot update
 				plot.append_gnss_position(easting, northing)
-				(err, gnss_yaw) = pp.estimate_orientation_from_gnss_positions()
-				if err == False:
-					latest_gnss_yaw = gnss_yaw
-					# pose = ekf.measurement_update_yaw (yaw, 5)
-					yaw = yawekf.measurement_update (gnss_yaw, var_gnss_yaw) # !!! TEMPORARY HACK
+
 
 	# output to screen
 	#if step % 2000 == 0: # each 20 seconds, needs to be calculated!!!
@@ -211,7 +216,7 @@ for step in xrange ((int(sim_steps)+1)):
 		if plot_pose_yaw:
 			plot.append_pose_yaw (latest_pose_yaw)
 		if plot_gnss_yaw:
-			plot.append_gnss_yaw (latest_gnss_yaw)
+			plot.append_gnss_yaw (latest_absolute_yaw)
 		if plot_ahrs_yaw:
 			plot.append_ahrs_yaw (latest_ahrs_yaw)
 		if plot_odo_yaw:
