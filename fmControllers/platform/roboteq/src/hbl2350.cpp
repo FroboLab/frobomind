@@ -25,8 +25,6 @@ hbl2350::hbl2350( )
 	ch1.ticks_to_meter = 1.0/1285.0;
 	ch2.ticks_to_meter = (1285.0/682.0)/1285.0; // TODO: Crappy 1.88 RoboTeQ hack
 
-
-
 	// Declare variables for parsing parameters
 	double max_time_diff_input;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
