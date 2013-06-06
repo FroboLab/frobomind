@@ -49,8 +49,8 @@ from wehicle odometry, SparkFun Razor IMU and RTK-GNSS.
 
 	<group ns="fmProcessors">
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
-			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
+			<param name="enc_left_sub" value="/fmInformation/enc_left" />
+			<param name="enc_right_sub" value="/fmInformation/enc_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/odom" />
 			<param name="encoder_output" value="relative"></param>  
@@ -65,8 +65,8 @@ from wehicle odometry, SparkFun Razor IMU and RTK-GNSS.
 		<node pkg="sdu_kjen_sandbox" name="frobit_remote_control" type="remote_control_mission.py" output="screen">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="max_linear_velocity" value="1.5"/>
-			<param name="max_angular_velocity" value="1.8"/>
+			<param name="max_linear_velocity" value="0.8"/>
+			<param name="max_angular_velocity" value="1.1"/>
 			<param name="deadband" value="0.001"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
@@ -99,8 +99,8 @@ from wehicle odometry, SparkFun Razor IMU and RTK-GNSS.
 			<param name="deadman_sub" value="/fmSignals/deadman"/>
 			<param name="nmea_sub" value="/fmData/nmea_from_frobit"/>
 			<param name="nmea_pub" value="/fmData/nmea_to_frobit"/>
-			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
-			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
+			<param name="encoder_left_pub" value="/fmInformation/enc_left"/>
+			<param name="encoder_right_pub" value="/fmInformation/enc_right"/>	
 			<param name="castor_front" value="true"/>
 			<param name="nmea_to_frobit_interval" value="0.1"/>          
 			<param name="cmd_vel_timeout" value="1"/>          
