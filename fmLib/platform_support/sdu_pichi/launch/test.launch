@@ -1,0 +1,36 @@
+<launch>
+	<group ns="fmTools">
+		<node pkg="rqt_publisher" name="topic" type="rqt_publisher" />
+		<node pkg="state_print" name="velocity_plot" type="velocity_plot.py" output="screen" />
+	</group>
+
+	<group ns="robot">	
+		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/robot_rx" />	 
+			<param name="subscriber_topic" value="/fmData/robot_tx" />
+			<param name="device" value="/dev/robot" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="13"/>
+		</node>
+	</group>
+	
+	<group ns="fmControllers">
+		<node pkg="sdu_pichi" name="robot_interface" type="sdu_pichi_node" output="screen" >
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
+			<param name="cmd_vel_ch2_topic" value="/fmSignals/cmd_vel_right"/>
+			<param name="serial_rx_topic" value="/fmData/robot_rx"/>
+			<param name="serial_tx_topic" value="/fmData/robot_tx"/>
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
+			<param name="encoder_ch2_topic" value="/fmInformation/encoder_right"/>	
+			<param name="power_ch1_topic" value="/fmData/power_left"/>
+			<param name="power_ch2_topic" value="/fmData/power_right"/>
+			<param name="status_topic" value="/fmData/status"/>	
+			<param name="mps_to_rpm" value="1320"/> 
+			<param name="p_gain" value="1.0"/>
+            <param name="i_gain" value="0.8"/>
+            <param name="d_gain" value="0.02"/>  
+            <param name="anti_windup_percent" value="0.5"/> <!-- No longer in percent -->     
+        </node>
+	</group>
+</launch>

@@ -1,0 +1,6 @@
+<launch>
+	<group ns="fmTools">
+		<node pkg="state_print" name="velocity_plot" type="velocity_plot.py" />
+	</group>
+
+</launch>

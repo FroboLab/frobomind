@@ -32,6 +32,8 @@
 #ifndef REGULATOR_HPP_
 #define REGULATOR_HPP_
 
+#include <iostream>
+
 class Regulator
 {
 /*

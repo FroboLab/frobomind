@@ -40,6 +40,24 @@
 #include "roboteq/roboteq.hpp"
 #include "roboteq/regulator.hpp"
 
+class Circular_queue
+{
+public:
+	Circular_queue();
+	explicit Circular_queue( int );
+	virtual ~Circular_queue();
+
+	void push_back( double );
+	double pop_front( void );
+	void resize( void );
+	bool isEmpty( void );
+	double average( void );
+
+private:
+	double * store;
+	int head , tail , size;
+};
+
 class BaseCB
 {
 /*
@@ -71,7 +89,7 @@ public:
 class Channel
 {
 /*
- * Class implementing the concept of a motor controller channel
+ * Class implementing the concept of a motCircular_queue::or controller channel
  * */
 public:
 	// Convenience structs for holding related variables
@@ -86,8 +104,9 @@ public:
 		ros::Publisher power, hall, temperature;
 	} publisher;
 
-	int	ch, max_rpm, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time;
-	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_mps, max_velocity_mps, last_hall;
+	int	ch, max_rpm, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time;
+	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps;
+	Circular_queue buffer;
 	ros::Time last_twist_received, last_deadman_received, last_regulation;
 	ros::Subscriber cmd_vel_sub;
 	ros::Publisher status_publisher;

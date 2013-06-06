@@ -86,6 +86,7 @@ public:
 	virtual void power_feedback(ros::Time time, int fb1, int fb2){}
 	virtual void hall_feedback(ros::Time time, int fb1){}
 	virtual void power_feedback(ros::Time time, int fb1){}
+	virtual void initController( std::string ){}
 
 	// Methods for transmitting commands to the controller
 	void transmit(int, std::string , ...);

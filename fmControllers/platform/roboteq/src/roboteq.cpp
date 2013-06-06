@@ -84,9 +84,10 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 //	else if(sscanf(msg->data.c_str(),"F=%d:%d",		&f1,&f2))		{ }
 	else if(sscanf(msg->data.c_str(),"FID=%s",dummy))
 	{
-		//status.online = true;
+		status.online = true;
 		status.initialised = false;
 		ROS_WARN("Found %s",msg->data.c_str());
+		initController("Standard");
 	}
 	else if(sscanf(msg->data.c_str(),"-%s",dummy))
 	{
