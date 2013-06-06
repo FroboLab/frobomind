@@ -14,7 +14,7 @@ hbl1650::hbl1650( )
 	ch1.init_cb = new CallbackHandler<hbl1650>(this,&hbl1650::initController);
 
 	// Set conversion factors
-	ch1.ticks_to_mps = 1/1320;
+	ch1.ticks_to_meter = 1/1320;
 
 	// Initialise status
 	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;

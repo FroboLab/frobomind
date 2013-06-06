@@ -11,11 +11,11 @@ void Channel::onHallFeedback(ros::Time time, int feedback)
 	message.hall.data = feedback;
 
 	// TODO: This is a temporary hack to make hall values relative
-	hall_value = feedback - last_hall;
+	hall_value += feedback - last_hall;
 	last_hall = feedback;
 	// end hack..
 
-	//std::cout << "Hall value: " << feedback << " Relative: " << hall_value << std::endl;
+	//std::cout << "Channel:" << ch << " Hall value: " << feedback << " Relative: " << hall_value << std::endl;
 	publisher.hall.publish(message.hall);
 }
 
@@ -74,16 +74,24 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 
 						/* Get new output */
 						double period = (ros::Time::now() - last_regulation).toSec();
-						double feedback = hall_value*ticks_to_mps;
+						double feedback = (( (double)hall_value)*ticks_to_meter)/period;
+						hall_value = 0;
+						buffer.push_back((feedback));
+						feedback = buffer.average();
+						if(ch == 1)
+							feedback *= -1;
 						double setpoint = regulator.output_from_input(velocity, feedback , period);
 						last_regulation = ros::Time::now();
 
 						/* Convert to roboteq format */
-						int output = ((setpoint)*roboteq_max)/8; //TODO: Hard coded max for Pichi
+						int output = ((setpoint)*roboteq_max)/3.6; //TODO: Hard coded max for Pichi
 
 						/* Send motor speed */
 						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
+
+						std::cout << ch << "," << velocity << "," << feedback << "," << period << std::endl;
+
 					}
 					else /* deadman not pressed */
 					{
@@ -120,8 +128,9 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 		else /* Controller is not initialised */
 		{
 			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
-			initController("standard");
-			status.initialised = true;
+			//initController("standard");
+			//status.initialised = true;'
+			transmit("?FID\r");
 		}
 	}
 	else /* controller is not online */
@@ -137,3 +146,65 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 	status_publisher.publish(status_out);
 }
 
+Circular_queue::Circular_queue()
+{
+	size = 20;
+	head = tail = 0;
+	store = new double[size];
+	for(int i = 0 ; i < size ; i++)
+		store[i] = 0;
+}
+
+Circular_queue::Circular_queue( int sz )
+{
+	size = sz;
+	head = tail = 0;
+	store = new double[size];
+
+}
+
+Circular_queue::~Circular_queue()
+{
+	delete store;
+}
+
+void Circular_queue::push_back( double item )
+{
+	if( tail >= size - 1 )
+		tail=0;//resize();
+
+	store[tail++] = item;
+}
+
+double Circular_queue::pop_front( void )
+{
+	if( head != tail )
+		return store[head++];
+	else
+		throw("Fault. Queue is empty");
+}
+
+void Circular_queue::resize( void )
+{
+	double * temp_p = new double[ size * 2 ];
+	for( int i = 0 ; i < size ; i++ )
+		temp_p[i] = store[i];
+	delete store;
+	store = temp_p;
+	size *= 2;
+}
+
+bool Circular_queue::isEmpty( void )
+{
+	return head == tail;
+}
+
+double Circular_queue::average( void )
+{
+	double out = 0;
+
+	for(int i = 0 ; i < size ; i++)
+		out += store[i];
+
+	return out/size;
+}

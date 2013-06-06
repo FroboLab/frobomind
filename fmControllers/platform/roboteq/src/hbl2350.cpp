@@ -3,6 +3,11 @@
 hbl2350::hbl2350( )
 :local_node_handler("~"),global_node_handler()
 {
+	// Initialise status
+	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
+	status.emergency_stop = true;
+
+
 	// Two channel operation
 	two_channel = true;
 
@@ -17,12 +22,8 @@ hbl2350::hbl2350( )
 	ch2.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 
 	// Set conversion factors
-	ch1.ticks_to_mps = 1/1320;
-	ch2.ticks_to_mps = 1/(1320/2.0); // TODO: Crappy 1.88 RoboTeQ hack
-
-	// Initialise status
-	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
-	status.emergency_stop = true;
+	ch1.ticks_to_meter = 1.0/1285.0;
+	ch2.ticks_to_meter = (1285.0/682.0)/1285.0; // TODO: Crappy 1.88 RoboTeQ hack
 
 	// Declare variables for parsing parameters
 	double max_time_diff_input;
@@ -104,7 +105,7 @@ void hbl2350::spin(void)
 	r.sleep();
 
 	// Initialize timer
-	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.1),&hbl2350::onTimer,this);
+	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.02),&hbl2350::onTimer,this);
 
 	ros::spin();
 }
@@ -127,13 +128,13 @@ void hbl2350::initController(std::string config)
 	sleep(1);
 	transmit(2,	"^ECHOF", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Echo is disabled
 	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
-	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
-	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
-	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
-	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
-	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
+//	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
+//	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
+//	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
+//	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
+//	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
-	transmit(1,	"# 10" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 10 ms
+	transmit(1,	"# 50" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 10 ms
 	sleep(2);
 
 	ROS_INFO("Initialization finished");

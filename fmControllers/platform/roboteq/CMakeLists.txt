@@ -7,7 +7,7 @@ project(roboteq)
 find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs std_msgs msgs)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+ find_package(Boost)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -69,7 +69,7 @@ include_directories(include
 # add_executable(roboteq_node src/roboteq_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(roboteq_node ${PROJECT_NAME} geometry_msgs_gencpp std_msgs_gencpp msgs_gencpp)
+ add_dependencies(roboteq ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(roboteq_node

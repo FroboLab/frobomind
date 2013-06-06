@@ -29,7 +29,9 @@ double Regulator::output_from_input( double setpoint , double input , double per
 	double differentiator = previous - error;
 
 	// Calculate output
-	double output = error * p + integrator * i * period + differentiator * d / period;
+	double output = (error * p) + ((integrator * period) * i) + ((differentiator / period)* d);
+	//std::cout << "P: " << (error * p) << " I: " << (integrator * i * period) << " D: " << ((differentiator * d) / period) << std::endl;
+	//std::cout << setpoint  << "," <<  input << "," << error << std::endl;
 
 	// Implement output max
 	if(output > out_max)
