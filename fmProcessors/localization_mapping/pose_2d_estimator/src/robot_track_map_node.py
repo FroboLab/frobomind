@@ -38,7 +38,7 @@ Revision
 # ROS imports
 import rospy
 import numpy as np
-from tf.transformations import euler_from_quaternion
+#from tf.transformations import euler_from_quaternion
 from math import sqrt, atan2, pi
 from nav_msgs.msg import Odometry
 from msgs.msg import gpgga_tranmerc

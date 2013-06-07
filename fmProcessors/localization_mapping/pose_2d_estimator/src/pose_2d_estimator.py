@@ -229,9 +229,9 @@ class pose_2d_preprocessor():
 	def angle_diff (self, angle_new, angle_old):
 		diff = angle_new - angle_old
 		while diff < -pi:
-			diff += 2*pi
+			diff += self.pi2
 		while diff > pi:
-			diff -= 2*pi
+			diff -= self.pi2
 		return diff
 
 class pose_2d_ekf():

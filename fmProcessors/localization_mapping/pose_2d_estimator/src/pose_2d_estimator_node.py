@@ -97,7 +97,6 @@ class Pose2DEstimatorNode():
 	def on_odom_topic(self, msg):
 		x = msg.pose.pose.position.x
 		y = msg.pose.pose.position.y
-		#yaw = 0.0 # !!!!! OI OI NEEDS ATTENTION!!! MUST GET THIS FROM QUARTERNION
 		self.quaternion[0] = msg.pose.pose.orientation.x
 		self.quaternion[1] = msg.pose.pose.orientation.y
 		self.quaternion[2] = msg.pose.pose.orientation.z
@@ -152,34 +151,11 @@ class Pose2DEstimatorNode():
 					var_yaw = 0.1
 					self.pose[2] = self.yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
 	
-	def multiply(self,q1,q2):
-		"""
-			Multiplies two quaternions
-		"""
-		result = np.empty((4, ), dtype=np.float64)
-		result[0] = q1[3] * q2[0] + q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1]
-		result[1] = q1[3] * q2[1] + q1[1] * q2[3] + q1[2] * q2[0] - q1[0] * q2[2]
-		result[2] = q1[3] * q2[2] + q1[2] * q2[3] + q1[0] * q2[1] - q1[1] * q2[0]
-		result[3] = q1[3] * q2[3] - q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2]
-		return result
-	
-	def quat(self,x,y,z,w):
-		"""
-			Generates a quaternion	
-		"""
-		new = np.empty((4, ), dtype=np.float64)
-		new[0] = x
-		new[1] = y
-		new[2] = z
-		new[3] = w
-		return new
-	
 	def publish_pose(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
 		self.pose_msg.pose.pose.position.x = self.pose[0]
 		self.pose_msg.pose.pose.position.y = self.pose[1]
 		self.pose_msg.pose.pose.position.z = 0
-		#print 'sent', self.pose[2]*180.0/pi
 		q = quaternion_from_euler (0, 0, self.pose[2])
 		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
 		self.pose_pub.publish(self.pose_msg); # publish the pose message
