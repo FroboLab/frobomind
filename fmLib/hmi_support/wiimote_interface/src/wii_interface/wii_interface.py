@@ -81,6 +81,7 @@ class WiiInterface():
         
         # Get topic names
         self.deadman_topic = rospy.get_param("~deadman_topic",'deadman')
+        self.automode_topic = rospy.get_param("~automode_topic",'automode')
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic",'cmd_vel')
         self.feedback_topic = rospy.get_param("~feedback_topic",'joy/set_feedback') 
         self.joy_topic = rospy.get_param("~joy_topic",'joy')
@@ -88,6 +89,7 @@ class WiiInterface():
 
         # Setup topics
         self.deadman_pub = rospy.Publisher(self.deadman_topic, Bool)
+        self.automode_pub = rospy.Publisher(self.automode_topic, Bool)
         self.twist_pub = rospy.Publisher(self.cmd_vel_topic, TwistStamped)
         self.fb_pub = rospy.Publisher(self.feedback_topic, JoyFeedbackArray)
         self.joy_sub = rospy.Subscriber(self.joy_topic, Joy, self.onJoy )
@@ -195,12 +197,25 @@ class WiiInterface():
         self.twist.twist.linear.x = self.linear
         self.twist.twist.angular.z = self.angular
         self.twist_pub.publish(self.twist)
-        
+      
+    def publishZeroCmdVel(self):
+        # Publish zero twist message                   
+        self.twist.header.stamp = rospy.Time.now()
+        self.twist.twist.linear.x = 0
+        self.twist.twist.angular.z = 0
+        self.twist_pub.publish(self.twist)
+          
     def publishDeadman(self):
         """
             Method to publish Bool message on deadman topic
         """
         self.deadman_pub.publish(self.deadman)
+        
+    def publishAutomode(self):
+        """
+            Method to publish Bool message on automode topic
+        """
+        self.automode_pub.publish(self.automode)
     
     def publishFeedback(self):
         """

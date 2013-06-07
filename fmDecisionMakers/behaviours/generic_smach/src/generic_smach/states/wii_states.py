@@ -39,14 +39,15 @@ class remoteControlState(smach.State):
         smach.State.__init__(self, outcomes=['enterAutomode','preempted'])
         # Instantiate HMI
         self.hmi = hmi
+        self.r = rospy.Rate(self.hmi.publish_frequency)
 
     def execute(self, userdata):
-        self.r = rospy.Rate(self.hmi.publish_frequency)
-#        while not self.hmi.automode and not rospy.is_shutdown():
+        self.hmi.publishZeroCmdVel()
         while not rospy.is_shutdown():
             if not self.hmi.automode :
                 # Publish topics
                 self.hmi.publishDeadman()
+                self.hmi.publishAutomode()
                 self.hmi.publishFeedback()
                 self.hmi.publishCmdVel()
                 try :
@@ -70,10 +71,12 @@ class interfaceState(smach.State):
         self.r = rospy.Rate(self.hmi.publish_frequency)
         
     def execute(self, userdata):
+        self.hmi.publishZeroCmdVel()
         while not rospy.is_shutdown():         
             if self.hmi.automode :
                 # Publish topics
                 self.hmi.publishDeadman()
+                self.hmi.publishAutomode()
                 self.hmi.publishFeedback()
                 try :
                     self.r.sleep()
