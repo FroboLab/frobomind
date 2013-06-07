@@ -38,7 +38,6 @@ Revision
 # ROS imports
 import rospy
 import numpy as np
-from tf.transformations import euler_from_quaternion
 from math import sqrt, atan2, pi
 from nav_msgs.msg import Odometry
 from msgs.msg import gpgga_tranmerc
@@ -95,19 +94,6 @@ class track_map_node():
 		qz = msg.pose.pose.orientation.z
 		qw = msg.pose.pose.orientation.w
 		self.yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
-
-		#self.q[0] = msg.pose.pose.orientation.x
-		#self.q[1] = msg.pose.pose.orientation.y
-		#self.q[2] = msg.pose.pose.orientation.z
-		#self.q[3] = msg.pose.pose.orientation.w
-		#rot = self.quat(0,1,0,pi/3)
-		#self.quaternion = self.multiply(self.quaternion, rot)
-		#rot = self.quat(1,0,0,pi/3)
-		#self.quaternion = self.multiply(self.quaternion, rot)
-		#rot = self.quat(0,0,1,(2*pi)/3)
-		#self.quaternion = self.multiply(self.quaternion, rot)
-		#(roll, pitch, self.yaw) = euler_from_quaternion(self.q)
-		#print 'received', self.yaw*180.0/pi
 
 	# handle incoming GNSS messages
 	def on_gnss_topic(self, msg):

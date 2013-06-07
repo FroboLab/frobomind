@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# Waypoint Navigation
+# PID Controller
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,8 +27,44 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-2013-06-06 KJ First version
+2013-06-07 KJ First version
 """
 
-# imports
+class pid_controller():
+	def __init__(self):
+		self.error = 0.0
+		self.error_prev = 0.0
+		self.integral = 0.0
+		self.deriative = 0.0
+		self.dT = 0.0
+		self.Kp = 0.0
+		self.Ki = 0.0
+		self.Kd = 0.0
+		self.integral_max = 0.0
+		self.integral_min = 0.0
+
+	def reset(self, dT, Kp, Ki, Kd, integral_max, integral_min):
+		self.error_prev = 0.0
+		self.integral = 0.0
+		self.dT = dT
+		self.Kp = Kp
+		self.Ki = Ki
+		self.Kd = Kd
+		self.integral_max = integral_max
+		self.integral_min = integral_min
+
+	def update(self, error):
+		# integration
+		self.integral += error * self.dT # integrate error over time
+		if self.integral > self.integral_max: # keep integral within min and max
+			self.integral = self.integral_max
+		elif self.integral < self.integral_min:
+			self.integral = self.integral_min
+
+		# derivation
+		self.derivative = (error - self.error_prev)/self.dT # error change
+
+		self.output = self.Kp*error + self.Ki*self.integral + self.Kd*self.derivative
+		self.error_prev  = error # save err for next iteration
+		return self.output
 
