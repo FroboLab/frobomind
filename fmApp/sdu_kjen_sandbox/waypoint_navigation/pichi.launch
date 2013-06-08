@@ -46,6 +46,8 @@
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wpt_destination_sub" value="/fmData/wpt_destination" />
+			<param name="wpt_target_sub" value="/fmData/wpt_target" />
 			<param name="plot_pose_track" value="true" />
 			<param name="plot_gnss_track" value="true" />
 			<param name="plot_odometry_track" value="false" />
@@ -53,7 +55,7 @@
 			<param name="easting_offset" value="-588784.0" />
 			<param name="northing_offset" value="-6137262.0" />
 			<param name="trackpoint_threshold" value="0.1" />
-			<param name="map_update_frequency" value="2.0" /> 
+			<param name="map_update_frequency" value="1.0" /> 
 			<param name="map_title" value="Robot track" />
 			<param name="map_window_size" value="4.8" />
 		</node>
@@ -106,6 +108,11 @@
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/joy" />
 			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" />
+			<param name="destination_pub" value="/fmData/wpt_destination" />
+			<param name="target_pub" value="/fmData/wpt_target" />
+			<param name="publish_destination" value="true" />
+			<param name="publish_target" value="true" />
+			<param name="print_debug_information" value="true" />
 		</node>		
 	</group>
 

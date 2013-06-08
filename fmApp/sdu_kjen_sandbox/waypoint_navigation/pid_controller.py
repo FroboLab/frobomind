@@ -27,39 +27,36 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-2013-06-07 KJ First version
+2013-06-08 KJ First version
 """
 
 class pid_controller():
-	def __init__(self):
+	def __init__(self, dT):
 		self.error = 0.0
 		self.error_prev = 0.0
 		self.integral = 0.0
 		self.deriative = 0.0
-		self.dT = 0.0
+		self.dT = dT
 		self.Kp = 0.0
 		self.Ki = 0.0
 		self.Kd = 0.0
 		self.integral_max = 0.0
-		self.integral_min = 0.0
 
-	def reset(self, dT, Kp, Ki, Kd, integral_max, integral_min):
-		self.error_prev = 0.0
-		self.integral = 0.0
-		self.dT = dT
+	def set_parameters (self, Kp, Ki, Kd, integral_max):
 		self.Kp = Kp
 		self.Ki = Ki
 		self.Kd = Kd
 		self.integral_max = integral_max
-		self.integral_min = integral_min
+
+	def reset(self):
+		self.error_prev = 0.0
+		self.integral = 0.0
 
 	def update(self, error):
 		# integration
 		self.integral += error * self.dT # integrate error over time
-		if self.integral > self.integral_max: # keep integral within min and max
+		if self.integral > self.integral_max: # keep integral element within max
 			self.integral = self.integral_max
-		elif self.integral < self.integral_min:
-			self.integral = self.integral_min
 
 		# derivation
 		self.derivative = (error - self.error_prev)/self.dT # error change

@@ -40,7 +40,7 @@ Revision
 """
 # imports
 import matplotlib.pyplot as plt
-from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
+from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw, clf
 from math import pi, sqrt
 
 class track_map():
@@ -56,6 +56,8 @@ class track_map():
 		# Initialize map
 		self.offset_e = easting_offset
 		self.offset_n = northing_offset
+		self.map_window_size = map_window_size
+		self.map_title = map_title
 		self.odo = []
 		self.gnss = []
 		self.pose_pos = []
@@ -63,22 +65,13 @@ class track_map():
 		self.gnss_yaw = []
 		self.ahrs_yaw = []
 		self.pose_yaw = []
+		self.wpt_destination = False
+		self.wpt_target = False
 
 		ion() # turn interaction mode on
 		if self.plot_gnss or self.plot_pose:
-			self.fig1 = plt.figure(num=1, figsize=(map_window_size, \
-				map_window_size), dpi=80, facecolor='w', edgecolor='w')
-			if self.plot_gnss and self.plot_pose:
-				title (map_title + ' - Pose and GNSS')
-			elif self.plot_gnss:
-				title (map_title + ' - GNSS')
-			elif self.plot_pose:
-				title (map_title + ' - Pose')
-			xlabel('Easting [m]')
-			ylabel('Northing [m]')
-			axis('equal')
-			grid (True)
-
+			self.fig1 = plt.figure(num=1, figsize=(self.map_window_size, \
+				self.map_window_size), dpi=80, facecolor='w', edgecolor='w')
 			# this is a temporary hack to show the SDU test field
 			sdu_test_field = [[588787.7447,6137275.3330], [588795.7513,6137275.1412], [588795.9340,6137283.1338], [588787.9458,6137283.3454], [588788.1267,6137291.3197], [588796.1145,6137291.1133]]
 			sdu_test_field.pop (-1)
@@ -86,8 +79,7 @@ class track_map():
 			for i in xrange(len(sdu_test_field)):
 				sdu_test_field[i][0] += self.offset_e
 				sdu_test_field[i][1] += self.offset_n
-			sdu_test_fieldT = zip(*sdu_test_field)
-			plot (sdu_test_fieldT[0], sdu_test_fieldT[1], 'bo')
+			self.sdu_test_fieldT = zip(*sdu_test_field)
 
 		if self.plot_odometry:
 			self.fig2 = plt.figure(num=2, figsize=(map_window_size, \
@@ -134,15 +126,36 @@ class track_map():
 	def append_odo_yaw (self, yaw):
 		self.odo_yaw.append(yaw*self.rad_to_deg)
 
+	def set_wpt_destination (self, easting, northing):
+		self.wpt_destination = [easting + self.offset_e, northing + self.offset_n]
+
+	def set_wpt_target (self, easting, northing):
+		self.wpt_target = [easting + self.offset_e, northing + self.offset_n]
+
 	def update(self):
 		if self.plot_gnss and self.gnss != []:
 			plt.figure(1)
+			clf()
+			self.fig1 = plt.figure(num=1, figsize=(self.map_window_size, \
+				self.map_window_size), dpi=80, facecolor='w', edgecolor='w')
+			title (self.map_title)			
+			xlabel('Easting [m]')
+			ylabel('Northing [m]')
+			axis('equal')
+			grid (True)
+			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'bo',markersize=7)
+
 			gnssT = zip(*self.gnss)		
 			gnss_plt = plot(gnssT[0],gnssT[1],'black')
 		if self.plot_pose and self.pose_pos != []:
 			plt.figure(1)
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
+		if self.plot_pose or self.plot_gnss:
+			if self.wpt_destination != False:
+				dest_plt = plot(self.wpt_destination[0],self.wpt_destination[1],'ro',markersize=8)
+			if self.wpt_target != False:
+				target_plt = plot(self.wpt_target[0],self.wpt_target[1],'r^',markersize=8)
 		if self.plot_odometry and self.odo != []:
 			plt.figure(2)
 			odoT = zip(*self.odo)		

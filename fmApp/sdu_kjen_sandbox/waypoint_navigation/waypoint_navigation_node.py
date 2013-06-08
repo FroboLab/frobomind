@@ -37,6 +37,7 @@ from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
+from msgs.msg import VectorStamped
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -44,7 +45,7 @@ from waypoint_navigation import waypoint_navigation
 class WaypointNavigationNode():
 	def __init__(self):
 		# defines
-		self.updater_rate = 10 # set updater frequency [Hz]
+		self.update_rate = 20 # set update frequency [Hz]
 		self.automode = False
 		self.automode_prev = False
 		self.status = 0
@@ -59,15 +60,19 @@ class WaypointNavigationNode():
 		self.wii_a_changed = False
 
 		# get parameters
-		self.debug = (rospy.get_param("~print_debug_information", "true") == "true")
+		self.debug = rospy.get_param("~print_debug_information", 'true') 
  		if self.debug:
 			rospy.loginfo(rospy.get_name() + ": Debug enabled")
+		self.publish_destination = rospy.get_param("~publish_destination", 'true') 
+		self.publish_target = rospy.get_param("~publish_target", 'true') 
 
 		# get topic names
 		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecisionMakers/automode')
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		self.joy_topic = rospy.get_param("~joy_sub",'/joy')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
+		self.destination_topic = rospy.get_param("~destination_pub",'/fmData/wpt_destination')
+		self.target_topic = rospy.get_param("~target_pub",'/fmData/wpt_target')
 
 		# setup subscription topic callbacks
 		rospy.Subscriber(self.automode_topic, Bool, self.on_automode_message)
@@ -77,17 +82,22 @@ class WaypointNavigationNode():
 		# setup publish topics
 		self.cmd_vel_pub = rospy.Publisher(self.cmdvel_topic, TwistStamped)
 		self.twist = TwistStamped()
+		self.destination_pub = rospy.Publisher(self.destination_topic, VectorStamped)
+		self.target_pub = rospy.Publisher(self.target_topic, VectorStamped)
+		self.vector = VectorStamped()
+		self.wpt_publish_count = 0
+		self.wpt_publish_interval = self.update_rate /2 # two times per second
 
 		# configure waypoint navigation
 		self.wptlist = waypoint_list()
-		self.wptnav = waypoint_navigation()
+		self.wptnav = waypoint_navigation(self.update_rate, self.debug)
 
 		# call updater function
-		self.r = rospy.Rate(self.updater_rate)
+		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
 	def load_wpt_list (self):
-		self.wptlist.load_from_csv_ne_format ('waypoints_square.txt')
+		self.wptlist.load_from_csv_ne_format ('waypoints_sdu_square.txt')
 		(numwpt, nextwpt) = self.wptlist.status()
 		rospy.loginfo(rospy.get_name() + ": %d waypoints loaded" % numwpt)
 
@@ -131,10 +141,28 @@ class WaypointNavigationNode():
 		self.twist.twist.angular.z = self.angular_speed		
 		self.cmd_vel_pub.publish (self.twist)
 
+	def publish_destination_message(self):
+		if self.wptnav.b != False:
+			self.vector.header.stamp = rospy.Time.now()
+			self.vector.data[0] = self.wptnav.b[0]
+			self.vector.data[1] = self.wptnav.b[1]
+			self.vector.data[2] = 0.0
+			self.destination_pub.publish (self.vector)
+
+	def publish_target_message(self):
+		if self.wptnav.target != False:
+			self.vector.header.stamp = rospy.Time.now()
+			self.vector.data[0] = self.wptnav.target[0]
+			self.vector.data[1] = self.wptnav.target[1]
+			self.vector.data[2] = 0.0
+			self.target_pub.publish (self.vector)
+
 	def updater(self):
 		while not rospy.is_shutdown():
-			if self.automode:
-				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update()
+			if True: # self.automode:
+				ros_time = rospy.Time.now()
+				time = ros_time.secs + ros_time.nsecs*1e-9
+				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
 					wpt = self.wptlist.get_next()
 					if wpt != False:
@@ -145,6 +173,12 @@ class WaypointNavigationNode():
 						self.wptnav.stop() 
 				else:
 					self.publish_cmd_vel_message()
+					self.wpt_publish_count += 1
+					if self.wpt_publish_count % self.wpt_publish_interval == 0:
+						if self.publish_destination:
+							self.publish_destination_message()
+						if self.publish_target:
+							self.publish_target_message()
 				self.r.sleep()
 
 # Main function.    
