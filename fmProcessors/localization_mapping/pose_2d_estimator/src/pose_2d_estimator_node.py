@@ -46,6 +46,7 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class Pose2DEstimatorNode():
 	def __init__(self):
+		self.update_rate = 20 # set update frequency [Hz]
 		self.pose_msg = Odometry()
 		self.quaternion = np.empty((4, ), dtype=np.float64) 
 		self.odom_topic_received = False
@@ -91,7 +92,7 @@ class Pose2DEstimatorNode():
 
 		# Call updater function
 		rospy.loginfo(rospy.get_name() + ": Start")
-		self.r = rospy.Rate(10) # set updater frequency [Hz]
+		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
 	def on_odom_topic(self, msg):
