@@ -73,11 +73,11 @@ class waypoint_navigation():
 		self.angular_speed_max = pi/2.0 # [radians/s]
 		self.wpt_tolerance_default = 0.5 # [m]
 		self.wpt_linear_speed_default = 0.7 # [m/s]
-		self.target_dist= 1.0 # [m] the intermediate target is along the ab line 'self.target_dist' meters ahead of the pose 
-		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_dist, the target is self.target_percent times the distance to b ahead of the pose
-		self.turn_start_at_heading_err = 25.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
-		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
-		self.turn_speed = pi/4.0 # [radians/s]
+		self.target_ahead = 0.8 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
+		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
+		self.turn_start_at_heading_err = 20.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
+		self.turn_acceptable_heading_err = 3.0*self.deg_to_rad # [radians]
+		self.turn_speed = pi/3.0 # [radians/s]
 
 		# state machine
 		self.state = STATE_STOP
@@ -105,10 +105,10 @@ class waypoint_navigation():
 
 		# PID drive controller
 		self.pid_drive = pid_controller(self.update_interval)
-		Kp = 1.5
-		Ki = 0.5
+		Kp = 2.5
+		Ki = 0.9
 		Kd = 0.0
-		integral_max = 1
+		integral_max = 1.5
 		self.pid_drive.set_parameters(Kp, Ki, Kd, integral_max)
 
 		# PID turn controller
@@ -127,7 +127,7 @@ class waypoint_navigation():
 		self.debug = debug
 		if self.debug:
 			self.debug_time_stamp = 0.0
-			self.print_interval = 1
+			self.print_interval = 10
 			self.print_count = 0
 
 	# call whenever a new pose is available
@@ -194,8 +194,8 @@ class waypoint_navigation():
 			else: # the closest point is defined by A + d(B-A)
 				dist_pt_to_b = sqrt((self.b[WPT_E]-pt[WPT_E])**2 + (self.b[WPT_N]-pt[WPT_N])**2)  # calc distance from closest point to b
 				dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
-				if dist_pt_to_target > self.target_dist:
-					dist_pt_to_target = self.target_dist
+				if dist_pt_to_target > self.target_ahead:
+					dist_pt_to_target = self.target_ahead
 				self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
 
 			# now navigate to the target point...

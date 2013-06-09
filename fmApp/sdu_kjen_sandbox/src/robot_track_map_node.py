@@ -114,8 +114,7 @@ class track_map_node():
 
 	# handle incoming destination waypoint messages
 	def on_wptnav_status_topic(self, msg):
-		self.plot.set_wpt_destination (msg.b_easting, msg.b_northing)
-		self.plot.set_wpt_target (msg.target_easting, msg.target_northing)
+		self.plot.set_wptnav (msg.mode, msg.b_easting, msg.b_northing, msg.target_easting, msg.target_northing)
 
 	# update loop
 	def updater(self):

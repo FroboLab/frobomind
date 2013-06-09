@@ -65,8 +65,12 @@ class track_map():
 		self.gnss_yaw = []
 		self.ahrs_yaw = []
 		self.pose_yaw = []
+		self.wpt_mode = 0
 		self.wpt_destination = False
 		self.wpt_target = False
+
+		self.pose_image_save = True
+		self.pose_image_count = 0
 
 		ion() # turn interaction mode on
 		if self.plot_gnss or self.plot_pose:
@@ -79,6 +83,7 @@ class track_map():
 			for i in xrange(len(sdu_test_field)):
 				sdu_test_field[i][0] += self.offset_e
 				sdu_test_field[i][1] += self.offset_n
+			sdu_test_field.append(sdu_test_field[0])
 			self.sdu_test_fieldT = zip(*sdu_test_field)
 
 		if self.plot_odometry:
@@ -126,11 +131,10 @@ class track_map():
 	def append_odo_yaw (self, yaw):
 		self.odo_yaw.append(yaw*self.rad_to_deg)
 
-	def set_wpt_destination (self, easting, northing):
-		self.wpt_destination = [easting + self.offset_e, northing + self.offset_n]
-
-	def set_wpt_target (self, easting, northing):
-		self.wpt_target = [easting + self.offset_e, northing + self.offset_n]
+	def set_wptnav (self, mode, dest_easting, dest_northing, target_easting, target_northing):
+		self.wpt_mode = mode
+		self.wpt_destination = [dest_easting + self.offset_e, dest_northing + self.offset_n]
+		self.wpt_target = [target_easting + self.offset_e, target_northing + self.offset_n]
 
 	def update(self):
 		if self.plot_gnss and self.gnss != []:
@@ -143,8 +147,8 @@ class track_map():
 			ylabel('Northing [m]')
 			axis('equal')
 			grid (True)
-			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'black')
-			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'bo',markersize=7)
+			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'g')
+			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'go',markersize=7)
 
 			gnssT = zip(*self.gnss)		
 			gnss_plt = plot(gnssT[0],gnssT[1],'black')
@@ -152,13 +156,23 @@ class track_map():
 			plt.figure(1)
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
-		if self.pose_pos != []:
-			pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=8)
 		if self.plot_pose or self.plot_gnss:
-			if self.wpt_destination != False:
-				dest_plt = plot(self.wpt_destination[0],self.wpt_destination[1],'ro',markersize=8)
-			if self.wpt_target != False:
-				target_plt = plot(self.wpt_target[0],self.wpt_target[1],'r^',markersize=8)
+			if self.wpt_mode == 1 or self.wpt_mode == 2:
+				if self.wpt_destination != False:
+					dest_plt = plot(self.wpt_destination[0],self.wpt_destination[1],'ro',markersize=8)
+				if self.wpt_mode == 1:
+					if self.pose_pos != []:
+						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=8)
+					if self.wpt_target != False:
+						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
+				elif self.wpt_mode == 2:
+					if self.pose_pos != []:
+						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bo',markersize=8)
+
+		if self.pose_image_save:
+			self.fig1.savefig ('img%05d.jpg' % self.pose_image_count)
+			self.pose_image_count += 1
+
 		if self.plot_odometry and self.odo != []:
 			plt.figure(2)
 			odoT = zip(*self.odo)		

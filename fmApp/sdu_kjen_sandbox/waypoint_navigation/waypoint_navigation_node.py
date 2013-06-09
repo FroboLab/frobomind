@@ -107,6 +107,7 @@ class WaypointNavigationNode():
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
 		else:
 			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
+			self.wptnav.stop()
 
 	def on_automode_message(self, msg):
 		self.automode = msg.data
@@ -181,13 +182,7 @@ class WaypointNavigationNode():
 				time = ros_time.secs + ros_time.nsecs*1e-9
 				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
-					wpt = self.wptlist.get_next()
-					if wpt != False:
-						rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % wpt[2])
-						self.wptnav.navigate(wpt, False)
-					else:
-						rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")		
-						self.wptnav.stop()
+					wpt = self.goto_next_wpt()
 				else:
 					self.publish_cmd_vel_message()
 					if self.status_publish_interval != 0:
