@@ -52,10 +52,10 @@ WPT_SPEED = 5
 
 # navigation controller state constants
 STATE_STOP = 0
-STATE_TURN_INIT = 1
-STATE_TURN = 2
-STATE_DRIVE_INIT = 3
-STATE_DRIVE = 4
+STATE_DRIVE_INIT = 1
+STATE_DRIVE = 2
+STATE_TURN_INIT = 3
+STATE_TURN = 4
 
 class waypoint_navigation():
 	def __init__(self, update_rate, debug):
@@ -73,9 +73,10 @@ class waypoint_navigation():
 		self.angular_speed_max = pi/2.0 # [radians/s]
 		self.wpt_tolerance_default = 0.5 # [m]
 		self.wpt_linear_speed_default = 0.7 # [m/s]
-		self.target_percent = 0.50 # [0;1] the intermediate target is along the ab line at dist self.target_dist*ab length from a
-		self.turn_start_at_heading_err = 20.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
-		self.turn_acceptable_heading_err = 3.0*self.deg_to_rad # [radians]
+		self.target_dist= 1.0 # [m] the intermediate target is along the ab line 'self.target_dist' meters ahead of the pose 
+		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_dist, the target is self.target_percent times the distance to b ahead of the pose
+		self.turn_start_at_heading_err = 25.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
+		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
 		self.turn_speed = pi/4.0 # [radians/s]
 
 		# state machine
@@ -97,7 +98,7 @@ class waypoint_navigation():
 		self.heading_err_minimum = self.pi2
 		self.ab_len = 0.0
 		self.ab_dist_to_pose = 0.0
-		self.abnormvec = [0,0]
+		self.ab_norm = [0,0]
 		self.target_dist = 0.0
 		self.target_bearing = 0.0
 		self.target_heading_err = 0.0 
@@ -126,7 +127,7 @@ class waypoint_navigation():
 		self.debug = debug
 		if self.debug:
 			self.debug_time_stamp = 0.0
-			self.print_interval = 2
+			self.print_interval = 1
 			self.print_count = 0
 
 	# call whenever a new pose is available
@@ -151,8 +152,8 @@ class waypoint_navigation():
 
 		# calculate ab-line properties (used by the drive function)
 		self.ab_len = sqrt((self.b[WPT_E]-self.a[WPT_E])**2 + (self.b[WPT_N]-self.a[WPT_N])**2) # length of ab line
-		self.abnvec = [(self.b[WPT_E]-self.a[WPT_E])/self.ab_len,(self.b[WPT_N]-self.a[WPT_N])/self.ab_len] # normalized ab vector
-		self.a_dot_abnormvec = self.a[0]*self.abnormvec[0] + self.a[1]*self.abnormvec[1] # (vector defined by point a) dot (normalized ab vector) 
+		self.ab_norm = [(self.b[WPT_E]-self.a[WPT_E])/self.ab_len,(self.b[WPT_N]-self.a[WPT_N])/self.ab_len] # normalized ab vector
+		self.a_dot_ab_norm = self.a[0]*self.ab_norm[0] + self.a[1]*self.ab_norm[1] # (vector defined by point a) dot (normalized ab vector) 
 
 		# reset state variables
 		self.dist_minimum = 20000000.0
@@ -180,9 +181,10 @@ class waypoint_navigation():
 			self.state = STATE_TURN_INIT
 		else:
 			# find distance to the point on the ab-line that is closest to the robot
-			pose_dot_abnormvec = self.pose[0]*self.abnormvec[0] + self.pose[1]*self.abnormvec[1] # (vector defined by pose) dot (normalized ab vector)
-			d = self.a_dot_abnormvec - pose_dot_abnormvec # distance along the ab line 
-			pt = [self.a[0] + d*self.abnormvec[0], self.a[1] + d*self.abnormvec[1]] # define closest point along the ab line
+			pose_dot_ab_norm = self.pose[0]*self.ab_norm[0] + self.pose[1]*self.ab_norm[1] # (vector defined by pose) dot (normalized ab vector)
+			d = pose_dot_ab_norm - self.a_dot_ab_norm  # distance along the ab line 
+
+			pt = [self.a[0] + d*self.ab_norm[0], self.a[1] + d*self.ab_norm[1]] # define closest point along the ab line
 			self.ab_dist_to_pose = sqrt((self.pose[WPT_E]-pt[WPT_E])**2 + (self.pose[WPT_N]-pt[WPT_N])**2)
 			if d > self.ab_len: # the pose lies beyond the end of the ab line and the closest point is therefore in fact b
 				# set b as target point	
@@ -192,7 +194,9 @@ class waypoint_navigation():
 			else: # the closest point is defined by A + d(B-A)
 				dist_pt_to_b = sqrt((self.b[WPT_E]-pt[WPT_E])**2 + (self.b[WPT_N]-pt[WPT_N])**2)  # calc distance from closest point to b
 				dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
-				self.target = [pt[0] + dist_pt_to_target*self.abnormvec[0], pt[1] + dist_pt_to_target*self.abnormvec[1]] # define target point
+				if dist_pt_to_target > self.target_dist:
+					dist_pt_to_target = self.target_dist
+				self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
 
 			# now navigate to the target point...
 			self.target_dist = sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2) # dist to target
@@ -215,8 +219,8 @@ class waypoint_navigation():
 		# check if we have turned enough
 		turned_enough = False
 		if fabs(self.heading_err) <= self.turn_acceptable_heading_err:
-			if fabs(self.heading_err) > self.heading_err_minimum:
-				turned_enough = True
+			#if fabs(self.heading_err) > self.heading_err_minimum:
+			turned_enough = True
 		if turned_enough:		
 			self.state = STATE_DRIVE_INIT
 		else:
@@ -237,9 +241,9 @@ class waypoint_navigation():
 		self.dist = sqrt((self.b[0]-self.pose[0])**2 + (self.b[1]-self.pose[1])**2) # dist to destination
 		if self.dist < self.dist_minimum: # used for arrival detection
 			self.dist_minimum = self.dist
-		easting_vector_component = self.b[0] - self.pose[0]  # destination bearing (angle with easting axis)
-		northing_vector_component = self.b[1] - self.pose[1]
-		self.bearing = self.angle_limit(atan2 (northing_vector_component, easting_vector_component)) 
+		easting_component = self.b[0] - self.pose[0]  # destination bearing (angle with easting axis)
+		northing_component = self.b[1] - self.pose[1]
+		self.bearing = self.angle_limit(atan2 (northing_component, easting_component)) 
 		self.heading_err = self.angle_diff(self.bearing, self.pose[2]) # signed diff. heading to destination bearing
 		if fabs(self.heading_err) < self.heading_err_minimum:
 			self.heading_err_minimum = fabs(self.heading_err)

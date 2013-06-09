@@ -41,7 +41,7 @@ import numpy as np
 from math import sqrt, atan2, pi
 from nav_msgs.msg import Odometry
 from msgs.msg import gpgga_tranmerc
-from msgs.msg import VectorStamped
+from msgs.msg import waypoint_navigation_status
 from robot_track_map import track_map
 
 class track_map_node():
@@ -73,15 +73,13 @@ class track_map_node():
 		pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		gnss_topic = rospy.get_param("~gnss_sub",'/fmInformation/gpgga_tranmerc')
 		odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/encoder_odom')
-		wpt_destination_topic = rospy.get_param("~wpt_destination_sub",'/fmData/wpt_destination')
-		wpt_target_topic = rospy.get_param("~wpt_target_sub",'/fmData/wpt_target')
+		wptnav_status_topic = rospy.get_param("~wptnav_status_sub",'/fmData/wptnav_status')
 
 		# Setup subscription topic callbacks
 		rospy.Subscriber(pose_topic, Odometry, self.on_pose_topic)
 		rospy.Subscriber(gnss_topic, gpgga_tranmerc, self.on_gnss_topic)
 		rospy.Subscriber(odom_topic, Odometry, self.on_odom_topic)
-		rospy.Subscriber(wpt_destination_topic, VectorStamped, self.on_wpt_destination_topic)
-		rospy.Subscriber(wpt_target_topic, VectorStamped, self.on_wpt_target_topic)
+		rospy.Subscriber(wptnav_status_topic, waypoint_navigation_status, self.on_wptnav_status_topic)
 
 		# Call updater function
 		self.r = rospy.Rate(map_update_frequency) # set updater frequency
@@ -115,12 +113,9 @@ class track_map_node():
 		self.plot.append_odometry_position(msg.pose.pose.position.x, msg.pose.pose.position.y)
 
 	# handle incoming destination waypoint messages
-	def on_wpt_destination_topic(self, msg):
-		self.plot.set_wpt_destination (msg.data[0], msg.data[1])
-
-	# handle incoming target waypoint messages
-	def on_wpt_target_topic(self, msg):
-		self.plot.set_wpt_target (msg.data[0], msg.data[1])
+	def on_wptnav_status_topic(self, msg):
+		self.plot.set_wpt_destination (msg.b_easting, msg.b_northing)
+		self.plot.set_wpt_target (msg.target_easting, msg.target_northing)
 
 	# update loop
 	def updater(self):

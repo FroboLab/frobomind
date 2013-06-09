@@ -37,7 +37,7 @@ from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
-from msgs.msg import VectorStamped
+from msgs.msg import waypoint_navigation_status
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -63,16 +63,14 @@ class WaypointNavigationNode():
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
  		if self.debug:
 			rospy.loginfo(rospy.get_name() + ": Debug enabled")
-		self.publish_destination = rospy.get_param("~publish_destination", 'true') 
-		self.publish_target = rospy.get_param("~publish_target", 'true') 
+		self.status_publish_interval = rospy.get_param("~status_publish_interval", '0') 
 
 		# get topic names
 		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecisionMakers/automode')
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		self.joy_topic = rospy.get_param("~joy_sub",'/joy')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
-		self.destination_topic = rospy.get_param("~destination_pub",'/fmData/wpt_destination')
-		self.target_topic = rospy.get_param("~target_pub",'/fmData/wpt_target')
+		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmData/wptnav_status')
 
 		# setup subscription topic callbacks
 		rospy.Subscriber(self.automode_topic, Bool, self.on_automode_message)
@@ -82,11 +80,9 @@ class WaypointNavigationNode():
 		# setup publish topics
 		self.cmd_vel_pub = rospy.Publisher(self.cmdvel_topic, TwistStamped)
 		self.twist = TwistStamped()
-		self.destination_pub = rospy.Publisher(self.destination_topic, VectorStamped)
-		self.target_pub = rospy.Publisher(self.target_topic, VectorStamped)
-		self.vector = VectorStamped()
-		self.wpt_publish_count = 0
-		self.wpt_publish_interval = self.update_rate /2 # two times per second
+		self.wptnav_status_pub = rospy.Publisher(self.wptnav_status_topic, waypoint_navigation_status)
+		self.wptnav_status = waypoint_navigation_status()
+		self.status_publish_count = 0
 
 		# configure waypoint navigation
 		self.wptlist = waypoint_list()
@@ -99,6 +95,8 @@ class WaypointNavigationNode():
 	def load_wpt_list (self):
 		self.wptlist.load_from_csv_ne_format ('waypoints_sdu_square.txt')
 		(numwpt, nextwpt) = self.wptlist.status()
+		self.prev_wpt = False 
+		self.wpt = False 
 		rospy.loginfo(rospy.get_name() + ": %d waypoints loaded" % numwpt)
 
 	def goto_next_wpt (self):
@@ -141,25 +139,44 @@ class WaypointNavigationNode():
 		self.twist.twist.angular.z = self.angular_speed		
 		self.cmd_vel_pub.publish (self.twist)
 
-	def publish_destination_message(self):
+	def publish_status_message(self):
 		if self.wptnav.b != False:
-			self.vector.header.stamp = rospy.Time.now()
-			self.vector.data[0] = self.wptnav.b[0]
-			self.vector.data[1] = self.wptnav.b[1]
-			self.vector.data[2] = 0.0
-			self.destination_pub.publish (self.vector)
-
-	def publish_target_message(self):
-		if self.wptnav.target != False:
-			self.vector.header.stamp = rospy.Time.now()
-			self.vector.data[0] = self.wptnav.target[0]
-			self.vector.data[1] = self.wptnav.target[1]
-			self.vector.data[2] = 0.0
-			self.target_pub.publish (self.vector)
+			if self.wptnav.state == 0:
+				self.wptnav_status.mode = 0
+			elif self.wptnav.state == 1 or self.wptnav.state == 2:
+				self.wptnav_status.mode = 1
+			elif self.wptnav.state == 3 or self.wptnav.state == 4:
+				self.wptnav_status.mode = 2
+			self.wptnav_status.header.stamp = rospy.Time.now()
+			self.wptnav_status.b_easting = self.wptnav.b[0]
+			self.wptnav_status.b_northing = self.wptnav.b[1]
+			self.wptnav_status.a_easting = self.wptnav.a[0]
+			self.wptnav_status.a_northing = self.wptnav.a[1]
+			self.wptnav_status.easting = self.wptnav.pose[0]
+			self.wptnav_status.northing = self.wptnav.pose[1]
+			self.wptnav_status.distance_to_b = self.wptnav.dist
+			self.wptnav_status.bearing_to_b = self.wptnav.bearing
+			self.wptnav_status.heading_err = self.wptnav.heading_err
+			self.wptnav_status.distance_to_ab_line = self.wptnav.ab_dist_to_pose
+			if self.wptnav.target != False:
+				self.wptnav_status.target_easting = self.wptnav.target[0]
+				self.wptnav_status.target_northing = self.wptnav.target[1]
+				self.wptnav_status.target_distance = self.wptnav.target_dist
+				self.wptnav_status.target_bearing = self.wptnav.target_bearing
+				self.wptnav_status.target_heading_err = self.wptnav.target_heading_err
+			else:	
+				self.wptnav_status.target_easting = 0.0
+				self.wptnav_status.target_northing = 0.0
+				self.wptnav_status.target_distance = 0.0
+				self.wptnav_status.target_bearing = 0.0
+				self.wptnav_status.target_heading_err = 0.0
+			self.wptnav_status.linear_speed = self.wptnav.linear_speed
+			self.wptnav_status.angular_speed = self.wptnav.angular_speed
+			self.wptnav_status_pub.publish (self.wptnav_status)
 
 	def updater(self):
 		while not rospy.is_shutdown():
-			if True: # self.automode:
+			if self.automode:
 				ros_time = rospy.Time.now()
 				time = ros_time.secs + ros_time.nsecs*1e-9
 				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
@@ -170,15 +187,13 @@ class WaypointNavigationNode():
 						self.wptnav.navigate(wpt, False)
 					else:
 						rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")		
-						self.wptnav.stop() 
+						self.wptnav.stop()
 				else:
 					self.publish_cmd_vel_message()
-					self.wpt_publish_count += 1
-					if self.wpt_publish_count % self.wpt_publish_interval == 0:
-						if self.publish_destination:
-							self.publish_destination_message()
-						if self.publish_target:
-							self.publish_target_message()
+					if self.status_publish_interval != 0:
+						self.status_publish_count += 1
+						if self.status_publish_count % self.status_publish_interval == 0:
+							self.publish_status_message()
 				self.r.sleep()
 
 # Main function.    

@@ -143,6 +143,7 @@ class track_map():
 			ylabel('Northing [m]')
 			axis('equal')
 			grid (True)
+			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'black')
 			plot (self.sdu_test_fieldT[0], self.sdu_test_fieldT[1], 'bo',markersize=7)
 
 			gnssT = zip(*self.gnss)		
@@ -151,6 +152,8 @@ class track_map():
 			plt.figure(1)
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
+		if self.pose_pos != []:
+			pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=8)
 		if self.plot_pose or self.plot_gnss:
 			if self.wpt_destination != False:
 				dest_plt = plot(self.wpt_destination[0],self.wpt_destination[1],'ro',markersize=8)
