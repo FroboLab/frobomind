@@ -69,7 +69,7 @@ class track_map():
 		self.wpt_destination = False
 		self.wpt_target = False
 
-		self.pose_image_save = True
+		self.pose_image_save = False # save an image for time-lapse video generation
 		self.pose_image_count = 0
 
 		ion() # turn interaction mode on
