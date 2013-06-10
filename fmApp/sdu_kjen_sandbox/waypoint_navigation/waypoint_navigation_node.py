@@ -189,7 +189,7 @@ class WaypointNavigationNode():
 						self.status_publish_count += 1
 						if self.status_publish_count % self.status_publish_interval == 0:
 							self.publish_status_message()
-				self.r.sleep()
+			self.r.sleep()
 
 # Main function.    
 if __name__ == '__main__':
