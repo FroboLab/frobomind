@@ -90,7 +90,7 @@ class pose_2d_preprocessor():
 		self.odo_buffer_size = buffer_initial_size_odo
 		self.absolute_orientation_timeout = 0.0
 		self.absolute_orientation_timeout_period = 1.0
-		self.gnss_heading_min_dist = 0.5
+		self.gnss_heading_min_dist = 0.25
 		self.orientation_odo_gnss_dist_max_diff_percent = 10.0
 		self.orientation_odo_max_angle = 5.0 * self.deg_to_rad
 		self.gnss_orientation_prev_yaw = -10.0
