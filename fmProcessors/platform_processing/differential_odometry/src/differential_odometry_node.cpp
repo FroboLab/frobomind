@@ -84,9 +84,10 @@ using namespace std;
 class SimpleOdom
 {
 public:
-	SimpleOdom(double tick_to_meter, double wheel_dist, int encoder_output, int yaw_source, int yaw_axis)
+	SimpleOdom(double tick_to_meter_left, double tick_to_meter_right, double wheel_dist, int encoder_output, int yaw_source, int yaw_axis)
 	{
-		this->tick_to_meter = tick_to_meter;
+		this->tick_to_meter_left = tick_to_meter_left;
+		this->tick_to_meter_right = tick_to_meter_right;
 		this->wheel_dist = wheel_dist;
 		this->encoder_output = encoder_output;
 		this->yaw_source = yaw_source;
@@ -261,16 +262,20 @@ public:
 			int64_t tick_l = delta_ticks_l;
 			delta_ticks_l = 0;
 			int64_t tick_r = delta_ticks_r;
-			delta_ticks_r = 0;		
+			delta_ticks_r = 0;
+
+			// convert encoder ticks to meter
+			double meter_l = tick_l * tick_to_meter_left;
+			double meter_r = tick_r * tick_to_meter_right;		
 
 			// calculate approx. distance (assuming linear motion during dt)
-			double dx = (tick_l + tick_r)*tick_to_meter/2.0;
+			double dx = (meter_l + meter_r)/2.0;
 
 			// calculate change in orientation using odometry
 			double dtheta;
 			if (yaw_source == YAW_SOURCE_ODOMETRY)
 			{
-				dtheta = (tick_r - tick_l)*tick_to_meter/wheel_dist; 
+				dtheta = (meter_r - meter_l)/wheel_dist; 
 			}
 			else // or calculate change in orientation using IMU
 			{
@@ -325,7 +330,7 @@ public:
 	std::string base_frame,odom_frame;
 
 private:
-	double tick_to_meter, wheel_dist;
+	double tick_to_meter_left, tick_to_meter_right, wheel_dist;
 	int encoder_output, yaw_source, yaw_axis;
 	double imu_yaw, prev_imu_yaw;
 	bool encoder_timeout, imu_timeout;
@@ -349,8 +354,9 @@ int main(int argc, char** argv) {
 	string subscribe_enc_r;
 	string subscribe_imu;
 
-	double wheel_radius, wheel_ticks_rev, tick_to_meter;
+	double wheel_radius, wheel_ticks_rev, tick_to_meter_left, tick_to_meter_right;
 	double wheel_dist;
+	double ticks_per_meter_left, ticks_per_meter_right;
 	int encoder_output, yaw_source, yaw_axis;
 	ros::Subscriber s1,s2,s3;
 
@@ -366,8 +372,20 @@ int main(int argc, char** argv) {
 	nh.param<double>("/diff_steer_wheel_radius", wheel_radius, 0.25);
 	nh.param<double>("/diff_steer_wheel_ticks_per_rev", wheel_ticks_rev, 360);
 	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);
-	tick_to_meter = 2*M_PI*wheel_radius/wheel_ticks_rev;
 
+	nh.param<double>("ticks_per_meter_left", ticks_per_meter_left, -1.0);
+	nh.param<double>("ticks_per_meter_right", ticks_per_meter_right, -1.0);
+
+	if (ticks_per_meter_right != -1.0 and ticks_per_meter_left != -1.0)
+	{
+		tick_to_meter_left = 1.0/ticks_per_meter_left;
+		tick_to_meter_right = 1.0/ticks_per_meter_right;
+	}
+	else
+	{	
+		tick_to_meter_left = 2*M_PI*wheel_radius/wheel_ticks_rev;
+		tick_to_meter_right = tick_to_meter_left;
+	}
 	// other parameters
 	std::string encoder_output_str;
 	nh.param<string>("encoder_output", encoder_output_str, "not initialized");
@@ -452,7 +470,7 @@ int main(int argc, char** argv) {
 	}
 
 	// init class
-	SimpleOdom p(tick_to_meter, wheel_dist, encoder_output, yaw_source, yaw_axis);
+	SimpleOdom p(tick_to_meter_left, tick_to_meter_right, wheel_dist, encoder_output, yaw_source, yaw_axis);
 
 	// subscriber callback functions
 	s1 = nh.subscribe(subscribe_enc_l,15,&SimpleOdom::processLeftEncoder,&p);
