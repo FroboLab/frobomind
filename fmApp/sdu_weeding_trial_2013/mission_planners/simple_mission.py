@@ -83,8 +83,8 @@ class mission():
     def build_usercode(self):
         behaviour = smach.StateMachine(outcomes=['succeeded','preempted','aborted'])
         with behaviour :
-            smach.StateMachine.add('USER', simpleAutomode(self.hmi), transitions={'succeeded':'succeeded', 'aborted':'aborted'})                    
-            
+            smach.StateMachine.add('USER', simpleAutomode(self.hmi), \
+				transitions={'succeeded':'succeeded', 'aborted':'aborted'})                    
         return behaviour
     
     def spin(self): 
@@ -99,7 +99,7 @@ class mission():
         self.sis.stop()
         
     def onButtonA(self):
-        rospy.loginfo("A pressed")   
+		pass
  
 def onPreempt(outcome_map):
     """

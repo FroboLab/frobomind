@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind
-# Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
+# Waypoint Navigation: Waypoint list
+# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,41 +26,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
-import rospy
-from std_msgs.msg import Bool
+"""
+2013-06-07 KJ First version
 
-class AutonomousDemo():
-    """
-        Demo of the FroboMind automode interface 
-    """
-    def __init__(self):
-        # Init node
-        self.encoder_l_sub = rospy.Subscriber("/fmDecisionMakers/automode", Bool, self.onAutomodeMessage )
-        self.r = rospy.Rate(10)
-        self.automode = False
-        
-    def onAutomodeMessage(self,msg):
-        self.automode = msg.data
-        
-    def spin(self):
-        while not rospy.is_shutdown():
-            if self.automode :
-                print("Jibii!! - I'm in control")
-            else :
-                print("Let me drive - control freak!!!")
-                # Publish topics
-            try :
-                self.r.sleep()
-            except rospy.ROSInterruptException:
-                print("Something went wrong...")
+Notice that the waypoint list must be in ROS_HOME which by default is ~/.ros
 
+Supported waypoint list format:
+	easting,northing,,id,mode,tolerance,speed,
+Reference: https://docs.google.com/document/d/1nXmZ2Yz4_EzWaQ4GabGi4fah6phSRXDoe_4mvrjz-kA/edit#
 
-if __name__ == '__main__':
-    rospy.init_node('cmd_vel_converter')
-    node = AutonomousDemo()
-    node.spin()
-    
+"""
 
+# imports
+import csv
 
+class waypoint_list():
+	def __init__(self):
+		self.wpts = []
+		self.next = 0
 
-    
+	def load_from_csv_ne_format(self, filename):
+		self.wpts = []
+		file = open(filename, 'rb')
+		lines = csv.reader(file, delimiter=',')
+		for easting, northing, yaw, wptid, modestr, tolerance, speed, task in lines:
+			if modestr == 'STWP': # 'straight to waypoint'
+				mode = 0
+			elif modestr == 'MCTE': # 'minimize cross track error'
+				mode = 1			
+			self.wpts.append([float(easting), float(northing), wptid, mode, float(tolerance), float(speed)])
+		file.close()
+		self.next = 0
+
+	def add (self, easting, northing, wptid, mode, tolerance, speed): 
+		self.wpts.append([easting, northing, wptid, mode, tolerance, speed])
+
+	def get_next (self):	
+		if self.next < len(self.wpts):
+			wpt = self.wpts[self.next]
+			self.next += 1
+		else:
+			wpt = False
+		return wpt
+
+	def status (self):		
+		return (len(self.wpts), self.next)
+
