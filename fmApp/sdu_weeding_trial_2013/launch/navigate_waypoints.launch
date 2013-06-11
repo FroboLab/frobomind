@@ -86,7 +86,7 @@
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="sdu_kjen_sandbox" type="waypoint_navigation_node.py" name="navigate_waypoints" output="screen">
+		<node pkg="sdu_weeding_trial_2013" type="waypoint_navigation_node.py" name="navigate_waypoints" output="screen">
 			<param name="automode_sub" value="/fmDecisionMakers/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
