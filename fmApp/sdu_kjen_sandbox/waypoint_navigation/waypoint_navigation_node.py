@@ -93,7 +93,7 @@ class WaypointNavigationNode():
 		self.updater()
 
 	def load_wpt_list (self):
-		self.wptlist.load_from_csv_ne_format ('waypoints_sdu_square.txt')
+		self.wptlist.load_from_csv_ne_format ('waypoints.txt')
 		(numwpt, nextwpt) = self.wptlist.status()
 		self.prev_wpt = False 
 		self.wpt = False 
@@ -133,6 +133,8 @@ class WaypointNavigationNode():
 		if int(msg.buttons[2]) != self.wii_a:
 			self.wii_a =  int(msg.buttons[2])
 			self.wii_a_changed = True
+			if self.wii_a == True:
+				print 'Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1])
 	
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
