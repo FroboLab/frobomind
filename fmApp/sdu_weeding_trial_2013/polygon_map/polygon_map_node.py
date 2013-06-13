@@ -67,12 +67,13 @@ class PolygonMapNode():
 		self.polymap.set_polygons_per_update (100)
 
 		# import polygons 
-		file = open('TekInnerParcelCornersExtended.csv', 'r')
+		file = open('polygon_map.txt', 'r')
 		file_content = csv.reader(file, delimiter='\t')
 		for name,e1,n1,e2,n2,e3,n3,e4,n4 in file_content:
 			polygon = [[float(e1),float(n1)],[float(e2),float(n2)],[float(e3),float(n3)],[float(e4),float(n4)]]
 			self.polymap.add_polygon (name, polygon)
 		file.close()
+		rospy.loginfo(rospy.get_name() + ": Loaded %ld polygons" % self.polymap.poly_total)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)

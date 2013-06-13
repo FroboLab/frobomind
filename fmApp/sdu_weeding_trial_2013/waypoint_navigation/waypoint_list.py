@@ -48,8 +48,12 @@ class waypoint_list():
 	def load_from_csv_ne_format(self, filename):
 		self.wpts = []
 		file = open(filename, 'rb')
-		lines = csv.reader(file, delimiter=',')
-		for easting, northing, yaw, wptid, modestr, tolerance, speed, task in lines:
+		lines = csv.reader(file, delimiter='\t')
+		#for easting, northing, yaw, wptid, modestr, tolerance, speed, task in lines:
+		modestr = 'MCTE'
+		tolerance = 0.0
+		speed = 0.0
+		for easting, northing, wptid in lines:
 			if modestr == 'STWP': # 'straight to waypoint'
 				mode = 0
 			elif modestr == 'MCTE': # 'minimize cross track error'

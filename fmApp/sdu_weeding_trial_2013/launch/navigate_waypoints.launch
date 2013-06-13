@@ -74,8 +74,8 @@
 		<node pkg="sdu_weeding_trial_2013" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-            <param name="max_linear_velocity" value="0.3"/>
-            <param name="max_angular_velocity" value="0.2"/>
+            <param name="max_linear_velocity" value="0.7"/>
+            <param name="max_angular_velocity" value="0.4"/>
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="40"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
@@ -92,7 +92,7 @@
 			<param name="joy_sub" value="/fmLib/joy" />
 			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
-			<param name="status_publish_interval" value="1" />
+			<param name="status_publish_interval" value="4" />
 			<param name="print_debug_information" value="true" />
 		</node>		
 	</group>

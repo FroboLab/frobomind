@@ -69,14 +69,14 @@ class waypoint_navigation():
 		# parameters
 		self.update_rate = update_rate # [Hz]
 		self.update_interval = 1.0/self.update_rate # [s]
-		self.linear_speed_max = 0.5 # [m/s]
+		self.wpt_linear_speed_default = 0.6 # [m/s]
+		self.linear_speed_max = 0.8 # [m/s]
 		self.angular_speed_max = 0.2 # [radians/s]
 		self.wpt_tolerance_default = 0.5 # [m]
-		self.wpt_linear_speed_default = 0.7 # [m/s]
-		self.target_ahead = 0.8 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
+		self.target_ahead = 0.9 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
 		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
-		self.turn_start_at_heading_err = 20.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
-		self.turn_acceptable_heading_err = 3.0*self.deg_to_rad # [radians]
+		self.turn_start_at_heading_err = 10.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
+		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
 		self.turn_speed = pi/3.0 # [radians/s]
 
 		# state machine
@@ -105,15 +105,15 @@ class waypoint_navigation():
 
 		# PID drive controller
 		self.pid_drive = pid_controller(self.update_interval)
-		Kp = 2.5
-		Ki = 0.9
-		Kd = 0.0
-		integral_max = 1.5
+		Kp = 1.5
+		Ki = 0.6
+		Kd = 0.2
+		integral_max = 1.0
 		self.pid_drive.set_parameters(Kp, Ki, Kd, integral_max)
 
 		# PID turn controller
 		self.pid_turn = pid_controller(self.update_interval)
-		Kp = 1.1
+		Kp = 0.9
 		Ki = 0.3
 		Kd = 0.0
 		integral_max = 1

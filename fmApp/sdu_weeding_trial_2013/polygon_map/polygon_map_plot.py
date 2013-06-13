@@ -53,7 +53,6 @@ class polygon_map_plot():
 		ylabel('Northing [m]')
 		axis('equal')
 		grid (False)
-		print 'init'
 
 	def add_polygon (self, polygon):
 		for i in range(len(polygon)):
