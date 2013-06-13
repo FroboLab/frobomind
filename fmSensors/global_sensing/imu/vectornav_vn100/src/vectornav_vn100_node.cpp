@@ -67,15 +67,20 @@ public:
 		tokenizer::iterator tok_iter;
 		tokenizer tokens(rx_msg->data, sep);
 
-		tok_iter = tokens.begin();
-		// get NMEA identifier
-		if((*tok_iter).compare("VNQMR") == 0)
+
+		if(tokens.begin() != tokens.end())
 		{
-			processIMU(tokens,rx_msg->data);
-		}
-		else
-		{
-			ROS_INFO("Ignoring Unknown NMEA identifier %s",(*tok_iter).c_str());
+			tok_iter = tokens.begin();
+
+			// get NMEA identifier
+			if((*tok_iter).compare("VNQMR") == 0)
+			{
+				processIMU(tokens,rx_msg->data);
+			}
+			else
+			{
+				ROS_INFO("Ignoring Unknown NMEA identifier %s",(*tok_iter).c_str());
+			}
 		}
 
 	}
