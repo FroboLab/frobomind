@@ -18,7 +18,7 @@
 			<param name="trackpoint_threshold" value="0.05" /> <!-- [m] -->
 			<param name="map_update_frequency" value="20.0" /> <!-- [Hz] -->
 			<param name="map_title" value="Robot track" />
-			<param name="map_window_size" value="10.0" /> <!-- [inches] -->
+			<param name="map_window_size" value="8.0" /> <!-- [inches] -->
 		</node>
 	</group>
 

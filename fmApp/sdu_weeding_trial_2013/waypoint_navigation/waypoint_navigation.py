@@ -69,8 +69,8 @@ class waypoint_navigation():
 		# parameters
 		self.update_rate = update_rate # [Hz]
 		self.update_interval = 1.0/self.update_rate # [s]
-		self.wpt_linear_speed_default = 0.6 # [m/s]
-		self.linear_speed_max = 0.8 # [m/s]
+		self.wpt_linear_speed_default = 0.55 # [m/s]
+		self.linear_speed_max = 0.7 # [m/s]
 		self.angular_speed_max = 0.2 # [radians/s]
 		self.wpt_tolerance_default = 0.5 # [m]
 		self.target_ahead = 0.9 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
@@ -105,9 +105,9 @@ class waypoint_navigation():
 
 		# PID drive controller
 		self.pid_drive = pid_controller(self.update_interval)
-		Kp = 1.5
-		Ki = 0.6
-		Kd = 0.2
+		Kp = 1.9
+		Ki = 0.2
+		Kd = 0.4
 		integral_max = 1.0
 		self.pid_drive.set_parameters(Kp, Ki, Kd, integral_max)
 
@@ -165,6 +165,8 @@ class waypoint_navigation():
 			print "Stop"
 		self.a = False
 		self.b = False
+		self.linear_speed = 0.0
+		self.angular_speed = 0.0
 		self.state = STATE_STOP
 
 	# initialize drive towards destination (b) waypoint

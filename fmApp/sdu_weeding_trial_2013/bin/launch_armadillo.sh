@@ -2,6 +2,7 @@
 
 WAYPOINT_LIST=waypoints_test_in_grass_field_reversed.txt
 WAYPOINT_LIST=ArmadilloRouteNorthernPartStintOne.csv
+#WAYPOINT_LIST=stint_one_first_turn_grass_field.txt
 
 POLYGON_MAP=FlakkebjergOuterParcelCorners.csv
 

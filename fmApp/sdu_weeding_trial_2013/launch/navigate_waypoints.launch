@@ -68,6 +68,12 @@
 			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
 			<param name="odometry_angular_variance" value="0.00035" /> <!-- [rad/update] -->
 		</node>
+
+		<!-- publish polygon entry and exit -->
+		<node pkg="sdu_weeding_trial_2013" name="polygon_map" type="polygon_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="polygon_map_pub" value="/fmKnowledge/polygon_map" />
+		</node>
 	</group>
 
 	<group ns="fmDecisionMakers">

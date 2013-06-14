@@ -58,6 +58,10 @@ class WaypointNavigationNode():
 		self.quaternion = np.empty((4, ), dtype=np.float64)
 		self.wii_a = False
 		self.wii_a_changed = False
+		self.wii_home = False
+		self.wii_home_changed = False
+		self.wii_up = False
+		self.wii_up_changed = False
 
 		# get parameters
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
@@ -87,6 +91,7 @@ class WaypointNavigationNode():
 		# configure waypoint navigation
 		self.wptlist = waypoint_list()
 		self.wptnav = waypoint_navigation(self.update_rate, self.debug)
+		self.wptlist_loaded = False
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -114,8 +119,11 @@ class WaypointNavigationNode():
 		if self.automode != self.automode_prev:
 			self.automode_prev = self.automode
 			if self.automode:
-				self.load_wpt_list()				
-				self.goto_next_wpt()
+				if self.wptlist_loaded == False:
+					rospy.loginfo(rospy.get_name() + ": Loading waypoint list")
+					self.load_wpt_list()				
+					self.goto_next_wpt()
+					self.wptlist_loaded = True
 				rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
 			else:
 				self.wptnav.stop() 
@@ -133,8 +141,12 @@ class WaypointNavigationNode():
 		if int(msg.buttons[2]) != self.wii_a:
 			self.wii_a =  int(msg.buttons[2])
 			self.wii_a_changed = True
-			if self.wii_a == True:
-				print 'Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1])
+		if int(msg.buttons[8]) != self.wii_up:
+			self.wii_up =  int(msg.buttons[8])
+			self.wii_up_changed = True
+		if int(msg.buttons[10]) != self.wii_home:
+			self.wii_home =  int(msg.buttons[10])
+			self.wii_home_changed = True
 	
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
@@ -143,20 +155,21 @@ class WaypointNavigationNode():
 		self.cmd_vel_pub.publish (self.twist)
 
 	def publish_status_message(self):
-		if self.wptnav.b != False:
-			if self.wptnav.state == 0:
+		self.wptnav_status.header.stamp = rospy.Time.now()
+		if self.wptnav.pose != False:
+			self.wptnav_status.easting = self.wptnav.pose[0]
+			self.wptnav_status.northing = self.wptnav.pose[1]
+		if self.automode != False and self.wptnav.b != False:
+			if  self.wptnav.state == 0:
 				self.wptnav_status.mode = 0
 			elif self.wptnav.state == 1 or self.wptnav.state == 2:
 				self.wptnav_status.mode = 1
 			elif self.wptnav.state == 3 or self.wptnav.state == 4:
 				self.wptnav_status.mode = 2
-			self.wptnav_status.header.stamp = rospy.Time.now()
 			self.wptnav_status.b_easting = self.wptnav.b[0]
 			self.wptnav_status.b_northing = self.wptnav.b[1]
 			self.wptnav_status.a_easting = self.wptnav.a[0]
 			self.wptnav_status.a_northing = self.wptnav.a[1]
-			self.wptnav_status.easting = self.wptnav.pose[0]
-			self.wptnav_status.northing = self.wptnav.pose[1]
 			self.wptnav_status.distance_to_b = self.wptnav.dist
 			self.wptnav_status.bearing_to_b = self.wptnav.bearing
 			self.wptnav_status.heading_err = self.wptnav.heading_err
@@ -175,22 +188,37 @@ class WaypointNavigationNode():
 				self.wptnav_status.target_heading_err = 0.0
 			self.wptnav_status.linear_speed = self.wptnav.linear_speed
 			self.wptnav_status.angular_speed = self.wptnav.angular_speed
-			self.wptnav_status_pub.publish (self.wptnav_status)
+		else:
+			self.wptnav_status.mode = -1			
+		self.wptnav_status_pub.publish (self.wptnav_status)
 
 	def updater(self):
 		while not rospy.is_shutdown():
+			if self.wii_a == True and self.wii_a_changed == True:
+				self.wii_a_changed = False
+				rospy.loginfo(rospy.get_name() + ': Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1]))
+			if self.wii_home == True and self.wii_home_changed == True:
+				self.wii_home_changed = False
+				rospy.loginfo(rospy.get_name() + ": User reloaded waypoint list")
+				self.load_wpt_list()				
+				self.goto_next_wpt()
+			if self.wii_up == True and self.wii_up_changed == True:
+				self.wii_up_changed = False
+				rospy.loginfo(rospy.get_name() + ": User skipped waypoint")
+				wpt = self.goto_next_wpt()
+
 			if self.automode:
 				ros_time = rospy.Time.now()
 				time = ros_time.secs + ros_time.nsecs*1e-9
 				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
-					wpt = self.goto_next_wpt()
+					self.goto_next_wpt()
 				else:
 					self.publish_cmd_vel_message()
-					if self.status_publish_interval != 0:
-						self.status_publish_count += 1
-						if self.status_publish_count % self.status_publish_interval == 0:
-							self.publish_status_message()
+			if self.status_publish_interval != 0:
+				self.status_publish_count += 1
+				if self.status_publish_count % self.status_publish_interval == 0:
+					self.publish_status_message()
 			self.r.sleep()
 
 # Main function.    

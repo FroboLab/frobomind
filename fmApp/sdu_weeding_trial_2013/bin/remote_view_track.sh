@@ -1,6 +1,8 @@
 #!/bin/sh
 
 WAYPOINT_LIST=ArmadilloRouteNorthernPartStintOne.csv
+#WAYPOINT_LIST=stint_one_first_turn_grass_field.txt
+
 
 APPDIR=`dirname $(readlink -f $0)`
 cd $APPDIR
