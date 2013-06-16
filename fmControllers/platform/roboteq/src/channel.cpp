@@ -1,8 +1,9 @@
 #include "roboteq/hbl2350.hpp"
 
-Channel::Channel( )
+Channel::Channel( ) : velocity_filter(8) // do not change!!
 {
 	down_time = 0;
+	current_setpoint = 0;
 }
 
 void Channel::onHallFeedback(ros::Time time, int feedback)
@@ -36,6 +37,10 @@ void Channel::onTemperatureFeedback(ros::Time time, int feedback)
 void Channel::onCmdVel(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {
 	velocity = msg->twist.linear.x;
+	// limit velocity
+	if(velocity >  max_velocity_mps) velocity = max_velocity_mps;
+	if(velocity < -max_velocity_mps) velocity = -max_velocity_mps;
+
 	last_twist_received = ros::Time::now();
 }
 
@@ -45,7 +50,7 @@ void Channel::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 		last_deadman_received = ros::Time::now();
 }
 
-void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
+void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 {
 	std::stringstream ss, out; /* streams for holding status message and command output */
 
@@ -70,27 +75,41 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 							/* release emergency stop */
 							transmit("!MG\r");
 							status.emergency_stop = false;
+							current_setpoint = 0;
 						}
 
 						/* Get new output */
 						double period = (ros::Time::now() - last_regulation).toSec();
 						double feedback = (( (double)hall_value)*ticks_to_meter)/period;
-						hall_value = 0;
-						buffer.push_back((feedback));
-						feedback = buffer.average();
 						if(ch == 1)
+						{
 							feedback *= -1;
-						double setpoint = regulator.output_from_input(velocity, feedback , period);
+						}
+						// reset hall_value after read, so we get the relative hall_ticks since last read
+						hall_value = 0;
+
+						double fb_sm = velocity_filter.update(feedback);
+
+						// calculate desired change in output using pid regulator
+						double sp_change = regulator.output_from_input(velocity, fb_sm , period);
+
+						// the output to maintain on the motor is then
+						current_setpoint += sp_change;
+
+						if(current_setpoint >  max_output) current_setpoint = max_output;
+						if(current_setpoint < -max_output) current_setpoint = -max_output;
+
+						std::cout << " vel " << velocity << " fb " << feedback << " fb_sm " << fb_sm;
+						std::cout << " sp_ch " << sp_change << " cur_sp " << current_setpoint << std::endl;
+
 						last_regulation = ros::Time::now();
 
 						/* Convert to roboteq format */
-						int output = ((setpoint)*roboteq_max)/3.6; //TODO: Hard coded max for Pichi
+						int output = (current_setpoint);
 
-						/* Send motor speed */
+						/* Send motor output command  */
 						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
-
-						//std::cout << ch << "," << velocity << "," << feedback << "," << period << std::endl;
 
 					}
 					else /* deadman not pressed */
@@ -100,6 +119,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 						status.emergency_stop = true;
 						transmit("!G 1 0\r");
 						transmit("!G 2 0\r");
+						current_setpoint = 0;
+						velocity = 0;
 						regulator.reset_integrator();
 					}
 				}
@@ -110,12 +131,15 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 					status.emergency_stop = true;
 					transmit("!G 1 0\r");
 					transmit("!G 2 0\r");
+					current_setpoint = 0;
+					velocity = 0;
 					regulator.reset_integrator();
+
 				}
 			}
 			else /* controller is not responding */
 			{
-				ROS_INFO("%s: Controller is not responding",ros::this_node::getName().c_str());
+				ROS_INFO_THROTTLE(5,"%s: Controller is not responding",ros::this_node::getName().c_str());
 				down_time++;
 				if(down_time > 10)
 				{
@@ -135,20 +159,20 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t status)
 	}
 	else /* controller is not online */
 	{
-		ROS_INFO("%s: Controller is not yet online",ros::this_node::getName().c_str());
+		ROS_INFO_THROTTLE(5,"%s: Controller is not yet online",ros::this_node::getName().c_str());
 		/* Try to re-connect and re-initialise */
 		transmit("?FID\r");
 	}
 
 	/* Publish the status message */
-	status_out.header.stamp = ros::Time::now();
-	status_out.data = ss.str();
-	status_publisher.publish(status_out);
+	//status_out.header.stamp = ros::Time::now();
+	//status_out.data = ss.str();
+	//status_publisher.publish(status_out);
 }
 
 Circular_queue::Circular_queue()
 {
-	size = 20;
+	size = 5;
 	head = tail = 0;
 	store = new double[size];
 	for(int i = 0 ; i < size ; i++)

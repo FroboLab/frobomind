@@ -39,6 +39,7 @@
 #include <msgs/IntStamped.h>
 #include "roboteq/roboteq.hpp"
 #include "roboteq/regulator.hpp"
+#include "filter/IRR.h"
 
 class Circular_queue
 {
@@ -104,9 +105,12 @@ public:
 		ros::Publisher power, hall, temperature;
 	} publisher;
 
-	int	ch, max_rpm, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time;
+	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm;
+	double i_max,max_output;
+	double current_setpoint;
 	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps;
-	Circular_queue buffer;
+	//Circular_queue buffer;
+	IRR velocity_filter;
 	ros::Time last_twist_received, last_deadman_received, last_regulation;
 	ros::Subscriber cmd_vel_sub;
 	ros::Publisher status_publisher;
@@ -114,6 +118,7 @@ public:
 	Regulator regulator;
 	BaseCB* transmit_cb;
 	BaseCB* init_cb;
+
 
 	Channel();
 
@@ -129,10 +134,11 @@ public:
 	// Subscriber callbacks
 	void onCmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
 	void onDeadman(const std_msgs::Bool::ConstPtr&);
-	void onTimer(const ros::TimerEvent&, RoboTeQ::status_t);
+	void onTimer(const ros::TimerEvent&, RoboTeQ::status_t&);
 
 	// Mutator method for setting up publisher
 	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
+
 };
 
 #endif /* CHANNEL_HPP_ */
