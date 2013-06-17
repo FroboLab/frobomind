@@ -22,10 +22,10 @@
 			<param name="power_ch2_topic" value="/fmData/power_right"/>
 			<param name="status_topic" value="/fmData/status"/>	
 			<param name="mps_to_rpm" value="1320"/> 
-			<param name="p_gain" value="2.0"/>
-            <param name="i_gain" value="1.0"/>
+			<param name="p_gain" value="1.0"/>
+            <param name="i_gain" value="0.8"/>
             <param name="d_gain" value="0.0"/>  
-            <param name="anti_windup_percent" value="0.0"/> <!-- No longer in percent -->     
+            <param name="anti_windup_percent" value="0.5"/> <!-- No longer in percent -->     
         </node>
 	</group>
 </launch>
