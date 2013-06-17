@@ -126,7 +126,7 @@ class polygon_map():
 					n_dist = 0.0
 
 				if e_dist + n_dist < 0.001: # pos is inside min-max ranges
-					dist == 0.0
+					dist = 0.0
 				else:
 					dist = sqrt(e_dist**2 + n_dist**2)
 				

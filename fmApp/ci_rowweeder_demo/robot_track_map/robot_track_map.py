@@ -42,6 +42,7 @@ Revision
 import matplotlib.pyplot as plt
 from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw, clf
 from math import pi, sqrt
+import csv
 
 class track_map():
 	def __init__(self, plot_pose, plot_gnss, plot_odometry, plot_yaw, map_title, map_window_size, easting_offset, northing_offset):
@@ -88,13 +89,20 @@ class track_map():
 			#self.test_fieldT = zip(*test_field)
 
 			# this is a temporary hack to show the temporary test field at Flakkebjerg
-			test_field = [[651183.096,6133753.717], [651179.863,6133758.452], [651180.992,6133763.590], [651199.168,6133758.523], [651196.819,6133749.232]]
-			for i in xrange(len(test_field)):
-				test_field[i][0] += self.offset_e
-				test_field[i][1] += self.offset_n
-			test_field.append(test_field[0])
+			#test_field = [[651183.096,6133753.717], [651179.863,6133758.452], [651180.992,6133763.590], [651199.168,6133758.523], [651196.819,6133749.232]]
+			#for i in xrange(len(test_field)):
+			#	test_field[i][0] += self.offset_e
+			#	test_field[i][1] += self.offset_n
+			#test_field.append(test_field[0])
+			#self.test_fieldT = zip(*test_field)
+	
+			test_field = []
+			file = open('waypoints.txt', 'rb')
+			lines = csv.reader(file, delimiter='\t')
+			for easting, northing, wptid in lines:
+				test_field.append([float(easting) + self.offset_e, float(northing) + self.offset_n])
+			file.close()
 			self.test_fieldT = zip(*test_field)
-
 
 		if self.plot_odometry:
 			self.fig2 = plt.figure(num=2, figsize=(map_window_size, \
@@ -168,16 +176,19 @@ class track_map():
 			pose_plt = plot(poseT[0],poseT[1],'r')
 		if self.plot_pose or self.plot_gnss:
 			if self.wpt_mode == 1 or self.wpt_mode == 2:
-				if self.wpt_destination != False:
+				if self.wpt_mode > 0 and self.wpt_destination != False:
 					dest_plt = plot(self.wpt_destination[0],self.wpt_destination[1],'ro',markersize=8)
 				if self.wpt_mode == 1:
-					if self.pose_pos != []:
+					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=8)
 					if self.wpt_target != False:
 						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
 				elif self.wpt_mode == 2:
-					if self.pose_pos != []:
+					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bo',markersize=8)
+			elif self.wpt_mode == -1:
+				if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
+					pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=8)
 
 		if self.pose_image_save:
 			self.fig1.savefig ('img%05d.jpg' % self.pose_image_count)

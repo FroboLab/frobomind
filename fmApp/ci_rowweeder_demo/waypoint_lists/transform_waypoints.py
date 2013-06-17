@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# Waypoint Navigation: Waypoint list
+# Waypoint tranform
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,52 +27,37 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-2013-06-07 KJ First version
+This scipt was created to transform the first stint turn sequence to a nearby
+grass field. The coordinates are not rotated.
 
-Notice that the waypoint list must be in ROS_HOME which by default is ~/.ros
-
-Supported waypoint list format:
-	easting,northing,,id,mode,tolerance,speed,
-Reference: https://docs.google.com/document/d/1nXmZ2Yz4_EzWaQ4GabGi4fah6phSRXDoe_4mvrjz-kA/edit#
-
+2013-06-13 KJ First version
 """
 
-# imports
 import csv
 
-class waypoint_list():
-	def __init__(self):
-		self.wpts = []
-		self.next = 0
+in_file = 'stint_one_first_turn.txt'
+out_file = 'stint_one_first_turn_grass_field.txt'
 
-	def load_from_csv_ne_format(self, filename):
-		self.wpts = []
-		file = open(filename, 'rb')
-		lines = csv.reader(file, delimiter='\t')
-		#for easting, northing, yaw, wptid, modestr, tolerance, speed, task in lines:
-		modestr = 'MCTE'
-		tolerance = 0.0
-		speed = 0.0
-		for easting, northing, wptid in lines:
-			if modestr == 'STWP': # 'straight to waypoint'
-				mode = 0
-			elif modestr == 'MCTE': # 'minimize cross track error'
-				mode = 1			
-			self.wpts.append([float(easting), float(northing), wptid, mode, float(tolerance), float(speed)])
-		file.close()
-		self.next = 0
+offset_e = 651185.181 - 651087.4919
+offset_n = 6133764.492 - 6133775.7449 
 
-	def add (self, easting, northing, wptid, mode, tolerance, speed): 
-		self.wpts.append([easting, northing, wptid, mode, tolerance, speed])
+# read in the waypoint list
+file = open(in_file, 'r')
+wpts = []
+lines = csv.reader(file, delimiter='\t')
+for easting, northing, wptid in lines:
+	wpts.append([float(easting), float(northing), wptid])
+file.close()
 
-	def get_next (self):	
-		if self.next < len(self.wpts):
-			wpt = self.wpts[self.next]
-			self.next += 1
-		else:
-			wpt = False
-		return wpt
+# transform waypoints
+for i in xrange(len(wpts)):
+	wpts[i][0] += offset_e
+	wpts[i][1] += offset_n
 
-	def status (self):		
-		return (len(self.wpts), self.next)
+# write the waypoint list
+file = open(out_file, 'w')
+for i in xrange(len(wpts)):
+	file.write ('%.3f\t%.3f\t%s\n' % (wpts[i][0], wpts[i][1], wpts[i][2]))
+file.close()
+
 
