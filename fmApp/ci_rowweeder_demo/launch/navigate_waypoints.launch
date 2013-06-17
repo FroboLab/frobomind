@@ -6,7 +6,7 @@
 	<param name="robot_max_velocity" value="0.7"/>
 	<!-- param name="diff_steer_wheel_radius" value="0.159"/ --> <!-- specified directly as parameters to differential_odometry -->
 	<!-- param name="diff_steer_wheel_ticks_per_rev" value="625"/--> <!-- specified directly as parameters to differential_odometry -->
-	<param name="diff_steer_wheel_distance" value="3.175"/>
+	<param name="diff_steer_wheel_distance" value="2.5"/>
 
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
@@ -83,6 +83,8 @@
 			<param name="status_topic" value="/fmData/state"/>
 			<param name="publish_frequency" value="10"/>
 		</node>
+		<node pkg="ci_rowweeder_demo" name="boom_control" type="move_tool.py">
+		</node>
 	</group>
 
 	<group ns="fmExecutors">
@@ -112,6 +114,7 @@
 			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
 			<param name="power_ch1_topic" value="/fmData/power_left"/>
 			<param name="status_topic" value="/fmData/status"/>
+			<param name="velocity_topic" value="/fmData/velocity_left"/>
 			<param name="ticks_per_meter" value="587.5"/>
 			<param name="p_gain" value="20"/>
 			<param name="i_gain" value="1"/>
@@ -131,6 +134,7 @@
 			<param name="encoder_ch1_topic" value="/fmInformation/encoder_right"/>
 			<param name="power_ch1_topic" value="/fmData/power_right"/>
 			<param name="status_topic" value="/fmData/status"/>
+			<param name="velocity_topic" value="/fmData/velocity_right"/>
 			<param name="ticks_per_meter" value="587.5"/>
 			<param name="p_gain" value="20"/>
 			<param name="i_gain" value="1"/>

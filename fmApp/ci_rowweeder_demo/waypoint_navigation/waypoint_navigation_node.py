@@ -34,6 +34,7 @@
 import rospy
 import numpy as np
 from std_msgs.msg import Bool
+from std_msgs.msg import Int8
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
@@ -62,6 +63,10 @@ class WaypointNavigationNode():
 		self.wii_home_changed = False
 		self.wii_up = False
 		self.wii_up_changed = False
+
+		self.boom_state_pub = rospy.Publisher("/fmData/boom_state",Int8)
+		self.boom_state_msg = Int8()
+		self.boom_state_msg.data = 0;
 
 		# get parameters
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
@@ -108,7 +113,13 @@ class WaypointNavigationNode():
 		self.prev_wpt = self.wpt
 		self.wpt = self.wptlist.get_next()
 		if self.wpt != False:
-			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[2])
+			if wpt[6] == "up":
+				self.boom_state_msg.data = 1
+			if wpt[6] == "down":
+				self.boom_state_msg.data = 2
+				
+			self.boom_state_pub.publish(self.boom_state_msg)
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s with boom state %s" % (self.wpt[2], self.wpt[6]) )
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
 		else:
 			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
@@ -212,6 +223,7 @@ class WaypointNavigationNode():
 				time = ros_time.secs + ros_time.nsecs*1e-9
 				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
+					# publish new implement state here!!
 					self.goto_next_wpt()
 				else:
 					self.publish_cmd_vel_message()
