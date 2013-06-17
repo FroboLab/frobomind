@@ -33,7 +33,7 @@ Revision
 
 # imports
 import matplotlib.pyplot as plt
-from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
+from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw, clf
 
 class polygon_map_plot():
 	def __init__(self, map_title, map_window_size, easting_offset, northing_offset):
@@ -44,6 +44,7 @@ class polygon_map_plot():
 		self.within = []
 		self.nearby = []
 		self.polyplt = []
+		self.poly_total = 0
 
 		ion() # turn interaction mode on
 		self.fig1 = plt.figure(num=1, figsize=(map_window_size, \
@@ -61,23 +62,25 @@ class polygon_map_plot():
 		polygon.append (polygon[0]) # close the polygon for plotting (must called be after modifying the polygon!)
 		polygonT =  zip(*polygon)
 		self.polypts.append (polygonT)
-		self.polyplt.append (plot(self.polypts[-1][0], self.polypts[-1][1], 'black'))
+		self.polyplt.append (plot(self.polypts[-1][0], self.polypts[-1][1], '#BBBBBB'))
+		self.poly_total += 1
 
 	def draw_polygon_within (self, num):
 		self.polyplt[num] = plot(self.polypts[num][0], self.polypts[num][1], 'red')
 
 	def draw_polygon_outside (self, num):
-		self.polyplt[num] = plot(self.polypts[num][0], self.polypts[num][1], 'black')
+		self.polyplt[num] = plot(self.polypts[num][0], self.polypts[num][1], '#999999')
 
 	def update_map_plot (self):
 		if len(self.polypts) > 0:
 			plt.figure(1)
+			# clf()
 			draw()
 		pass
 
 	def save_map_plot (self):
 		self.fig1.savefig ('polygon_map_plot.png')
 
-	def update_pos (self):
+	def update_pos (self, easting, northing):
 		pass
 

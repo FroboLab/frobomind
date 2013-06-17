@@ -47,13 +47,13 @@
 			<param name="enc_right_sub" value="/fmInformation/enc_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
-			<param name="encoder_output" value="absolute"></param>  
-			<param name="ticks_per_meter_left" value="620"></param>  
-			<param name="ticks_per_meter_right" value="-1040"></param>  
-			<param name="yaw_angle_source" value="imu_angular_velocity"></param>
-			<param name="imu_angular_velocity_yaw_axis" value="z"></param>
-			<param name="vehicle_frame" value="base_footprint"></param>      
-			<param name="odom_estimate_frame" value="/odom_combined"></param>      
+			<param name="odom_estimate_frame" value="/odom_combined" />
+			<param name="vehicle_frame" value="base_footprint" />
+			<param name="encoder_output" value="absolute" />
+			<param name="ticks_per_meter_left" value="-620" />
+			<param name="ticks_per_meter_right" value="-520" />
+			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="imu_angular_velocity_yaw_axis" value="z" />
 		</node>
 
 		<!-- estimate robot 2d pose -->
@@ -73,6 +73,9 @@
 		<node pkg="sdu_weeding_trial_2013" name="polygon_map" type="polygon_map_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="polygon_map_pub" value="/fmKnowledge/polygon_map" />
+			<param name="update_rate" value="10" />
+			<param name="polygons_per_update" value="100" />
+			<param name="nearby_threshold" value="5.0" />
 		</node>
 	</group>
 
@@ -177,11 +180,14 @@
 
 		<!-- launch conversion node to convert IntStamped messages to encoder messages -->
 		<!-- (this is a temporary fix until we get all encoder messages changed to IntStamped) -->
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py">
+		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py">
 			<param name="left_sub" value="/fmInformation/encoder_left" />
 			<param name="right_sub" value="/fmInformation/encoder_right" />
 			<param name="left_pub" value="/fmInformation/enc_left" />
 			<param name="right_pub" value="/fmInformation/enc_right" />
 		</node>
 	</group>
+
+	<!-- enables communication with the implement -->
+	<node name="rosbridge_websocket" pkg="rosbridge_server" type="rosbridge_websocket" output="screen" />
 </launch>

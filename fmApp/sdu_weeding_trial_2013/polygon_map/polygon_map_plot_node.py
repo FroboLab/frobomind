@@ -34,20 +34,25 @@
 import rospy
 from nav_msgs.msg import Odometry
 from msgs.msg import IntStamped
-from polygon_map import polygon_map
+from polygon_map_plot import polygon_map_plot
 import csv
 
 class PolygonMapNode():
 	def __init__(self):
+		# defines
 		rospy.loginfo(rospy.get_name() + ": Start")
 
 		# get parameters
 		self.update_rate = rospy.get_param("~update_rate", "10") # update frequency [Hz]
-		self.polygons_per_update = rospy.get_param("~polygons_per_update", "100")
-		self.nearby_threshold = rospy.get_param("~nearby_threshold", "5.0") # [m]
-		rospy.loginfo(rospy.get_name() + ": Update rate: %ld Hz", self.update_rate)
-		rospy.loginfo(rospy.get_name() + ": Polygons per update: %ld", self.polygons_per_update)
-		rospy.loginfo(rospy.get_name() + ": Nearby threshold: %.3f m", self.nearby_threshold)
+		self.offset_e = rospy.get_param("~easting_offset",0.0) # [m]
+		self.offset_n = rospy.get_param("~northing_offset",0.0) # [m]
+		self.trkpt_threshold = rospy.get_param("~trackpoint_threshold",0.1) # [m]
+		map_title = rospy.get_param("~map_title", "Track")
+		map_window_size = rospy.get_param("~map_window_size",5.0) # [inches]
+ 		#if self.debug:		self.easting_offset = rospy.get_param("~easting_offset", '0.0') 
+ 
+		#	rospy.loginfo(rospy.get_name() + ": Debug enabled")
+		#self.status_publish_interval = rospy.get_param("~status_publish_interval", '0') 
 
 		# get topic names
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
@@ -55,50 +60,42 @@ class PolygonMapNode():
 
 		# setup subscription topic callbacks
 		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
-
-		# setup publish topics
-		self.polygon_change_pub = rospy.Publisher(self.polygon_map_topic, IntStamped)
-		self.polygon_change = IntStamped()
+		rospy.Subscriber(self.polygon_map_topic, IntStamped, self.on_polygon_map_message)
 
 		# initialize the polygon map
-		self.polymap = polygon_map()
-		self.polymap.set_nearby_threshold (self.nearby_threshold) 
-		self.polymap.set_polygons_per_update (self.polygons_per_update)
+		self.polyplot = polygon_map_plot(map_title, map_window_size, self.offset_e, self.offset_n)
 
 		# import polygons 
 		file = open('polygon_map.txt', 'r')
 		file_content = csv.reader(file, delimiter='\t')
 		for name,e1,n1,e2,n2,e3,n3,e4,n4 in file_content:
 			polygon = [[float(e1),float(n1)],[float(e2),float(n2)],[float(e3),float(n3)],[float(e4),float(n4)]]
-			self.polymap.add_polygon (name, polygon)
+			self.polyplot.add_polygon (polygon)
 		file.close()
-		rospy.loginfo(rospy.get_name() + ": Loaded %ld polygons" % self.polymap.poly_total)
+		rospy.loginfo(rospy.get_name() + ": Loaded %ld polygons" % self.polyplot.poly_total)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
 	def on_pose_message(self, msg):
-		self.polymap.update_pos (msg.pose.pose.position.x, msg.pose.pose.position.y)
-	
-	def publish_polygon_change_message(self, change):
-		self.polygon_change.header.stamp = rospy.Time.now()
-		self.polygon_change.data = change
-		self.polygon_change_pub.publish (self.polygon_change)
+		self.polyplot.update_pos (msg.pose.pose.position.x, msg.pose.pose.position.y)
+
+	def on_polygon_map_message(self, msg):
+		if msg.data > 0:
+			self.polyplot.draw_polygon_within (msg.data-1)
+		else:
+			self.polyplot.draw_polygon_outside (-(msg.data+1))	
 
 	def updater(self):
 		while not rospy.is_shutdown():
-			time_ros = rospy.Time.now()
-			time_secs = time_ros.secs + time_ros.nsecs*1e-9
-			polygon_changes = self.polymap.update_map(time_secs)
-			for i in xrange(len(polygon_changes)):
-				self.publish_polygon_change_message (polygon_changes[i])
+			self.polyplot.update_map_plot()
 			self.r.sleep()
 
 # Main function.    
 if __name__ == '__main__':
     # Initialize the node and name it.
-    rospy.init_node('polygon_map_node')
+    rospy.init_node('polygon_map_plot_node')
 
     # Go to class functions that do all the heavy lifting. Do error checking.
     try:
