@@ -99,8 +99,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						if(current_setpoint >  max_output) current_setpoint = max_output;
 						if(current_setpoint < -max_output) current_setpoint = -max_output;
 
-						std::cout << " vel " << velocity << " fb " << feedback << " fb_sm " << fb_sm;
-						std::cout << " sp_ch " << sp_change << " cur_sp " << current_setpoint << std::endl;
+						//std::cout << " vel " << velocity << " fb " << feedback << " fb_sm " << fb_sm;
+						//std::cout << " sp_ch " << sp_change << " cur_sp " << current_setpoint << std::endl;
 
 						last_regulation = ros::Time::now();
 
