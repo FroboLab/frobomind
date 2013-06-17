@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(roboteq)
+project(quickui)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs std_msgs msgs)
+find_package(catkin REQUIRED COMPONENTS rospy rqt_gui rqt_gui_py)
 
 ## System dependencies are found with CMake's conventions
- find_package(Boost)
+# find_package(Boost REQUIRED COMPONENTS system)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
-# catkin_python_setup()
+catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -45,9 +45,9 @@ find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs std_msgs msgs)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-  LIBRARIES roboteq
-  CATKIN_DEPENDS roscpp geometry_msgs std_msgs msgs
+#  INCLUDE_DIRS include
+#  LIBRARIES quickui
+#  CATKIN_DEPENDS rospy rqt_gui rqt_gui_py
 #  DEPENDS system_lib
 )
 
@@ -56,23 +56,21 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-)
+# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
- add_library(roboteq
-   src/roboteq.cpp src/channel.cpp src/hbl2350.cpp src/hbl1650.cpp src/regulator.cpp src/filter/IRR.cpp
- )
+# add_library(quickui
+#   src/${PROJECT_NAME}/quickui.cpp
+# )
 
 ## Declare a cpp executable
-# add_executable(roboteq_node src/roboteq_node.cpp)
+# add_executable(quickui_node src/quickui_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(roboteq ${PROJECT_NAME})
+# add_dependencies(quickui_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(roboteq_node
+# target_link_libraries(quickui_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -88,18 +86,18 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS roboteq roboteq_node
+# install(TARGETS quickui quickui_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
 ## Mark cpp header files for installation
- install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-   FILES_MATCHING PATTERN "*.h"
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
- )
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -113,7 +111,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_roboteq.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_quickui.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

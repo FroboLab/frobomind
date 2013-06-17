@@ -1,0 +1,65 @@
+<!--
+This launch file runs the pose 2d estimator with simulated sensor output based
+on a rosbag recorded during a drive test of the Armadillo Pichi robot.
+-->
+
+<launch>
+	<param name="/use_sim_time" value="true"/> 
+
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+		<!-- plot maps of pose, gnss and odometry data -->
+		<node pkg="sdu_kjen_sandbox" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status_sim" />
+			<param name="plot_pose_track" value="true" /> <!-- remember to use proper values for ekf_initial_guess_ at pose_2d_estimator for this plot -->
+			<param name="plot_gnss_track" value="true" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="easting_offset" value="-588784.0" />
+			<param name="northing_offset" value="-6137262.0" />
+			<param name="trackpoint_threshold" value="0.05" /> <!-- [m] -->
+			<param name="map_update_frequency" value="20.0" /> <!-- [Hz] -->
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="10.0" /> <!-- [inches] -->
+		</node>
+
+		<node pkg="sdu_kjen_sandbox" name="parcel_map" type="polygon_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="polygon_map_pub" value="/fmKnowledge/polygon_map" />
+		</node>
+
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="sdu_kjen_sandbox" type="waypoint_navigation_node.py" name="navigate_waypoints" output="screen">
+			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel_sim" />
+			<param name="status_pub" value="/fmData/wptnav_status_sim" />
+			<param name="status_publish_interval" value="1" />
+			<param name="print_debug_information" value="false" />
+		</node>		
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+	</group>
+
+	<group ns="rosbag">
+		<!-- launch a bag from the robot to emulate sensor input -->
+		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find sdu_kjen_sandbox)/waypoint_navigation/pichi_autonomous_test1.bag">
+			<remap from="/rosbag/clock" to="/clock"/> <!-- should not be necessary but it is...!!! -->
+		</node>
+	</group>
+</launch>

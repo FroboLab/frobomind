@@ -1,0 +1,38 @@
+<!--
+-->
+
+<launch>
+	<group ns="fmProcessors">
+		<!-- plot maps of pose, gnss and odometry data -->
+		<node pkg="ci_rowweeder_demo" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="plot_pose_track" value="true" /> <!-- remember to use proper values for ekf_initial_guess_ at pose_2d_estimator for this plot -->
+			<param name="plot_gnss_track" value="true" />
+			<param name="plot_odometry_track" value="true" />
+			<param name="plot_pose_yaw" value="true" />
+			<param name="easting_offset" value="-651180.0" />
+			<param name="northing_offset" value="-6133758.0" />
+			<param name="trackpoint_threshold" value="0.05" /> <!-- [m] -->
+			<param name="map_update_frequency" value="10.0" /> <!-- [Hz] -->
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="8.0" /> <!-- [inches] -->
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+	</group>
+</launch>
+
+
