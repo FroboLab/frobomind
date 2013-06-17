@@ -53,12 +53,12 @@ class waypoint_list():
 		modestr = 'MCTE'
 		tolerance = 0.0
 		speed = 0.0
-		for easting, northing, wptid in lines:
+		for easting, northing, wptid,boom_state in lines:
 			if modestr == 'STWP': # 'straight to waypoint'
 				mode = 0
 			elif modestr == 'MCTE': # 'minimize cross track error'
 				mode = 1			
-			self.wpts.append([float(easting), float(northing), wptid, mode, float(tolerance), float(speed)])
+			self.wpts.append([float(easting), float(northing), wptid, mode, float(tolerance), float(speed), boom_state])
 		file.close()
 		self.next = 0
 

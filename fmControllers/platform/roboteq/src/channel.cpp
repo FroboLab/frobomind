@@ -89,7 +89,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						hall_value = 0;
 
 						double fb_sm = velocity_filter.update(feedback);
-
+						vel_msg.data = fb_sm;
+						vel_publisher.publish(vel_msg);
 						// calculate desired change in output using pid regulator
 						double sp_change = regulator.output_from_input(velocity, fb_sm , period);
 

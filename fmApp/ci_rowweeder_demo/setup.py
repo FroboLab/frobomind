@@ -6,7 +6,9 @@ d = generate_distutils_setup(
   'mission_planners/simple_mission.py',
   'waypoint_navigation/waypoint_navigation_node.py',
   'robot_track_map/robot_track_map_node.py',
-  'polygon_map/polygon_map_node.py'],
+  'polygon_map/polygon_map_node.py',
+  'bin/plot_vel_control.py'],
+                             
 )
 
 setup(**d)
