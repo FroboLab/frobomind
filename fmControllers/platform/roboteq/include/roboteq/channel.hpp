@@ -35,6 +35,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
 #include <msgs/StringStamped.h>
 #include <msgs/IntStamped.h>
 #include "roboteq/roboteq.hpp"
@@ -105,9 +106,12 @@ public:
 		ros::Publisher power, hall, temperature;
 	} publisher;
 
+	ros::Publisher vel_publisher;
+
 	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm;
 	double i_max,max_output;
 	double current_setpoint;
+	std_msgs::Float64 vel_msg;
 	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps;
 	//Circular_queue buffer;
 	IRR velocity_filter;
@@ -138,6 +142,7 @@ public:
 
 	// Mutator method for setting up publisher
 	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
+	void setVelPub(ros::Publisher pub){vel_publisher = pub;}
 
 };
 
