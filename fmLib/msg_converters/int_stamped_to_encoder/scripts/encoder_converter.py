@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboMind cmd_vel_converter.py
-# Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
+# Copyright (c) 2011-2013, Leon Bonde Larsen <leon@bondelarsen.dk>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,13 +34,23 @@ class Converter():
         Converter 
     """
     def __init__(self):
-        # Init node
-        self.encoder_l_pub = rospy.Publisher("/fmInformation/enc_left", encoder)
-        self.encoder_r_pub = rospy.Publisher("/fmInformation/enc_right", encoder)
-        self.encoder_l_sub = rospy.Subscriber("/fmInformation/encoder_left", IntStamped, self.onIntStampedLeft )
-        self.encoder_r_sub = rospy.Subscriber("/fmInformation/encoder_right", IntStamped, self.onIntStampedRight )
-        self.encoder_l = encoder() 
-        self.encoder_r = encoder()     
+		rospy.loginfo(rospy.get_name() + ": Start")
+
+ 		# get topic names
+		self.left_sub_topic = rospy.get_param("~left_sub",'/fmInformation/encoder_left')
+		self.right_sub_topic = rospy.get_param("~right_sub",'/fmInformation/encoder_right')
+		self.left_pub_topic = rospy.get_param("~left_pub",'/fmInformation/enc_left')
+		self.right_pub_topic = rospy.get_param("~right_pub",'/fmInformation/enc_right')
+
+		# initialize message publishers
+		self.encoder_l_pub = rospy.Publisher(self.left_pub_topic, encoder)
+		self.encoder_r_pub = rospy.Publisher(self.right_pub_topic, encoder)
+		self.encoder_l = encoder() 
+		self.encoder_r = encoder()     
+ 
+		# initialize subscribers
+		self.encoder_l_sub = rospy.Subscriber(self.left_sub_topic, IntStamped, self.onIntStampedLeft )
+		self.encoder_r_sub = rospy.Subscriber(self.right_sub_topic, IntStamped, self.onIntStampedRight )
  
     def onIntStampedLeft(self,msg):
         self.encoder_l.encoderticks = msg.data

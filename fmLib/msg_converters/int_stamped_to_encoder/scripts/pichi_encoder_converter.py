@@ -34,19 +34,24 @@ class Converter():
         Converter 
     """
     def __init__(self):
- 		# Get topic names
+		rospy.loginfo(rospy.get_name() + ": Start")
+
+ 		# get topic names
 		self.left_sub_topic = rospy.get_param("~left_sub",'/fmInformation/encoder_left')
 		self.right_sub_topic = rospy.get_param("~right_sub",'/fmInformation/encoder_right')
 		self.left_pub_topic = rospy.get_param("~left_pub",'/fmInformation/enc_left')
 		self.right_pub_topic = rospy.get_param("~right_pub",'/fmInformation/enc_right')
-		print 'INIT!!!'
+
+		# initialize message publishers
 		self.encoder_l_pub = rospy.Publisher(self.left_pub_topic, encoder)
 		self.encoder_r_pub = rospy.Publisher(self.right_pub_topic, encoder)
-		self.encoder_l_sub = rospy.Subscriber(self.left_sub_topic, IntStamped, self.onIntStampedLeft )
-		self.encoder_r_sub = rospy.Subscriber(self.right_sub_topic, IntStamped, self.onIntStampedRight )
 		self.encoder_l = encoder() 
 		self.encoder_r = encoder()     
  
+		# initialize subscribers
+		self.encoder_l_sub = rospy.Subscriber(self.left_sub_topic, IntStamped, self.onIntStampedLeft )
+		self.encoder_r_sub = rospy.Subscriber(self.right_sub_topic, IntStamped, self.onIntStampedRight )
+
     def onIntStampedLeft(self,msg):
         self.encoder_l.encoderticks = msg.data * -1.0
         self.encoder_l.header.stamp = msg.header.stamp       
