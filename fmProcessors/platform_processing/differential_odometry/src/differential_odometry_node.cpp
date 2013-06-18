@@ -84,10 +84,11 @@ using namespace std;
 class SimpleOdom
 {
 public:
-	SimpleOdom(double tick_to_meter_left, double tick_to_meter_right, double wheel_dist, int encoder_output, int yaw_source, int yaw_axis)
+	SimpleOdom(double tick_to_meter_left, double tick_to_meter_right, double max_ticks_per_update, double wheel_dist, int encoder_output, int yaw_source, int yaw_axis)
 	{
 		this->tick_to_meter_left = tick_to_meter_left;
 		this->tick_to_meter_right = tick_to_meter_right;
+		this->max_ticks_per_update = max_ticks_per_update;
 		this->wheel_dist = wheel_dist;
 		this->encoder_output = encoder_output;
 		this->yaw_source = yaw_source;
@@ -135,10 +136,14 @@ public:
 		{
 			if (l_first == false)
 			{
-				delta_ticks_l += (msg->encoderticks - prev_l.encoderticks);
-				l_time_prev = l_time_latest;
-				l_time_latest = ros::Time::now();
-				l_updated = true;
+				int64_t dticks = (msg->encoderticks - prev_l.encoderticks);
+				if (abs(dticks) <= max_ticks_per_update)
+				{
+					delta_ticks_l += dticks;
+					l_time_prev = l_time_latest;
+					l_time_latest = ros::Time::now();
+					l_updated = true;
+				}		
 			}
 			else
 				l_first = false;
@@ -146,10 +151,13 @@ public:
 		}
 		else
 		{
-			delta_ticks_l += msg->encoderticks;
-			l_time_prev = l_time_latest;
-			l_time_latest = ros::Time::now();
-			l_updated = true;
+			if (abs(msg->encoderticks) <= max_ticks_per_update)
+			{
+				delta_ticks_l += msg->encoderticks;
+				l_time_prev = l_time_latest;
+				l_time_latest = ros::Time::now();
+				l_updated = true;
+			}
 		}
 	}
 
@@ -159,10 +167,14 @@ public:
 		{
 			if (r_first == false)
 			{
-				delta_ticks_r += (msg->encoderticks - prev_r.encoderticks);
-				r_time_prev = r_time_latest;
-				r_time_latest = ros::Time::now();
-				r_updated = true;
+				int64_t dticks = (msg->encoderticks - prev_r.encoderticks);
+				if (abs(dticks) <= max_ticks_per_update)
+				{
+					delta_ticks_r += dticks;
+					r_time_prev = r_time_latest;
+					r_time_latest = ros::Time::now();
+					r_updated = true;
+				}	
 			}
 			else
 				r_first = false;
@@ -170,10 +182,13 @@ public:
 		}
 		else
 		{
-			delta_ticks_r += msg->encoderticks;
-			r_time_prev = r_time_latest;
-			r_time_latest = ros::Time::now();
-			r_updated = true;
+			if (abs(msg->encoderticks) <= max_ticks_per_update)
+			{
+				delta_ticks_r += msg->encoderticks;
+				r_time_prev = r_time_latest;
+				r_time_latest = ros::Time::now();
+				r_updated = true;
+			}	
 		}
 	}
 
@@ -330,7 +345,7 @@ public:
 	std::string base_frame,odom_frame;
 
 private:
-	double tick_to_meter_left, tick_to_meter_right, wheel_dist;
+	double tick_to_meter_left, tick_to_meter_right, max_ticks_per_update, wheel_dist;
 	int encoder_output, yaw_source, yaw_axis;
 	double imu_yaw, prev_imu_yaw;
 	bool encoder_timeout, imu_timeout;
@@ -354,7 +369,7 @@ int main(int argc, char** argv) {
 	string subscribe_enc_r;
 	string subscribe_imu;
 
-	double wheel_radius, wheel_ticks_rev, tick_to_meter_left, tick_to_meter_right;
+	double wheel_radius, wheel_ticks_rev, tick_to_meter_left, tick_to_meter_right, max_ticks_per_update;
 	double wheel_dist;
 	double ticks_per_meter_left, ticks_per_meter_right;
 	int encoder_output, yaw_source, yaw_axis;
@@ -375,6 +390,7 @@ int main(int argc, char** argv) {
 
 	nh.param<double>("ticks_per_meter_left", ticks_per_meter_left, -1.0);
 	nh.param<double>("ticks_per_meter_right", ticks_per_meter_right, -1.0);
+	nh.param<double>("max_ticks_per_update", max_ticks_per_update, 1000000.0);
 
 	if (ticks_per_meter_right != -1.0 and ticks_per_meter_left != -1.0)
 	{
@@ -470,7 +486,7 @@ int main(int argc, char** argv) {
 	}
 
 	// init class
-	SimpleOdom p(tick_to_meter_left, tick_to_meter_right, wheel_dist, encoder_output, yaw_source, yaw_axis);
+	SimpleOdom p(tick_to_meter_left, tick_to_meter_right, max_ticks_per_update, wheel_dist, encoder_output, yaw_source, yaw_axis);
 
 	// subscriber callback functions
 	s1 = nh.subscribe(subscribe_enc_l,15,&SimpleOdom::processLeftEncoder,&p);

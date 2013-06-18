@@ -12,6 +12,10 @@ ticks_per_meter_right
 	Use these optional parameters if the encoder feedback is different on the left and right side.
 	Defining those will override the use of diff_steer_wheel_radius and diff_steer_wheel_ticks_per_rev
 
+max_ticks_per_update
+	Relative ticks or changes in absolute ticks in two subsequent updates will be ignored if above
+	this threshold.
+
 yaw_angle_source options:
 	odometry		(estimate the yaw angle from wheel odometry)
 	imu_angular_velocity	(extimate the yaw angle using angular velocity from sensor_msgs/Imu.msg)
@@ -39,8 +43,9 @@ imu_angular_velocity_yaw_axis options:
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/odom" />
 			<param name="encoder_output" value="relative"></param>  
-			<param name="ticks_per_meter_left" value="620"></param>  
-			<param name="ticks_per_meter_right" value="-1040"></param>  
+			<param name="ticks_per_meter_left" value="-620"></param>  
+			<param name="ticks_per_meter_right" value="-620"></param>  
+			<param name="max_ticks_per_update" value="200" />
 			<param name="yaw_angle_source" value="imu_angular_velocity"></param>  
 			<param name="imu_angular_velocity_yaw_axis" value="z"></param> 
 			<param name="vehicle_frame" value="base_footprint"></param>      
