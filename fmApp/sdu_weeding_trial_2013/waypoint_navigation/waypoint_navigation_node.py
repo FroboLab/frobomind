@@ -62,6 +62,8 @@ class WaypointNavigationNode():
 		self.wii_home_changed = False
 		self.wii_up = False
 		self.wii_up_changed = False
+		self.wii_down = False
+		self.wii_down_changed = False
 
 		# get parameters
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
@@ -114,19 +116,32 @@ class WaypointNavigationNode():
 			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
 			self.wptnav.stop()
 
+	def goto_previous_wpt (self):
+		(wpt, prev_wpt) = self.wptlist.get_previous()
+		if wpt != False:
+			self.wpt = wpt
+			self.prev_wpt = prev_wpt
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[2])
+			self.wptnav.navigate(self.wpt, self.prev_wpt)
+		else:
+			rospy.loginfo(rospy.get_name() + ": This is the first waypoint")
+
 	def on_automode_message(self, msg):
 		self.automode = msg.data
 		if self.automode != self.automode_prev:
 			self.automode_prev = self.automode
 			if self.automode:
+				rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
 				if self.wptlist_loaded == False:
 					rospy.loginfo(rospy.get_name() + ": Loading waypoint list")
 					self.load_wpt_list()				
 					self.goto_next_wpt()
 					self.wptlist_loaded = True
-				rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
+				elif self.wptnav.state == self.wptnav.STATE_STANDBY:
+					self.wptnav.resume()
+					rospy.loginfo(rospy.get_name() + ": Resuming waypoint navigation")
 			else:
-				self.wptnav.stop() 
+				self.wptnav.standby() 
 				rospy.loginfo(rospy.get_name() + ": Switching to Wiimote control")			
 
 	def on_pose_message(self, msg):
@@ -144,6 +159,9 @@ class WaypointNavigationNode():
 		if int(msg.buttons[8]) != self.wii_up:
 			self.wii_up =  int(msg.buttons[8])
 			self.wii_up_changed = True
+		if int(msg.buttons[9]) != self.wii_down:
+			self.wii_down =  int(msg.buttons[9])
+			self.wii_down_changed = True
 		if int(msg.buttons[10]) != self.wii_home:
 			self.wii_home =  int(msg.buttons[10])
 			self.wii_home_changed = True
@@ -160,11 +178,11 @@ class WaypointNavigationNode():
 			self.wptnav_status.easting = self.wptnav.pose[0]
 			self.wptnav_status.northing = self.wptnav.pose[1]
 		if self.automode != False and self.wptnav.b != False:
-			if  self.wptnav.state == 0:
+			if  self.wptnav.state == self.wptnav.STATE_STOP or self.wptnav.state == self.wptnav.STATE_STANDBY:
 				self.wptnav_status.mode = 0
-			elif self.wptnav.state == 1 or self.wptnav.state == 2:
+			elif self.wptnav.state == self.wptnav.STATE_DRIVE_INIT or self.wptnav.state == self.wptnav.STATE_DRIVE:
 				self.wptnav_status.mode = 1
-			elif self.wptnav.state == 3 or self.wptnav.state == 4:
+			elif self.wptnav.state == self.wptnav.STATE_TURN_INIT or self.wptnav.state == self.wptnav.STATE_TURN:
 				self.wptnav_status.mode = 2
 			self.wptnav_status.b_easting = self.wptnav.b[0]
 			self.wptnav_status.b_northing = self.wptnav.b[1]
@@ -205,7 +223,11 @@ class WaypointNavigationNode():
 			if self.wii_up == True and self.wii_up_changed == True:
 				self.wii_up_changed = False
 				rospy.loginfo(rospy.get_name() + ": User skipped waypoint")
-				wpt = self.goto_next_wpt()
+				self.goto_next_wpt()
+			if self.wii_down == True and self.wii_down_changed == True:
+				self.wii_down_changed = False
+				rospy.loginfo(rospy.get_name() + ": User selected previous waypoint")
+				self.goto_previous_wpt()
 
 			if self.automode:
 				ros_time = rospy.Time.now()

@@ -73,6 +73,16 @@ class waypoint_list():
 			wpt = False
 		return wpt
 
+	def get_previous (self):
+		prev_wpt = False
+		wpt = False
+		if self.next > 1:
+			self.next -= 1
+			wpt = self.wpts[self.next-1]
+			if self.next > 1:
+				prev_wpt = self.wpts[self.next-2]
+		return (wpt, prev_wpt)
+
 	def status (self):		
 		return (len(self.wpts), self.next)
 

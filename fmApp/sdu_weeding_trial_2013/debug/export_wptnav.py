@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# Polygon Map Plot
+# export
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,63 +27,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 """
-Revision
-2013-05-31 KJ First version
+This script extract relevant data from a rosbag and saves it in csv files.
 """
-
 # imports
-import matplotlib.pyplot as plt
-from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw, clf
+import roslib
+import rosbag
+from math import pi
 
-class polygon_map_plot():
-	def __init__(self, map_title, map_window_size, easting_offset, northing_offset):
-		self.offset_e = easting_offset # [m]
-		self.offset_n = northing_offset # [m]
-		self.polypts = []
-		self.polyplt = []
-		self.poly_total = 0
-		self.image_count = 0
-		self.save_images = True
+bag = rosbag.Bag ('../test.bag')
 
-		ion() # turn interaction mode on
-		self.fig1 = plt.figure(num=1, figsize=(map_window_size, \
-			map_window_size), dpi=80, facecolor='w', edgecolor='w')
-		title (map_title)
-		xlabel('Easting [m]')
-		ylabel('Northing [m]')
-		axis('equal')
-		grid (False)
+f = open ('wptnav_status.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmData/wptnav_status']):
+	secs = msg.header.stamp.secs
+	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
+	if msecs == 1000:
+		secs += 1 
+		msecs = 0		
+	f.write ('%d.%03d,%.3f,%.3f,%.3f,%.2f\n' % (secs, msecs, msg.easting, msg.northing, msg.distance_to_ab_line, msg.heading_err*180/pi))
+f.close()
 
-	def add_polygon (self, polygon):
-		for i in range(len(polygon)):
-			polygon[i][0] += self.offset_e
-			polygon[i][1] += self.offset_n
-		polygon.append (polygon[0]) # close the polygon for plotting (must called be after modifying the polygon!)
-		polygonT =  zip(*polygon)
-		self.polypts.append (polygonT)
-		self.polyplt.append (plot(self.polypts[-1][0], self.polypts[-1][1], '#BBBBBB'))
-		self.poly_total += 1
+bag.close()
 
-	def draw_polygon_within (self, num):
-		self.polyplt[num] = plot(self.polypts[num][0], self.polypts[num][1], 'red')
-
-	def draw_polygon_outside (self, num):
-		self.polyplt[num] = plot(self.polypts[num][0], self.polypts[num][1], '#999999')
-
-	def update_map_plot (self):
-		if len(self.polypts) > 0:
-			plt.figure(1)
-			# clf()
-			draw()
-			if self.save_images:
-				self.fig1.savefig ('img%05d.jpg' % self.image_count)
-				self.image_count += 1
-
-		pass
-
-	def save_map_plot (self):
-		self.fig1.savefig ('polygon_map_plot.png')
-
-	def update_pos (self, easting, northing):
-		pass
 

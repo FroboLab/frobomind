@@ -27,16 +27,16 @@
 		</node>
 
 		<!-- plot polygon map -->
-		<node pkg="sdu_weeding_trial_2013" name="polygon_map_plot" type="polygon_map_plot_node.py" output="screen" >
+		<!-- node pkg="sdu_weeding_trial_2013" name="polygon_map_plot" type="polygon_map_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="polygon_map_sub" value="/fmKnowledge/polygon_map" />
-			<param name="update_rate" value="10" />
+			<param name="update_rate" value="5" />
 			<param name="easting_offset" value="-651180.0" />
 			<param name="northing_offset" value="-6133758.0" />
-			<param name="trackpoint_threshold" value="0.05" /> <!-- [m] -->
+			<param name="trackpoint_threshold" value="0.05" />
 			<param name="map_title" value="Polygon map" />
-			<param name="map_window_size" value="9.5" /> <!-- [inches] -->
-		</node>
+			<param name="map_window_size" value="9.5" />
+		</node -->
 	</group>
 
 	<group ns="fmDecisionMakers">

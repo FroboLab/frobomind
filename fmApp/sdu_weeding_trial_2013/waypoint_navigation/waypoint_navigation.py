@@ -50,13 +50,6 @@ WPT_MODE = 3
 WPT_TOLERANCE = 4
 WPT_SPEED = 5
 
-# navigation controller state constants
-STATE_STOP = 0
-STATE_DRIVE_INIT = 1
-STATE_DRIVE = 2
-STATE_TURN_INIT = 3
-STATE_TURN = 4
-
 class waypoint_navigation():
 	def __init__(self, update_rate, debug):
 		# constants
@@ -66,21 +59,29 @@ class waypoint_navigation():
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
 
+		# navigation controller state constants
+		self.STATE_STOP = 0
+		self.STATE_STANDBY = 1
+		self.STATE_DRIVE_INIT = 2
+		self.STATE_DRIVE = 3
+		self.STATE_TURN_INIT = 4
+		self.STATE_TURN = 5
+
 		# parameters
 		self.update_rate = update_rate # [Hz]
 		self.update_interval = 1.0/self.update_rate # [s]
-		self.wpt_linear_speed_default = 0.55 # [m/s]
+		self.wpt_linear_speed_default = 0.5 # [m/s]
 		self.linear_speed_max = 0.7 # [m/s]
-		self.angular_speed_max = 0.2 # [radians/s]
+		self.angular_speed_max = 0.25 # [radians/s]
 		self.wpt_tolerance_default = 0.5 # [m]
 		self.target_ahead = 0.9 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
 		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
-		self.turn_start_at_heading_err = 10.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
+		self.turn_start_at_heading_err = 15.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
 		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
-		self.turn_speed = pi/3.0 # [radians/s]
 
 		# state machine
-		self.state = STATE_STOP
+		self.state = self.STATE_STOP
+		self.prev_state = self.STATE_STOP
 
 		# reset waypoints
 		self.b = False
@@ -105,18 +106,18 @@ class waypoint_navigation():
 
 		# PID drive controller
 		self.pid_drive = pid_controller(self.update_interval)
-		Kp = 1.9
-		Ki = 0.2
-		Kd = 0.4
+		Kp = 4.0
+		Ki = 0.0
+		Kd = 0.2
 		integral_max = 1.0
 		self.pid_drive.set_parameters(Kp, Ki, Kd, integral_max)
 
 		# PID turn controller
 		self.pid_turn = pid_controller(self.update_interval)
-		Kp = 0.9
+		Kp = 0.8
 		Ki = 0.3
 		Kd = 0.0
-		integral_max = 1
+		integral_max = 1.0
 		self.pid_turn.set_parameters(Kp, Ki, Kd, integral_max)
 
 		# initialize output
@@ -157,7 +158,7 @@ class waypoint_navigation():
 
 		# reset state variables
 		self.dist_minimum = 20000000.0
-		self.state = STATE_DRIVE_INIT
+		self.state = self.STATE_DRIVE_INIT
 	
 	# call to stop navigating to the destination
 	def stop (self):
@@ -167,7 +168,22 @@ class waypoint_navigation():
 		self.b = False
 		self.linear_speed = 0.0
 		self.angular_speed = 0.0
-		self.state = STATE_STOP
+		self.state = self.STATE_STOP
+
+	# call to temporaily stop navigating to the destination
+	def standby (self):
+		if self.debug:
+			print "Navigation standby"
+		self.linear_speed = 0.0
+		self.angular_speed = 0.0
+		self.prev_state = self.state
+		self.state = self.STATE_STANDBY
+
+	# call to resume navigating to the destination
+	def resume (self):
+		if self.debug:
+			print "Resuming navigation"
+		self.state = self.prev_state
 
 	# initialize drive towards destination (b) waypoint
 	def drive_init(self):
@@ -175,12 +191,12 @@ class waypoint_navigation():
 			print "Driving towards wpt"
 		self.pid_drive.reset ()
 		self.heading_err_minimum = self.pi2
-		self.state = STATE_DRIVE
+		self.state = self.STATE_DRIVE
 
 	# drive towards destination (b) waypoint
 	def drive(self):
 		if fabs(self.heading_err) > self.turn_start_at_heading_err:
-			self.state = STATE_TURN_INIT
+			self.state = self.STATE_TURN_INIT
 		else:
 			# find distance to the point on the ab-line that is closest to the robot
 			pose_dot_ab_norm = self.pose[0]*self.ab_norm[0] + self.pose[1]*self.ab_norm[1] # (vector defined by pose) dot (normalized ab vector)
@@ -214,7 +230,7 @@ class waypoint_navigation():
 			print 'Turning to adjust heading error: %.1f' %(self.heading_err*self.rad_to_deg)
 		self.pid_turn.reset ()
 		self.heading_err_minimum = self.pi2
-		self.state = STATE_TURN
+		self.state = self.STATE_TURN
 
 	# turn about own center (not applicable to all robots)
 	def turn(self):
@@ -224,7 +240,7 @@ class waypoint_navigation():
 			#if fabs(self.heading_err) > self.heading_err_minimum:
 			turned_enough = True
 		if turned_enough:		
-			self.state = STATE_DRIVE_INIT
+			self.state = self.STATE_DRIVE_INIT
 		else:
 			self.angular_speed = self.pid_turn.update (self.heading_err) # get controller output
 			self.linear_speed = 0.0
@@ -265,7 +281,7 @@ class waypoint_navigation():
 	# waypoint navigation updater, returns status, and linear and angular speed to the controller
 	def update(self, time_stamp):
 		status = self.UPDATE_NONE
-		if self.state != STATE_STOP and self.pose != False: # if we have a valid pose
+		if self.state != self.STATE_STOP and self.pose != False: # if we have a valid pose
 
 			# calculate distance, bearing, heading error
 			self.update_navigation_state()
@@ -278,13 +294,13 @@ class waypoint_navigation():
 			
 			else:
 				# run navigation state machine	
-				if self.state == STATE_DRIVE_INIT:
+				if self.state == self.STATE_DRIVE_INIT:
 					self.drive_init()
-				elif self.state == STATE_DRIVE:
+				elif self.state == self.STATE_DRIVE:
 					self.drive()
-				elif self.state == STATE_TURN_INIT:
+				elif self.state == self.STATE_TURN_INIT:
 					self.turn_init()
-				elif self.state == STATE_TURN:
+				elif self.state == self.STATE_TURN:
 					self.turn()
 
 				self.limit_speed() # don't exceed defined speed limitations

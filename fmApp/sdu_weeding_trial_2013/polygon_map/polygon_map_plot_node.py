@@ -37,30 +37,18 @@ from msgs.msg import IntStamped
 from polygon_map_plot import polygon_map_plot
 import csv
 
-class PolygonMapNode():
+class PolygonMapPlotNode():
 	def __init__(self):
 		# defines
 		rospy.loginfo(rospy.get_name() + ": Start")
 
 		# get parameters
-		self.update_rate = rospy.get_param("~update_rate", "10") # update frequency [Hz]
+		self.update_rate = rospy.get_param("~update_rate", "5") # update frequency [Hz]
 		self.offset_e = rospy.get_param("~easting_offset",0.0) # [m]
 		self.offset_n = rospy.get_param("~northing_offset",0.0) # [m]
 		self.trkpt_threshold = rospy.get_param("~trackpoint_threshold",0.1) # [m]
 		map_title = rospy.get_param("~map_title", "Track")
 		map_window_size = rospy.get_param("~map_window_size",5.0) # [inches]
- 		#if self.debug:		self.easting_offset = rospy.get_param("~easting_offset", '0.0') 
- 
-		#	rospy.loginfo(rospy.get_name() + ": Debug enabled")
-		#self.status_publish_interval = rospy.get_param("~status_publish_interval", '0') 
-
-		# get topic names
-		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
-		self.polygon_map_topic = rospy.get_param("~polygon_map_pub",'/fmKnowledge/polygon_map')
-
-		# setup subscription topic callbacks
-		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
-		rospy.Subscriber(self.polygon_map_topic, IntStamped, self.on_polygon_map_message)
 
 		# initialize the polygon map
 		self.polyplot = polygon_map_plot(map_title, map_window_size, self.offset_e, self.offset_n)
@@ -73,6 +61,14 @@ class PolygonMapNode():
 			self.polyplot.add_polygon (polygon)
 		file.close()
 		rospy.loginfo(rospy.get_name() + ": Loaded %ld polygons" % self.polyplot.poly_total)
+
+		# get topic names
+		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
+		self.polygon_map_topic = rospy.get_param("~polygon_map_pub",'/fmKnowledge/polygon_map')
+
+		# setup subscription topic callbacks
+		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
+		rospy.Subscriber(self.polygon_map_topic, IntStamped, self.on_polygon_map_message)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -99,7 +95,7 @@ if __name__ == '__main__':
 
     # Go to class functions that do all the heavy lifting. Do error checking.
     try:
-        node_class = PolygonMapNode()
+        node_class = PolygonMapPlotNode()
     except rospy.ROSInterruptException:
 		pass
 
