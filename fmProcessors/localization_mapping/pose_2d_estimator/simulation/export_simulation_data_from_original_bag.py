@@ -35,11 +35,11 @@ import rosbag
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Quaternion
 
-bag = rosbag.Bag ('sim.bag')
+bag = rosbag.Bag ('test.bag')
 
 # extract odometry data
 f = open ('sim_odometry.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/encoder_odom_sim']):
+for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/encoder_odom']):
 	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
 	if msecs == 1000:
@@ -65,7 +65,7 @@ f.close()
 
 # extract GPGGA data
 f = open ('sim_gnss.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga_tranmerc_sim']):
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga_tranmerc']):
 	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
 	if msecs == 1000:

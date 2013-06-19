@@ -193,8 +193,8 @@ class pose_2d_preprocessor():
 			while len(self.imu) > self.imu_buffer_size:
 				self.imu.pop(0)
 
-	def odometry_new_feedback(self, time_stamp, delta_dist, delta_angle):
-		self.odo.append([time_stamp, delta_dist, delta_angle])
+	def odometry_new_feedback(self, time_stamp, delta_dist, delta_angle, forward):
+		self.odo.append([time_stamp, delta_dist, delta_angle, forward])
 		if len(self.odo) > self.odo_buffer_size: # trim buffer length to size
 			self.odo.pop(0)
 		elif len(self.odo) == 50: # update buffer size based on gnss update interval
@@ -213,6 +213,8 @@ class pose_2d_preprocessor():
 			for i in xrange(self.odo_buffer_size):
 				buffer_dist += self.odo[i][1]
 				buffer_angle += self.odo[i][2]
+				if self.odo[i][3] == False: # if we have been driving backwards the data may be invalid
+					valid = False
 		return (valid, buffer_dist, buffer_angle)
 
 	def estimate_yaw(self):

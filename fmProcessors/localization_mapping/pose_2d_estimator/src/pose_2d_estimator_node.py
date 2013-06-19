@@ -104,13 +104,19 @@ class Pose2DEstimatorNode():
 		self.quaternion[3] = msg.pose.pose.orientation.w
 		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 
+		# driving forwards or backwards?
+		if (msg.twist.twist.linear.x > 0):
+			forward = True
+		else:
+			forward = False
+
 		if self.odom_topic_received == True: # if we have received a first odom message
 
 			# EKF system update (odometry)
 			time_recv = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
 			delta_dist =  sqrt((x-self.odometry_x_prev)**2 + (y-self.odometry_y_prev)**2)
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
-			self.pp.odometry_new_feedback (time_recv, delta_dist, delta_angle)
+			self.pp.odometry_new_feedback (time_recv, delta_dist, delta_angle, forward)
 			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
 			self.pose[2] = self.yawekf.system_update (delta_angle, self.odometry_var_angle) # !!! TEMPORARY HACK
 
