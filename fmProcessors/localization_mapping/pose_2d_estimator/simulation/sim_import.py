@@ -35,15 +35,16 @@ Revision
 import csv
 
 class odometry_data():
-	def __init__(self, filename, max_lines):
+	def __init__(self, filename, skip_lines, max_lines):
 		self.i = 0
 		print 'Importing odometry data'
 		file = open(filename, 'rb')
 		file_content = csv.reader(file, delimiter=',')
 	 	self.data = []
 		i = 0
-		for time, x, y, yaw in file_content:
-			self.data.append([float(time), float(x), float(y), float(yaw)])
+		for time, x, y, yaw, speed in file_content:
+			if i > skip_lines:
+				self.data.append([float(time), float(x), float(y), float(yaw), float(speed)])
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break
@@ -60,7 +61,7 @@ class odometry_data():
 		return (new_data, self.data[self.i-1])
 
 class imu_data():
-	def __init__(self, filename, max_lines):
+	def __init__(self, filename, skip_lines, max_lines):
 		self.i = 0
 		print 'Importing IMU data'
 		file = open(filename, 'rb')
@@ -68,7 +69,8 @@ class imu_data():
 	 	self.data = []
 		i = 0
 		for time, ang_vel_z, orient_yaw in file_content:
-			self.data.append([float(time), float(ang_vel_z), float(orient_yaw)])
+			if i > skip_lines:
+				self.data.append([float(time), float(ang_vel_z), float(orient_yaw)])
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break
@@ -84,7 +86,7 @@ class imu_data():
 		return (new_data, self.data[self.i-1])
 
 class gnss_data:
-	def __init__(self, filename, max_lines):
+	def __init__(self, filename, skip_lines, max_lines):
 		self.i = 0
 		print 'Importing GPS data'
 		file = open(filename, 'rb')
@@ -94,8 +96,9 @@ class gnss_data:
 		origo_e = 0
 		origo_n = 0
 		for time, lat, lon, easting, northing, fix, sat, hdop in file_content:
-			self.data.append([float(time), float(lat), float(lon), \
-				float(easting), float(northing), int(fix), int(sat), float(hdop)])
+			if i > skip_lines:
+				self.data.append([float(time), float(lat), float(lon), \
+					float(easting), float(northing), int(fix), int(sat), float(hdop)])
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break

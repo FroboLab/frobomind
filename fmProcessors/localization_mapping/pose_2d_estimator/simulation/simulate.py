@@ -44,8 +44,8 @@ from sim_import import odometry_data, imu_data, gnss_data
 from robot_track_map import track_map
 
 # parameters
-ekf_easting_init = 588767.5   # set these EKF initial guess coordinates close
-ekf_northing_init = 6137270.3 # to actual transverse mercator coordinates.
+ekf_easting_init = 651180.0   # set these EKF initial guess coordinates close
+ekf_northing_init = 6133758.0 # to actual transverse mercator coordinates.
 plot_pose = True
 plot_gnss = True
 plot_odometry = True
@@ -56,13 +56,16 @@ plot_ahrs_yaw =  False # used only in this simulation to determine which values 
 plot_odo_yaw = True # used only in this simulation to determine which values to append
 plot_relative_coordinates = True
 odo_file = 'sim_odometry.txt'
-odo_max_lines = 0 # 0 = read the entire file
+odo_skip_lines =  0
+odo_max_lines = 0 # 0 = read to the end
 imu_file = 'sim_imu.txt'
+imu_skip_lines = 0
 imu_max_lines = 0
 gnss_file = 'sim_gnss.txt'
+gnss_skip_lines = 0
 gnss_max_lines = 0 
 sim_step_interval = 0.01 # 100 Hz
-steps_btw_plot_updates = 250 # 2.5 seconds
+steps_btw_plot_updates = 10000
 steps_btw_yaw_plot_points = 10
 min_gnss_fix_msg_before_pose_plot = 5 # used to avoid the high initial variance causes odd plots
 var_dist = 0.001**2 # per meter
@@ -116,9 +119,9 @@ latest_odo_yaw = 0.0
 gnss_fix_msg_count = 0 
 
 # import simulation data
-odo_sim = odometry_data(odo_file, odo_max_lines)
-imu_sim = imu_data(imu_file, imu_max_lines)
-gnss_sim = gnss_data(gnss_file, gnss_max_lines)
+odo_sim = odometry_data(odo_file, odo_skip_lines, odo_max_lines)
+imu_sim = imu_data(imu_file, imu_skip_lines, imu_max_lines)
+gnss_sim = gnss_data(gnss_file, gnss_skip_lines, gnss_max_lines)
 
 # define simulation time based on odometry data
 sim_offset = odo_sim.data[0][0]
@@ -154,7 +157,8 @@ for step in xrange ((int(sim_steps)+1)):
 		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
 		delta_angle = angle_diff (odometry[3], prev_odometry[3])
 		prev_odometry = odometry
-		pp.odometry_new_feedback (time_recv, delta_dist, delta_angle)
+		forward = odometry[4] >= 0
+		pp.odometry_new_feedback (time_recv, delta_dist, delta_angle, forward)
 		
 		# EKF system update (odometry)
 		pose = ekf.system_update (delta_dist, var_dist, delta_angle, var_angle)
