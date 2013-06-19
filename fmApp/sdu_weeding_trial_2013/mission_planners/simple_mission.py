@@ -112,4 +112,6 @@ if __name__ == '__main__':
         node = mission()
         node.spin()
     except rospy.ROSInterruptException:
-        node.quit()
+        #node.quit()
+		pass
+

@@ -69,15 +69,16 @@ class waypoint_navigation():
 
 		# parameters
 		self.update_rate = update_rate # [Hz]
-		self.update_interval = 1.0/self.update_rate # [s]
+		self.update_interval = (1.0/self.update_rate) # [s]
 		self.wpt_linear_speed_default = 0.5 # [m/s]
 		self.linear_speed_max = 0.7 # [m/s]
 		self.angular_speed_max = 0.25 # [radians/s]
 		self.wpt_tolerance_default = 0.5 # [m]
-		self.target_ahead = 0.9 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
+		self.target_ahead = 1.5 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
 		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
 		self.turn_start_at_heading_err = 15.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
-		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
+		self.turn_acceptable_heading_err = 2.5*self.deg_to_rad # [radians]
+		self.print_interval = 10
 
 		# state machine
 		self.state = self.STATE_STOP
@@ -128,7 +129,6 @@ class waypoint_navigation():
 		self.debug = debug
 		if self.debug:
 			self.debug_time_stamp = 0.0
-			self.print_interval = 10
 			self.print_count = 0
 
 	# call whenever a new pose is available
@@ -195,39 +195,16 @@ class waypoint_navigation():
 
 	# drive towards destination (b) waypoint
 	def drive(self):
-		if fabs(self.heading_err) > self.turn_start_at_heading_err:
+		if fabs(self.target_heading_err) > self.turn_start_at_heading_err:
 			self.state = self.STATE_TURN_INIT
 		else:
-			# find distance to the point on the ab-line that is closest to the robot
-			pose_dot_ab_norm = self.pose[0]*self.ab_norm[0] + self.pose[1]*self.ab_norm[1] # (vector defined by pose) dot (normalized ab vector)
-			d = pose_dot_ab_norm - self.a_dot_ab_norm  # distance along the ab line 
-
-			pt = [self.a[0] + d*self.ab_norm[0], self.a[1] + d*self.ab_norm[1]] # define closest point along the ab line
-			self.ab_dist_to_pose = sqrt((self.pose[WPT_E]-pt[WPT_E])**2 + (self.pose[WPT_N]-pt[WPT_N])**2)
-			if d > self.ab_len: # the pose lies beyond the end of the ab line and the closest point is therefore in fact b
-				# set b as target point	
-				self.target = [self.b[0], self.b[1]]	
-			elif d < 0: # the pose lies before the beginning of the ab line so the closest point is in fact a
-				self.target = [self.a[0], self.a[1]]			
-			else: # the closest point is defined by A + d(B-A)
-				dist_pt_to_b = sqrt((self.b[WPT_E]-pt[WPT_E])**2 + (self.b[WPT_N]-pt[WPT_N])**2)  # calc distance from closest point to b
-				dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
-				if dist_pt_to_target > self.target_ahead:
-					dist_pt_to_target = self.target_ahead
-				self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
-
-			# now navigate to the target point...
-			self.target_dist = sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2) # dist to target
-			self.target_bearing = self.angle_limit(atan2 (self.target[1]-self.pose[1], self.target[0]-self.pose[0])) #  target bearing (angle with easting axis)
-			self.target_heading_err = self.angle_diff(self.target_bearing, self.pose[2]) # signed diff. heading to target bearing
-
 			self.angular_speed = self.pid_drive.update (self.target_heading_err) # get controller output
 			self.linear_speed = self.wpt_linear_speed
 
 	# initialize turn about own center (not applicable to all robots)
 	def turn_init(self):
 		if self.debug:		
-			print 'Turning to adjust heading error: %.1f' %(self.heading_err*self.rad_to_deg)
+			print 'Turning to adjust heading error: %.1f' %(self.target_heading_err*self.rad_to_deg)
 		self.pid_turn.reset ()
 		self.heading_err_minimum = self.pi2
 		self.state = self.STATE_TURN
@@ -235,16 +212,11 @@ class waypoint_navigation():
 	# turn about own center (not applicable to all robots)
 	def turn(self):
 		# check if we have turned enough
-		turned_enough = False
-		if fabs(self.heading_err) <= self.turn_acceptable_heading_err:
-			#if fabs(self.heading_err) > self.heading_err_minimum:
-			turned_enough = True
-		if turned_enough:		
+		if fabs(self.target_heading_err) <= self.turn_acceptable_heading_err:
 			self.state = self.STATE_DRIVE_INIT
 		else:
-			self.angular_speed = self.pid_turn.update (self.heading_err) # get controller output
+			self.angular_speed = self.pid_turn.update (self.target_heading_err) # get controller output
 			self.linear_speed = 0.0
-			self.target = [self.pose[0], self.pose[1]] # to support publishing the target topic
 
 	# return true if we have arrived at the destination (b) waypoint
 	def arrived_at_waypoint(self):
@@ -265,6 +237,33 @@ class waypoint_navigation():
 		self.heading_err = self.angle_diff(self.bearing, self.pose[2]) # signed diff. heading to destination bearing
 		if fabs(self.heading_err) < self.heading_err_minimum:
 			self.heading_err_minimum = fabs(self.heading_err)
+
+		# find distance to the point on the ab-line that is closest to the robot
+		pose_dot_ab_norm = self.pose[0]*self.ab_norm[0] + self.pose[1]*self.ab_norm[1] # (vector defined by pose) dot (normalized ab vector)
+		d = pose_dot_ab_norm - self.a_dot_ab_norm  # distance along the ab line 
+
+		pt = [self.a[0] + d*self.ab_norm[0], self.a[1] + d*self.ab_norm[1]] # define closest point along the ab line
+		self.ab_dist_to_pose = sqrt((self.pose[WPT_E]-pt[WPT_E])**2 + (self.pose[WPT_N]-pt[WPT_N])**2)
+		if d > self.ab_len: # the pose lies beyond the end of the ab line and the closest point is therefore in fact b
+			# set b as target point	
+			self.target = [self.b[0], self.b[1]]	
+		elif d < 0: # the pose lies before the beginning of the ab line so the closest point is in fact a
+		#	self.target = [self.a[0], self.a[1]]			
+			self.target = [self.b[0], self.b[1]]	
+		else: # the closest point is defined by A + d(B-A)
+			dist_pt_to_b = sqrt((self.b[WPT_E]-pt[WPT_E])**2 + (self.b[WPT_N]-pt[WPT_N])**2)  # calc distance from closest point to b
+			dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
+			if dist_pt_to_target > self.target_ahead:
+				dist_pt_to_target = self.target_ahead
+			self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
+
+		# now navigate to the target point...
+		self.target_dist = sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2) # dist to target
+		self.target_bearing = self.angle_limit(atan2 (self.target[1]-self.pose[1], self.target[0]-self.pose[0])) #  target bearing (angle with easting axis)
+		self.target_heading_err = self.angle_diff(self.target_bearing, self.pose[2]) # signed diff. heading to target bearing
+
+		#print self.target_dist, self.target_heading_err, self.a[0], self.a[1], self.b[0], self.b[1], self.pose[0], self.pose[1], self.target[0], self.target[1] 
+
 
 	# make sure we don't exceed maximum linear and angular speed
 	def limit_speed(self):
@@ -309,9 +308,12 @@ class waypoint_navigation():
 				if self.debug:					
 					self.print_count += 1
 					if self.print_count % self.print_interval == 0:
-						print "dT: %.3f dist: %.2f bearing: %.1f heading err: %.2f heading err min: %.2f t.dist: %.2f t.bearing: %.1f  linspd: %.3f angspd: %.3f" \
-							% ((time_stamp-self.debug_time_stamp)/self.print_interval, self.dist, self.bearing*180.0/pi, \
-							self.heading_err*self.rad_to_deg, self.heading_err_minimum*self.rad_to_deg, self.target_dist, self.target_bearing*180.0/pi, self.linear_speed, self.angular_speed)
+						#print "dT: %.3f dist: %.2f bearing: %.1f heading err: %.2f heading err min: %.2f t.dist: %.2f t.bearing: %.1f  linspd: %.3f angspd: %.3f" \
+						#	% ((time_stamp-self.debug_time_stamp)/self.print_interval, self.dist, self.bearing*180.0/pi, \
+						#	self.heading_err*self.rad_to_deg, self.heading_err_minimum*self.rad_to_deg, self.target_dist, self.target_bearing*180.0/pi, self.linear_speed, self.angular_speed)
+						print "state %d dist %6.2f ab %.2f bearing %5.1f heading err %5.1f t.dist %5.2f t.heading_err %5.1f  linspd %.3f angspd %.3f" \
+							% (self.state, self.dist, self.ab_dist_to_pose, self.bearing*180.0/pi, \
+							self.heading_err*self.rad_to_deg, self.target_dist, self.target_heading_err*self.rad_to_deg, self.linear_speed, self.angular_speed)
 						self.debug_time_stamp = time_stamp
 
 		# return result

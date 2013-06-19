@@ -186,6 +186,8 @@ class track_map():
 				elif self.wpt_mode == 2:
 					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bo',markersize=8)
+					if self.wpt_target != False:
+						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
 			elif self.wpt_mode == -1:
 				if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 					pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=8)
