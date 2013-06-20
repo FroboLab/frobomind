@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# Pose 2D Estimator - Simulation import classes
+# Waypoint Navigation - Simulation import classes
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -28,23 +28,23 @@
 #*****************************************************************************
 """
 Revision
-2013-04-23 KJ First version
+2013-06-20 KJ First version
 """
 
 # imports
 import csv
 
-class odometry_data():
+class pose_data():
 	def __init__(self, filename, skip_lines, max_lines):
 		self.i = 0
-		print 'Importing odometry data'
-		file = open(filename, 'rb')
+		print 'Importing pose data'
+		file = open(filename, 'r')
 		file_content = csv.reader(file, delimiter=',')
 	 	self.data = []
 		i = 0
-		for time, x, y, yaw, speed in file_content:
+		for time, x, y, yaw, linspd, angspd in file_content:
 			if i > skip_lines:
-				self.data.append([float(time), float(x), float(y), float(yaw), float(speed)])
+				self.data.append([float(time), float(x), float(y), float(yaw), float(linspd), float(angspd)])
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break
@@ -60,17 +60,23 @@ class odometry_data():
 			new_data += 1
 		return (new_data, self.data[self.i-1])
 
-class imu_data():
+class wptnav_data():
 	def __init__(self, filename, skip_lines, max_lines):
 		self.i = 0
-		print 'Importing IMU data'
-		file = open(filename, 'rb')
+		print 'Importing waypoint navigation status data'
+		file = open(filename, 'r')
 		file_content = csv.reader(file, delimiter=',')
 	 	self.data = []
 		i = 0
-		for time, ang_vel_z, orient_yaw in file_content:
+		for time_stamp,mode,b_e,b_n,a_e,a_n, \
+			e,n,dist_b,bearing_b,head_err,dist_ab, \
+			t_e,t_n,t_dist,t_bearing,t_head_err, \
+			linspd,angspd in file_content:
 			if i > skip_lines:
-				self.data.append([float(time), float(ang_vel_z), float(orient_yaw)])
+				self.data.append([float(time_stamp), int(mode), float(b_e), float(b_n), float(a_e), float(a_n), \
+					float(e), float(n), float(dist_b), float(bearing_b), float(head_err), float(dist_ab), \
+					float(t_e), float(t_n), float(t_dist), float(t_bearing), float(t_head_err), \
+					float(linspd), float(angspd)])
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break
@@ -85,35 +91,4 @@ class imu_data():
 			new_data += 1
 		return (new_data, self.data[self.i-1])
 
-class gnss_data:
-	def __init__(self, filename, skip_lines, max_lines):
-		self.i = 0
-		print 'Importing GPS data'
-		file = open(filename, 'rb')
-		file_content = csv.reader(file, delimiter=',')
-	 	self.data = []
-		i = 0
-		origo_e = 0
-		origo_n = 0
-		for time, lat, lon, easting, northing, fix, sat, hdop in file_content:
-			if i > skip_lines:
-				self.data.append([float(time), float(lat), float(lon), \
-					float(easting), float(northing), int(fix), int(sat), float(hdop)])
-			i += 1
-			if max_lines > 0 and i == max_lines:
-				break
-		file.close()
-		self.length = len(self.data)
-		print '\tTotal samples: %d' % (self.length) 
-
-	def get_latest(self, time):
-		new_data = 0
-		while self.i < self.length and self.data[self.i][0] <= time:
-			# print ('  GPS time: %f' % (self.data[self.i][0]))
-			self.i += 1
-			new_data += 1
-		if self.i < self.length:
-			return (new_data, self.data[self.i-1])
-		else:
-			return (0, False)
 

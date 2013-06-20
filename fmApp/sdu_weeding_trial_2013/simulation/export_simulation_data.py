@@ -101,14 +101,14 @@ f.close()
 
 # extract velocity_left data
 f = open ('sim_velocity_left.txt', 'w')
-#for topic, msg, t in bag.read_messages(topics=[topic_velocity_left]):
-#	f.write ('%s,%.6f\n' % (time_stamp(msg.header.stamp), msg.data))
+for topic, msg, t in bag.read_messages(topics=[topic_velocity_left]):
+	f.write ('%s,%.6f\n' % (time_stamp(t), msg.data))
 f.close()
 
 # extract velocity_right data
 f = open ('sim_velocity_right.txt', 'w')
-#for topic, msg, t in bag.read_messages(topics=[topic_velocity_right]):
-#	f.write ('%s,%.6f\n' % (time_stamp(msg.header.stamp), msg.data))
+for topic, msg, t in bag.read_messages(topics=[topic_velocity_right]):
+	f.write ('%s,%.6f\n' % (time_stamp(t), msg.data))
 f.close()
 
 # extract power_left data

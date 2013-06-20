@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# Pose 2D Estimator - robot drive simulation
+# Waypoint navigation simulation
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,71 +27,41 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 """
-This file contains a Python script to test the Pose 2D Estimator using system
-feedback and sensor data from FroboMind rosbags
 
 Revision
-2013-05-10 KJ First alpha release
-2013-05-15 KJ Added AHRS support
-2013-06-05 KJ Improved pre-processing algorithms 
+2013-06-20 KJ First version
 """
 
 # imports
 import signal
-from math import sqrt, pi
-from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf, yaw_ekf
-from sim_import import odometry_data, imu_data, gnss_data
-from robot_track_map import track_map
+from sim_import import pose_data, wptnav_data
+from wptnav_plot import ab_map
+from math import fabs
 
 # parameters
-ekf_easting_init = 651180.0   # set these EKF initial guess coordinates close
-ekf_northing_init = 6133758.0 # to actual transverse mercator coordinates.
-plot_pose = True
-plot_gnss = True
-plot_odometry = True
+offset_e = -651180.0   
+offset_n = -6133758.0 
+reject_pose_around_origo = True
+max_buffer_seconds = 120
+plot_ab = True
+plot_ab_history = 15 # [s]
+plot_ab_size = 5
 plot_yaw = True
-plot_pose_yaw = True # used only in this simulation to determine which values to append
-plot_gnss_yaw = True # used only in this simulation to determine which values to append
-plot_ahrs_yaw =  False # used only in this simulation to determine which values to append
-plot_odo_yaw = True # used only in this simulation to determine which values to append
 plot_relative_coordinates = True
-odo_file = 'sim_odometry.txt'
-odo_skip_lines =  0
-odo_max_lines = 0 # 0 = read to the end
-imu_file = 'sim_imu.txt'
-imu_skip_lines = 0
-imu_max_lines = 0
-gnss_file = 'sim_gnss.txt'
-gnss_skip_lines = 0
-gnss_max_lines = 0 
+pose_file = 'sim_pose.txt'
+pose_skip_lines =  0
+pose_max_lines = 0 # 0 = read to the end
+wptnav_file = 'sim_wptnav_status.txt'
+wptnav_skip_lines = 0
+wptnav_max_lines = 0
 sim_step_interval = 0.01 # 100 Hz
-steps_btw_plot_updates = 10000
+steps_btw_plot_updates = 300
 steps_btw_yaw_plot_points = 10
 min_gnss_fix_msg_before_pose_plot = 5 # used to avoid the high initial variance causes odd plots
-var_dist = 0.001**2 # per meter
-var_angle = (0.003*2*pi)**2 # per 2*pi
-var_yaw = 0.1
-pi2 = 2.0*pi
-
-# return angle within [0;2pi[
-def angle_limit (angle):
-	while angle < 0:
-		angle += pi2
-	while angle >= pi2:
-		angle -= pi2
-	return angle
-
-# return signed difference between new and old angle
-def angle_diff (angle_new, angle_old):
-	diff = angle_new - angle_old
-	while diff < -1.5*pi:
-		diff += 2*pi
-	while diff > 1.5*pi:
-		diff -= 2*pi
-	return diff
+save_images = False
 
 # main
-print 'Simulation of robot motion'
+print 'Simulation of waypoint navigation'
 print 'Press CTRL-C to cancel'
 
 # define and install ctrl-c handler
@@ -103,44 +73,22 @@ def signal_handler(signal, frame):
     print 'Quit'
 signal.signal(signal.SIGINT, signal_handler)
 
-# setup plotting
-if plot_relative_coordinates == False: # define absolute or relative plotting coordinates
-	plot_easting_offset = 0.0
-	plot_northing_offset = 0.0
-else:
-	plot_easting_offset = -ekf_easting_init 
-	plot_northing_offset = -ekf_northing_init
-plot = track_map(plot_pose, plot_gnss, plot_odometry, plot_yaw, \
-	"Robot track", 5.0, plot_easting_offset, plot_northing_offset)
-latest_pose_yaw = 0.0
-latest_absolute_yaw = 0.0
-latest_ahrs_yaw = 0.0
-latest_odo_yaw = 0.0
-gnss_fix_msg_count = 0 
+# setup plottingf 
+if plot_ab:
+	ab_plot = ab_map(plot_ab_history, plot_ab_size, offset_e, offset_n, max_buffer_seconds, save_images)
 
 # import simulation data
-odo_sim = odometry_data(odo_file, odo_skip_lines, odo_max_lines)
-imu_sim = imu_data(imu_file, imu_skip_lines, imu_max_lines)
-gnss_sim = gnss_data(gnss_file, gnss_skip_lines, gnss_max_lines)
+pose_sim = pose_data(pose_file, pose_skip_lines, pose_max_lines)
+wptnav_sim = wptnav_data(wptnav_file, wptnav_skip_lines, wptnav_max_lines)
 
 # define simulation time based on odometry data
-sim_offset = odo_sim.data[0][0]
-sim_len = odo_sim.data[-1][0] - sim_offset
+sim_offset = pose_sim.data[0][0]
+sim_len = pose_sim.data[-1][0] - sim_offset
 sim_steps = sim_len/sim_step_interval
 sim_time = 0
 print ('Simulation')
 print ('  Step interval: %.2fs' % sim_step_interval)
 print ('  Total: %.2fs (%.0f steps)' % (sim_len, sim_steps))
-
-# initialize estimator (preprocessing)
-robot_max_speed = 3.0 # [m/s]
-pp = pose_2d_preprocessor (robot_max_speed)
-
-# initialize estimator (EKF)
-prev_odometry = [0.0, 0.0, 0.0, 0.0] # [time,X,Y,theta]
-ekf = pose_2d_ekf()
-ekf.set_initial_guess([ekf_easting_init, ekf_northing_init, 0])
-yawekf = yaw_ekf() # !!! TEMPORARY HACK
 
 # run simulation
 for step in xrange ((int(sim_steps)+1)):
@@ -149,74 +97,23 @@ for step in xrange ((int(sim_steps)+1)):
 	log_time = sim_time + sim_offset
 	sim_time += sim_step_interval
 
-    # update odometry position
-	(odo_updates, odometry) = odo_sim.get_latest(log_time) 
-	if odo_updates > 0:
-		# odometry data preprocessing
-		time_recv = odometry[0]
-		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
-		delta_angle = angle_diff (odometry[3], prev_odometry[3])
-		prev_odometry = odometry
-		forward = odometry[4] >= 0
-		pp.odometry_new_feedback (time_recv, delta_dist, delta_angle, forward)
-		
-		# EKF system update (odometry)
-		pose = ekf.system_update (delta_dist, var_dist, delta_angle, var_angle)
-		pose[2] = yawekf.system_update (delta_angle, var_angle) # !!! TEMPORARY HACK
+    # update pose data
+	(pose_updates, pose) = pose_sim.get_latest(log_time) 
+	if pose_updates > 0:
+		if reject_pose_around_origo == False or fabs(pose[1]) > 10.0 or fabs(pose[2]) > 10.0:
+			latest_pose_yaw = pose[3]
+			if plot_ab:
+				ab_plot.append_pose(pose[0], pose[1], pose[2])
 
-		# odometry plot update
-		latest_odo_yaw += delta_angle
-		latest_odo_yaw = angle_limit(latest_odo_yaw)
-		plot.append_odometry_position(odometry[1], odometry[2])
-
-		# pose plot update
-		if gnss_fix_msg_count >= min_gnss_fix_msg_before_pose_plot:
-			plot.append_pose_position (pose[0], pose[1])
-		latest_pose_yaw = angle_limit(pose[2])
-
-    # update IMU data
-	(imu_updates, imu_data) = imu_sim.get_latest(log_time) 
-	if imu_updates > 0:		
-		# EKF measurement update (IMU)
-		time_recv = imu_data[0]
-		rate_yaw = imu_data[1]
-		orientation_yaw = angle_limit(imu_data[2])
-		pos = pp.imu_new_measurement (time_recv, rate_yaw, orientation_yaw)
-	
-		# plot update
-		latest_ahrs_yaw = orientation_yaw
-
-    # update GNSS data
-	(gnss_updates, gnss_data) = gnss_sim.get_latest(log_time)
-	if gnss_updates > 0: # if new data available
-		solution = gnss_data[5]
-		if solution > 0: # if the new data has a satellite fix
-			gnss_fix_msg_count += 1
-			time_recv = gnss_data[0]
-			easting = gnss_data[3] 
-			northing = gnss_data[4]
-			satellites = gnss_data[6]
-			hdop = gnss_data[7]
-			# GNSS data preprocessing
-			valid = pp.gnss_new_measurement (time_recv, easting, northing, solution, satellites, hdop)
-			if valid == True: # if position is validated
-				var_pos = pp.gnss_estimate_variance_pos() # estimate the position variance
-				pose = ekf.measurement_update_pos ([easting, northing], var_pos) # EKF measurement update
-
-				(valid, yaw) = pp.estimate_absolute_orientation()
-				if valid == True:
-					latest_absolute_yaw = yaw
-					# pose = ekf.measurement_update_yaw (yaw, 5)
-					yaw = yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
-
-				# plot update
-				plot.append_gnss_position(easting, northing)
-
+	# update wptnav status data
+	(wptnav_updates, wn) = wptnav_sim.get_latest(log_time) 
+	if wptnav_updates > 0:
+		if plot_ab:
+			ab_plot.append_wptnav_status(wn)
 
 	# output to screen
-	#if step % 2000 == 0: # each 20 seconds, needs to be calculated!!!
-	#	print ('Step %d time %.2f log time %.2f' % (step+1, sim_time, (sim_time+sim_offset)))
-	if step % steps_btw_yaw_plot_points == 0:
+	#print ('Step %d time %.2f log time %.2f' % (step+1, sim_time, (sim_time+sim_offset)))
+	"""if step % steps_btw_yaw_plot_points == 0:
 		if plot_pose_yaw:
 			plot.append_pose_yaw (latest_pose_yaw)
 		if plot_gnss_yaw:
@@ -225,9 +122,9 @@ for step in xrange ((int(sim_steps)+1)):
 			plot.append_ahrs_yaw (latest_ahrs_yaw)
 		if plot_odo_yaw:
 			plot.append_odo_yaw (latest_odo_yaw)
-
+	"""
 	if step % steps_btw_plot_updates == 0:
-		plot.update()
+		ab_plot.update()
 
     # exit if CTRL-C pressed
 	if ctrl_c:
@@ -237,5 +134,4 @@ for step in xrange ((int(sim_steps)+1)):
 if ctrl_c == False:
 	print 'Simulation completed, press Enter to quit'
 	raw_input() # wait for enter keypress 
-	plot.save('simulation')
 
