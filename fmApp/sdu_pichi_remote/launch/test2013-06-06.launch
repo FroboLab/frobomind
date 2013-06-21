@@ -6,6 +6,7 @@
 	
 	<!-- Mission -->
 	<include file="$(find sdu_pichi_remote)/launch/missions/remote_mission.launch"/>
+	<include file="$(find sdu_pichi_remote)/launch/nodes/safety.launch"/>
 
 	<!-- Sensors -->
 	<include file="$(find sdu_pichi_remote)/launch/nodes/web_cam.launch"/>

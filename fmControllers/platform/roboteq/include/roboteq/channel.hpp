@@ -109,6 +109,7 @@ public:
 	ros::Publisher vel_publisher;
 
 	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm;
+
 	double i_max,max_output;
 	double current_setpoint;
 	std_msgs::Float64 vel_msg;

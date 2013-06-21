@@ -1,0 +1,5 @@
+<launch>
+	<group ns="fmSafety">
+		<node pkg="sdu_pichi_remote" type="fault_detector.py" name="fault_detector_node" respawn="true" output="screen"/>
+	</group>
+</launch>

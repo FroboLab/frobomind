@@ -3,11 +3,6 @@
 hbl2350::hbl2350( )
 :local_node_handler("~"),global_node_handler()
 {
-	// Initialise status
-	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
-	status.emergency_stop = true;
-
-
 	// Two channel operation
 	two_channel = true;
 
@@ -21,9 +16,13 @@ hbl2350::hbl2350( )
 	ch1.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 	ch2.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 
-	// Set conversion factors
-	ch1.ticks_to_meter = 1.0/1285.0;
-	ch2.ticks_to_meter = (1285.0/682.0)/1285.0; // TODO: Crappy 1.88 RoboTeQ hack
+	//Motor controller constant open loop max outputmax_output
+	ch1.roboteq_max = 1000;
+	ch2.roboteq_max = 1000;
+
+	// Initialise status
+	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
+	status.emergency_stop = true;
 
 	// Declare variables for parsing parameters
 	double max_time_diff_input;
@@ -46,28 +45,31 @@ hbl2350::hbl2350( )
 
 	// Init channel parameters
 	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
-	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
-	local_node_handler.param<double>("d_gain", ch1.d_gain, 0);
 	ch2.p_gain = ch1.p_gain;
+	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
 	ch2.i_gain = ch1.i_gain;
+	local_node_handler.param<double>("d_gain", ch1.d_gain, 0);
 	ch2.d_gain = ch1.d_gain;
-	local_node_handler.param<int>("max_acceleration",ch1.max_acceleration,20000);
-	ch2.max_acceleration = ch1.max_acceleration;
-	local_node_handler.param<int>("max_deceleration",ch1.max_deceleration,20000);
-	ch2.max_acceleration = ch1.max_acceleration;
-	local_node_handler.param<int>("max_rpm",ch1.max_rpm,4000);
-	ch2.max_rpm = ch1.max_rpm;
+	local_node_handler.param<double>("i_max",ch1.i_max,50);
+	ch2.i_max = ch1.i_max;
+
 	local_node_handler.param<double>("/robot_max_velocity",ch1.max_velocity_mps,1.0);
 	ch2.max_velocity_mps = ch1.max_velocity_mps;
-	local_node_handler.param<int>("anti_windup_percent",ch1.anti_windup_percent,50);
-	ch2.anti_windup_percent = ch1.anti_windup_percent;
-	ch1.roboteq_max = ch2.roboteq_max = 1000; //Motor controller constant
-	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5);
-	ch2.mps_to_rpm = ch1.mps_to_rpm;
+	local_node_handler.param<double>("max_controller_command",ch1.max_output,300);
+	ch2.max_output = ch1.max_output;
+	if(ch1.max_output > ch1.roboteq_max) ch1.max_output = ch1.roboteq_max;
+	if(ch2.max_output > ch2.roboteq_max) ch2.max_output = ch2.roboteq_max;
+
+	double tmp;
+	local_node_handler.param<double>("ticks_per_meter",tmp,1285.0);
+	ch1.ticks_to_meter = -(1.0/tmp);
+//	ch2.ticks_to_meter = (1.0/tmp);
+	ch2.ticks_to_meter = (tmp/682.0)/tmp; // TODO: Crappy 1.88 RoboTeQ hack
+
 	ch1.last_deadman_received = ch2.last_deadman_received = ros::Time::now();
 	ch1.velocity = ch2.velocity = 0;
-	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,100 , 1000);
-	ch2.regulator.set_params(ch2.p_gain , ch2.i_gain , ch2.d_gain ,100 , 1000);
+	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
+	ch2.regulator.set_params(ch2.p_gain , ch2.i_gain , ch2.d_gain ,ch2.i_max , ch2.roboteq_max);
 
 	// Init general parameters
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
@@ -135,6 +137,8 @@ void hbl2350::initController(std::string config)
 	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
 	transmit(1,	"# 50" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 10 ms
+	transmit(1,	"^ALIM 1 70" ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(1,	"^ALIM 2 70" ); sleep(TIME_BETWEEN_COMMANDS);
 	sleep(2);
 
 	ROS_INFO("Initialization finished");

@@ -4,6 +4,7 @@ Channel::Channel( ) : velocity_filter(8) // do not change!!
 {
 	down_time = 0;
 	current_setpoint = 0;
+	hall_value = 0;
 }
 
 void Channel::onHallFeedback(ros::Time time, int feedback)
@@ -81,10 +82,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						/* Get new output */
 						double period = (ros::Time::now() - last_regulation).toSec();
 						double feedback = (( (double)hall_value)*ticks_to_meter)/period;
-						if(ch == 1)
-						{
-							feedback *= -1;
-						}
+
 						// reset hall_value after read, so we get the relative hall_ticks since last read
 						hall_value = 0;
 
@@ -100,9 +98,6 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						if(current_setpoint >  max_output) current_setpoint = max_output;
 						if(current_setpoint < -max_output) current_setpoint = -max_output;
 
-						//std::cout << " vel " << velocity << " fb " << feedback << " fb_sm " << fb_sm;
-						//std::cout << " sp_ch " << sp_change << " cur_sp " << current_setpoint << std::endl;
-
 						last_regulation = ros::Time::now();
 
 						/* Convert to roboteq format */
@@ -111,6 +106,9 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						/* Send motor output command  */
 						out << "!G " << ch << " " << output << "\r";
 						transmit(out.str());
+
+						std::cout << "Channel: " << ch << " vel " << velocity << " Feedback: " << feedback << " Feedback filtered: " << fb_sm;
+						std::cout << " Setpoint change: " << sp_change << " Current setpoint: " << current_setpoint << " Output: " << output << std::endl;
 
 					}
 					else /* deadman not pressed */

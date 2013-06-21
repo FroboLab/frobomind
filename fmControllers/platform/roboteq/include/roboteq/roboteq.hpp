@@ -63,7 +63,7 @@ public:
 							bsr1,bsr2,				// Variables for holding motor speed in 1/1000 max
 							e1,e2,					// Variables for holding closed loop error readings
 							p1,p2,					// Variables for holding power readings
-							t1,t2,t3,				// Variables for holding tmperature readings
+							t1,t2,t3,				// Variables for holding temperature readings
 							v1,v2,v3;				// Variables for holding voltage readings
 
 	msgs::serial 			serial_out;

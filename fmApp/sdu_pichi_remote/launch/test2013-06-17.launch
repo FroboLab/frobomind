@@ -1,4 +1,16 @@
 <launch>
+	<include file="$(find sdu_pichi_remote)/launch/missions/remote_mission.launch"/>
+
+	<group ns="robot">	
+		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/robot_rx" />	 
+			<param name="subscriber_topic" value="/fmData/robot_tx" />
+			<param name="device" value="/dev/robot" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="13"/>
+		</node>
+	</group>
+	
 	<group ns="fmTools">
 		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py" />
 	</group>
@@ -21,11 +33,13 @@
 			<param name="power_ch1_topic" value="/fmData/power_left"/>
 			<param name="power_ch2_topic" value="/fmData/power_right"/>
 			<param name="status_topic" value="/fmData/status"/>	
-			<param name="mps_to_rpm" value="1320"/> 
-			<param name="p_gain" value="1.0"/>
-            <param name="i_gain" value="0.8"/>
-            <param name="d_gain" value="0.0"/>  
-            <param name="i_max" value="0.5"/> <!-- No longer in percent -->     
-        </node>
+			<param name="ticks_per_meter" value="1285.0"/>
+			<param name="p_gain" value="10"/>
+			<param name="i_gain" value="1"/>
+			<param name="d_gain" value="0"/>
+			<param name="i_max" value="1"/>
+			<param name="max_controller_command" value="999" />
+			<param name="closed_loop_operation" value="true"/>        
+		</node>
 	</group>
 </launch>

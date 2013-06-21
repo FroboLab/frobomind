@@ -13,8 +13,8 @@ hbl1650::hbl1650( )
 	ch1.transmit_cb = new CallbackHandler<hbl1650>(this,&hbl1650::transmit);
 	ch1.init_cb = new CallbackHandler<hbl1650>(this,&hbl1650::initController);
 
-
-	ch1.roboteq_max = 1000; //Motor controller constant open loop max outputmax_output
+	//Motor controller constant open loop max outputmax_output
+	ch1.roboteq_max = 1000;
 
 	// Initialise status
 	status.cmd_vel_publishing = status.deadman_pressed = status.initialised = status.online = status.responding = false;
@@ -42,7 +42,6 @@ hbl1650::hbl1650( )
 	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
 	local_node_handler.param<double>("d_gain", ch1.d_gain, 0);
 	local_node_handler.param<double>("i_max",ch1.i_max,50);
-	local_node_handler.param<int>("anti_windup_percent",ch1.anti_windup_percent,50);
 
 	local_node_handler.param<double>("/robot_max_velocity",ch1.max_velocity_mps,1.0);
 

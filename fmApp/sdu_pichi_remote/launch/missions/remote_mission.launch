@@ -7,7 +7,7 @@
 			<param name="feedback_topic" value="/fmHMI/joy/set_feedback" />
 			<param name="joy_topic" value="/fmHMI/joy" />
 			<param name="max_linear_velocity" value="1.0"/>
-			<param name="max_angular_velocity" value="2.5"/>
+			<param name="max_angular_velocity" value="1.5"/>
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="50"/>
 			<param name="publish_frequency" value="10"/>
@@ -20,8 +20,5 @@
 			<!--param name="fixed_wiimote_address" value="00:1F:C5:3B:AE:63"/-->
 		</node>
 	</group>
-	
-	<group ns="fmSafety">
-		<node pkg="sdu_pichi_remote" type="fault_detector.py" name="fault_detector_node" respawn="true" output="screen"/>
-	</group>
+
 </launch>
