@@ -46,6 +46,7 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class Pose2DEstimatorNode():
 	def __init__(self):
+		rospy.loginfo(rospy.get_name() + ": Start")
 		self.update_rate = 20 # set update frequency [Hz]
 		self.pose_msg = Odometry()
 		self.quaternion = np.empty((4, ), dtype=np.float64) 
@@ -53,6 +54,7 @@ class Pose2DEstimatorNode():
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
 		self.odometry_yaw_prev = 0.0
+		self.first_absolute_yaw_update = False
 
 		# Get parameters
 		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
@@ -91,7 +93,6 @@ class Pose2DEstimatorNode():
 		self.yawekf = yaw_ekf() # !!! TEMPORARY HACK
 
 		# Call updater function
-		rospy.loginfo(rospy.get_name() + ": Start")
 		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
@@ -157,7 +158,10 @@ class Pose2DEstimatorNode():
 				if valid == True:
 					var_yaw = 0.1
 					self.pose[2] = self.yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
-	
+					if self.first_absolute_yaw_update == False:
+						self.first_absolute_yaw_update = True
+						rospy.loginfo(rospy.get_name() + ': First absolute orientation update')
+
 	def publish_pose(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
 		self.pose_msg.pose.pose.position.x = self.pose[0]
