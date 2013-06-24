@@ -75,11 +75,20 @@ int main(int argc, char **argv)
   serialInterface.term_char = (char)term;
 
   /* keep trying until connection is made */
-  while(serialInterface.openDevice(device, baudrate))
-	  sleep(2);
+  ros::Rate r(2);
 
-  s_subscriber = nh.subscribe<msgs::serial> (subscriber_topic.c_str(), 20, &serialInterface::writeHandler, &serialInterface);
-  ros::spin();
+  while(serialInterface.openDevice(device, baudrate) && ros::ok())
+  {
+	  r.sleep();
+	  ros::spinOnce();
+  }
+
+  if(ros::ok())
+  {
+	  s_subscriber = nh.subscribe<msgs::serial> (subscriber_topic.c_str(), 20, &serialInterface::writeHandler, &serialInterface);
+	  ros::spin();
+  }
+
   return 0;
 
 }
