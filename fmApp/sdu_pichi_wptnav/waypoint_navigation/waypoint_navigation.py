@@ -59,7 +59,30 @@ class waypoint_navigation():
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
 
-		# navigation controller state constants
+		# parameters
+		self.update_rate = update_rate # [Hz]
+		self.update_interval = (1.0/self.update_rate) # [s]
+		self.wpt_linear_speed_default = 0.7 # [m/s]
+		self.linear_speed_max = 1.0 # [m/s]
+		self.wpt_linear_ramp_down_speed_default = 0.3 # [m/s]
+		self.wpt_linear_ramp_down_at_dist_default = 1.0 # [m]
+		self.angular_speed_max = 0.45 # [radians/s]
+		self.turn_start_at_heading_err = 17.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
+		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
+		self.drive_kp =23.0
+		self.drive_ki = 0.0
+		self.drive_kd = 2.4
+		self.drive_integral_max = 1.0
+		self.turn_kp = 2.5
+		self.turn_ki = 0.0
+		self.turn_kd = 1.0
+		self.turn_integral_max = 1.0
+		self.target_ahead = 2.0 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
+		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
+		self.wpt_tolerance_default = 0.5 # [m]
+		self.print_interval = 10
+
+		# navigation controller state machine
 		self.STATE_STOP = 0
 		self.STATE_STANDBY = 1
 		self.STATE_DRIVE_INIT = 2
@@ -67,20 +90,6 @@ class waypoint_navigation():
 		self.STATE_TURN_INIT = 4
 		self.STATE_TURN = 5
 
-		# parameters
-		self.update_rate = update_rate # [Hz]
-		self.update_interval = (1.0/self.update_rate) # [s]
-		self.wpt_linear_speed_default = 0.6 # [m/s]
-		self.linear_speed_max = 0.8 # [m/s]
-		self.angular_speed_max = 0.35 # [radians/s]
-		self.wpt_tolerance_default = 0.5 # [m]
-		self.target_ahead = 1.0 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
-		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
-		self.turn_start_at_heading_err = 15.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot
-		self.turn_acceptable_heading_err = 2.5*self.deg_to_rad # [radians]
-		self.print_interval = 10
-
-		# state machine
 		self.state = self.STATE_STOP
 		self.prev_state = self.STATE_STOP
 
@@ -91,6 +100,8 @@ class waypoint_navigation():
 		self.target = False
 		self.wpt_tolerance = 0.0
 		self.wpt_linear_speed = 0.0
+		self.wpt_linear_ramp_down_at_dist = 0.0
+		self.wpt_linear_ramp_down_speed = 0.0
 
 		# initialize navigation state vars
 		self.dist = 0.0
@@ -107,19 +118,11 @@ class waypoint_navigation():
 
 		# PID drive controller
 		self.pid_drive = pid_controller(self.update_interval)
-		Kp = 4.0
-		Ki = 0.0
-		Kd = 0.2
-		integral_max = 1.0
-		self.pid_drive.set_parameters(Kp, Ki, Kd, integral_max)
+		self.pid_drive.set_parameters(self.drive_kp, self.drive_ki, self.drive_kd, self.drive_integral_max)
 
 		# PID turn controller
 		self.pid_turn = pid_controller(self.update_interval)
-		Kp = 0.8
-		Ki = 0.3
-		Kd = 0.0
-		integral_max = 1.0
-		self.pid_turn.set_parameters(Kp, Ki, Kd, integral_max)
+		self.pid_turn.set_parameters(self.turn_kp, self.turn_ki, self.turn_kd, self.turn_integral_max)
 
 		# initialize output
 		self.linear_speed = 0.0
@@ -150,6 +153,9 @@ class waypoint_navigation():
 		self.wpt_linear_speed = float(self.b[WPT_SPEED])
 		if self.wpt_linear_speed < 0.01:
 			self.wpt_linear_speed = self.wpt_linear_speed_default
+
+		self.wpt_linear_ramp_down_speed = self.wpt_linear_ramp_down_speed_default
+		self.wpt_linear_ramp_down_at_dist = self.wpt_linear_ramp_down_at_dist_default
 
 		# calculate ab-line properties (used by the drive function)
 		self.ab_len = sqrt((self.b[WPT_E]-self.a[WPT_E])**2 + (self.b[WPT_N]-self.a[WPT_N])**2) # length of ab line
@@ -199,7 +205,10 @@ class waypoint_navigation():
 			self.state = self.STATE_TURN_INIT
 		else:
 			self.angular_speed = self.pid_drive.update (self.target_heading_err) # get controller output
-			self.linear_speed = self.wpt_linear_speed
+			if self.dist > self.wpt_linear_ramp_down_at_dist:
+				self.linear_speed = self.wpt_linear_speed
+			else:
+				self.linear_speed = self.wpt_linear_speed - (1 - self.dist/self.wpt_linear_ramp_down_at_dist)*(self.wpt_linear_speed - self.wpt_linear_ramp_down_speed)
 
 	# initialize turn about own center (not applicable to all robots)
 	def turn_init(self):

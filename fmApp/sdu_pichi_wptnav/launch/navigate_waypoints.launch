@@ -70,8 +70,10 @@
 			<param name="odom_estimate_frame" value="/odom_combined" />
 			<param name="vehicle_frame" value="base_footprint" />
 			<param name="encoder_output" value="absolute" />
-			<param name="ticks_per_meter_left" value="-1285" />
-			<param name="ticks_per_meter_right" value="642" />
+			<!-- param name="ticks_per_meter_left" value="-1285" /-->
+			<!-- param name="ticks_per_meter_right" value="642" / -->
+			<param name="ticks_per_meter_left" value="-1353" />
+			<param name="ticks_per_meter_right" value="755" />
 			<param name="max_ticks_per_update" value="200" />
 			<param name="yaw_angle_source" value="imu_angular_velocity" />
 			<param name="imu_angular_velocity_yaw_axis" value="y" />
@@ -83,6 +85,8 @@
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="update_rate" value="20" />
+			<param name="publish_relative_pose" type="boolean" value="false" />
 			<param name="ekf_initial_guess_easting" value="588784.0" /> <!-- [m] if unsure set to 0.0 -->
 			<param name="ekf_initial_guess_northing" value="6137262.0" /> <!-- [m] if unsure set to 0.0 -->
 			<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->
@@ -95,8 +99,8 @@
 		<node pkg="sdu_pichi_wptnav" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-            <param name="max_linear_velocity" value="0.8"/>
-            <param name="max_angular_velocity" value="0.5"/>
+            <param name="max_linear_velocity" value="1.3"/>
+            <param name="max_angular_velocity" value="0.9"/>
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="50"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />

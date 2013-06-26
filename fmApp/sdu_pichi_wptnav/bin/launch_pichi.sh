@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WAYPOINT_LIST=waypoints_temp.txt
+WAYPOINT_LIST=waypoints_sdu_s.txt
 
 # determine the script directory
 APPDIR=`dirname $(readlink -f $0)`
