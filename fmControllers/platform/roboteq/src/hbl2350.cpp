@@ -16,7 +16,7 @@ hbl2350::hbl2350( )
 	ch1.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 	ch2.init_cb = new CallbackHandler<hbl2350>(this,&hbl2350::initController);
 
-	//Motor controller constant open loop max outputmax_output
+	//Maximum thrust value (motor controller constant)
 	ch1.roboteq_max = 1000;
 	ch2.roboteq_max = 1000;
 
@@ -27,21 +27,25 @@ hbl2350::hbl2350( )
 	// Declare variables for parsing parameters
 	double max_time_diff_input;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
-	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic;
+	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic,
+	propulsion_module_status_topic, propulsion_module_feedback_left_topic,propulsion_module_feedback_right_topic;
 
 	// Parse from parameter server
-	local_node_handler.param<std::string>("cmd_vel_ch1_topic", cmd_vel_ch1_topic, "/fmActuators/cmd_vel_ch1");
-	local_node_handler.param<std::string>("cmd_vel_ch2_topic", cmd_vel_ch2_topic, "/fmActuators/cmd_vel_ch2");
-	local_node_handler.param<std::string>("serial_rx_topic", serial_rx_topic, "/fmCSP/S0_rx");
-	local_node_handler.param<std::string>("serial_tx_topic", serial_tx_topic, "/fmCSP/S0_tx");
+	local_node_handler.param<std::string>("serial_rx_topic", serial_rx_topic, "/fmData/robot_rx");
+	local_node_handler.param<std::string>("serial_tx_topic", serial_tx_topic, "/fmData/robot_tx");
 	local_node_handler.param<std::string>("command_relay_topic", command_relay_topic, "/fmData/command");
-	local_node_handler.param<std::string>("deadman_topic", deadman_topic, "/fmHMI/joy");
-	local_node_handler.param<std::string>("encoder_ch1_topic", encoder_ch1_topic, "/fmSensors/encoder_ch1");
-	local_node_handler.param<std::string>("encoder_ch2_topic", encoder_ch2_topic, "/fmSensors/encoder_ch2");
-	local_node_handler.param<std::string>("power_ch1_topic", power_ch1_topic, "/fmSensors/power_ch1");
-	local_node_handler.param<std::string>("power_ch2_topic", power_ch2_topic, "/fmSensors/power_ch2");
-	local_node_handler.param<std::string>("status_topic", status_topic, "/fmActuators/status");
-	local_node_handler.param<std::string>("temperature_topic", temperature_topic, "/fmActuators/temperature");
+	local_node_handler.param<std::string>("deadman_topic", deadman_topic, "/fmSignals/deadman");
+	local_node_handler.param<std::string>("cmd_vel_ch1_topic", cmd_vel_ch1_topic, "/fmSignals/cmd_vel_ch1");
+	local_node_handler.param<std::string>("cmd_vel_ch2_topic", cmd_vel_ch2_topic, "/fmSignals/cmd_vel_ch2");
+	local_node_handler.param<std::string>("encoder_ch1_topic", encoder_ch1_topic, "/fmInformation/encoder_ch1");
+	local_node_handler.param<std::string>("encoder_ch2_topic", encoder_ch2_topic, "/fmInformation/encoder_ch2");
+	local_node_handler.param<std::string>("power_ch1_topic", power_ch1_topic, "/fmInformation/power_ch1");
+	local_node_handler.param<std::string>("power_ch2_topic", power_ch2_topic, "/fmInformation/power_ch2");
+	local_node_handler.param<std::string>("status_topic", status_topic, "/fmInformation/status");
+	local_node_handler.param<std::string>("temperature_topic", temperature_topic, "/fmInformation/temperature");
+	local_node_handler.param<std::string>("propulsion_module_status_topic", propulsion_module_status_topic, "/fmInformation/propulsion_module_status");
+	local_node_handler.param<std::string>("propulsion_module_feedback_left_topic", propulsion_module_feedback_left_topic, "/fmInformation/propulsion_module_feedback_left");
+	local_node_handler.param<std::string>("propulsion_module_feedback_right_topic", propulsion_module_feedback_right_topic, "/fmInformation/propulsion_module_feedback_right");
 
 	// Init channel parameters
 	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
@@ -78,6 +82,7 @@ hbl2350::hbl2350( )
 	local_node_handler.param<bool>("closed_loop_operation", closed_loop_operation, false);
 
 	// Setup publishers
+	propulsion_module_status_publisher = local_node_handler.advertise<msgs::PropulsionModuleStatus>( propulsion_module_status_topic,10 );
 	setSerialPub( local_node_handler.advertise<msgs::serial>( serial_tx_topic,10 ));
 	setEncoderCh1Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch1_topic, 10));
 	setEncoderCh2Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch2_topic, 10));
@@ -86,6 +91,8 @@ hbl2350::hbl2350( )
 	setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	ch2.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
+	ch1.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_left_topic, 10));
+	ch2.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_right_topic, 10));
 	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
 
 	// Set up subscribers
@@ -99,7 +106,7 @@ void hbl2350::spin(void)
 {
 	// Wait for RoboTeQ to come online
 	ros::Rate r(5);
-	while(!this->subscribers())
+	while(!this->subscribers() && ros::ok())
 	{
 		ROS_INFO_THROTTLE(1,"Waiting for serial node to subscribe");
 		r.sleep();
@@ -108,8 +115,24 @@ void hbl2350::spin(void)
 
 	// Initialize timer
 	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.02),&hbl2350::onTimer,this);
+	ros::Timer status_timer = global_node_handler.createTimer(ros::Duration(0.5),&hbl2350::onStatusTimer,this);
 
 	ros::spin();
+}
+
+void hbl2350::onStatusTimer(const ros::TimerEvent& event)
+{
+	propulsion_module_status_message.header.stamp = ros::Time::now();
+	propulsion_module_status_message.voltage = v2/10.0;
+	propulsion_module_status_message.current = ba1/10.0;
+	propulsion_module_status_message.power = (v2*ba1)/100.0;
+	propulsion_module_status_publisher.publish(propulsion_module_status_message);
+
+	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
+	transmit(1,	"?BA"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
+	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
+	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
+	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 }
 
 void hbl2350::updateStatus(void)
@@ -119,6 +142,7 @@ void hbl2350::updateStatus(void)
 	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.time_stamp.last_twist_received) < max_time_diff) || ( (ros::Time::now() - ch2.time_stamp.last_twist_received) < max_time_diff);
 	status.responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
 }
+
 
 void hbl2350::initController(std::string config)
 {
@@ -130,13 +154,8 @@ void hbl2350::initController(std::string config)
 	sleep(1);
 	transmit(2,	"^ECHOF", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Echo is disabled
 	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
-	transmit(1,	"?P"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
-	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
-	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
-	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
-	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
-	transmit(1,	"# 50" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 10 ms
+	transmit(1,	"# 50" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
 	transmit(1,	"^ALIM 1 70" ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(1,	"^ALIM 2 70" ); sleep(TIME_BETWEEN_COMMANDS);
 	sleep(2);

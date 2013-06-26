@@ -37,6 +37,7 @@
 #include <msgs/serial.h>
 #include <msgs/IntStamped.h>
 #include <msgs/StringStamped.h>
+#include <msgs/PropulsionModuleStatus.h>
 
 class RoboTeQ
 {
@@ -55,21 +56,17 @@ public:
 	bool					two_channel;			// True if controller has two channel mode
 	unsigned int			ff,fs;					// Variables for holding status flags
 	int						cb1,cb2,				// Variables for holding absolute hall values
-							cbr1,cbr2,				// Variables for holding relative hall values
-							f1,f2,					// Variables for holding external encoder readings
 							a1,a2,					// Variables for holding motor current readings
 							ba1,ba2,				// Variables for holding battery current readings
-							bs1,bs2,				// Variables for holding motor speed in rpm
-							bsr1,bsr2,				// Variables for holding motor speed in 1/1000 max
-							e1,e2,					// Variables for holding closed loop error readings
 							p1,p2,					// Variables for holding power readings
 							t1,t2,t3,				// Variables for holding temperature readings
 							v1,v2,v3;				// Variables for holding voltage readings
 
 	msgs::serial 			serial_out;
 	msgs::StringStamped		status_out;
+	msgs::PropulsionModuleStatus propulsion_module_status_message;
 	ros::Time 				last_serial_msg;
-	ros::Publisher 			serial_publisher, status_publisher, temperature_publisher;
+	ros::Publisher 			serial_publisher, status_publisher, temperature_publisher, propulsion_module_status_publisher;
 
 	RoboTeQ();
 
@@ -83,8 +80,8 @@ public:
 	// Methods for handling feedback from the controller. Implemented as virtual to
 	// allow inheriting class to override. Notice the empty implementation.
 	virtual void hall_feedback(ros::Time time, int fb1, int fb2){}
-	virtual void power_feedback(ros::Time time, int fb1, int fb2){}
 	virtual void hall_feedback(ros::Time time, int fb1){}
+	virtual void power_feedback(ros::Time time, int fb1, int fb2){}
 	virtual void power_feedback(ros::Time time, int fb1){}
 	virtual void initController( std::string ){}
 

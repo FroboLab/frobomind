@@ -124,6 +124,7 @@ public:
 
 	// Mutator method for setting up publisher
 	void setStatusPub(ros::Publisher pub){publisher.status = pub;}
+	void setPropulsionFeedbackPub(ros::Publisher pub){publisher.feedback = pub;}
 	void setVelPub(ros::Publisher pub){publisher.feedback = pub;}
 
 };
