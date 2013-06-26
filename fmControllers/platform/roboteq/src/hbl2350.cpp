@@ -25,7 +25,7 @@ hbl2350::hbl2350( )
 	status.emergency_stop = true;
 
 	// Declare variables for parsing parameters
-	double max_time_diff_input;
+	double max_time_diff_input, ticks_per_meter_left, ticks_per_meter_right;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
 	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic,
 	propulsion_module_status_topic, propulsion_module_feedback_left_topic,propulsion_module_feedback_right_topic;
@@ -64,11 +64,10 @@ hbl2350::hbl2350( )
 	if(ch1.max_output > ch1.roboteq_max) ch1.max_output = ch1.roboteq_max;
 	if(ch2.max_output > ch2.roboteq_max) ch2.max_output = ch2.roboteq_max;
 
-	double tmp;
-	local_node_handler.param<double>("ticks_per_meter",tmp,1285.0);
-	ch1.ticks_to_meter = -(1.0/tmp);
-//	ch2.ticks_to_meter = (1.0/tmp);
-	ch2.ticks_to_meter = (tmp/682.0)/tmp; // TODO: Crappy 1.88 RoboTeQ hack
+	local_node_handler.param<double>("ticks_per_meter",ticks_per_meter_left,1285.0);
+	local_node_handler.param<double>("ticks_per_meter",ticks_per_meter_right,683.0);
+	ch1.ticks_to_meter = ticks_per_meter_left;
+	ch2.ticks_to_meter = ticks_per_meter_right;
 
 	ch1.time_stamp.last_deadman_received = ch2.time_stamp.last_deadman_received = ros::Time::now();
 	ch1.velocity = ch2.velocity = 0;
