@@ -176,15 +176,18 @@ void serialInterface::recoverConnection(void)
 	try
 	{
 		ROS_ERROR("%s: Attempting to re-open connection...",ros::this_node::getName().c_str());
+		ros::Rate r(2);
 		while(openDevice(dev,baud))
-			sleep(2);
+			r.sleep();
+
 	} catch (...){ROS_ERROR("%s: Attempt to re-open failed.",ros::this_node::getName().c_str());}
 }
 
 serialInterface::~serialInterface()
 {
-	serial_.cancel();
-	serial_.close();
-
-	sleep(2);
+	if(serial_.is_open())
+	{
+		serial_.cancel();
+		serial_.close();
+	}
 }
