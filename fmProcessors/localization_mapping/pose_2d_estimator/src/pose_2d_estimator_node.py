@@ -46,14 +46,15 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class Pose2DEstimatorNode():
 	def __init__(self):
+		# initialization
 		rospy.loginfo(rospy.get_name() + ": Start")
-		self.update_rate = 20 # set update frequency [Hz]
 		self.pose_msg = Odometry()
 		self.quaternion = np.empty((4, ), dtype=np.float64) 
 		self.odom_topic_received = False
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
 		self.odometry_yaw_prev = 0.0
+		self.first_absolute_pos_update = False
 		self.first_absolute_yaw_update = False
 
 		# Get parameters
@@ -61,6 +62,8 @@ class Pose2DEstimatorNode():
 		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
 
 		robot_max_velocity = rospy.get_param("~/robot_max_velocity", "1.0") # Robot maximum velocity [m/s]
+		self.update_rate = int(rospy.get_param("~update_rate", "20")) # set update frequency [Hz]
+		self.publish_rel_pose = rospy.get_param("~publish_relative_pose", True)
 		ekf_init_guess_easting = rospy.get_param("~ekf_initial_guess_easting", "0.0")
 		ekf_init_guess_northing = rospy.get_param("~ekf_initial_guess_northing", "0.0")
 		ekf_init_guess_yaw = rospy.get_param("~ekf_initial_guess_yaw", "0.0")
@@ -150,8 +153,8 @@ class Pose2DEstimatorNode():
 			time_recv = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
 			valid = self.pp.gnss_new_measurement (time_recv, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
 			if valid == True: # if we have a valid position 
+				self.first_absolute_pos_update = True
 				var_pos = self.pp.gnss_estimate_variance_pos()
-
 				# EKF measurement update (GNSS)
 				self.pose = self.ekf.measurement_update_pos ([msg.easting, msg.northing], var_pos)
 				(valid, yaw) = self.pp.estimate_absolute_orientation()
@@ -163,15 +166,16 @@ class Pose2DEstimatorNode():
 						rospy.loginfo(rospy.get_name() + ': First absolute orientation update')
 
 	def publish_pose(self):
-		self.pose_msg.header.stamp = rospy.Time.now()
-		self.pose_msg.pose.pose.position.x = self.pose[0]
-		self.pose_msg.pose.pose.position.y = self.pose[1]
-		self.pose_msg.pose.pose.position.z = 0
-		q = quaternion_from_euler (0, 0, self.pose[2])
-		self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
-		self.pose_pub.publish(self.pose_msg); # publish the pose message
-		self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), \
-			self.pose_msg.header.frame_id, self.pose_msg.child_frame_id) # publish the transform message
+		if self.publish_rel_pose == True or (self.first_absolute_pos_update == True and self.first_absolute_yaw_update == True):
+			self.pose_msg.header.stamp = rospy.Time.now()
+			self.pose_msg.pose.pose.position.x = self.pose[0]
+			self.pose_msg.pose.pose.position.y = self.pose[1]
+			self.pose_msg.pose.pose.position.z = 0
+			q = quaternion_from_euler (0, 0, self.pose[2])
+			self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
+			self.pose_pub.publish(self.pose_msg); # publish the pose message
+			self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), \
+				self.pose_msg.header.frame_id, self.pose_msg.child_frame_id) # publish the transform message
 
 	def updater(self):
 		while not rospy.is_shutdown():
