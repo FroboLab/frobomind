@@ -23,7 +23,8 @@ hbl1650::hbl1650( )
 	// Declare variables for parsing parameters
 	double max_time_diff_input;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
-	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic,velocity_topic;
+	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic,velocity_topic,
+	propulsion_module_status_topic, propulsion_module_feedback_topic;
 
 	// Parse from parameter server
 	local_node_handler.param<std::string>("cmd_vel_ch1_topic", cmd_vel_ch1_topic, "/fmActuators/cmd_vel_ch1");
@@ -36,6 +37,9 @@ hbl1650::hbl1650( )
 	local_node_handler.param<std::string>("status_topic", status_topic, "/fmActuators/status");
 	local_node_handler.param<std::string>("temperature_topic", temperature_topic, "/fmActuators/temperature");
 	local_node_handler.param<std::string>("velocity_topic", velocity_topic, "/fmActuators/velocity");
+	local_node_handler.param<std::string>("propulsion_module_status_topic", propulsion_module_status_topic, "/fmInformation/propulsion_module_status");
+	local_node_handler.param<std::string>("propulsion_module_feedback_topic", propulsion_module_feedback_topic, "/fmInformation/propulsion_module_feedback");
+
 	ch1.roboteq_max = 1000; //Motor controller constant open loop max outputmax_output
 	// Init channel parameters
 	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
@@ -64,12 +68,14 @@ hbl1650::hbl1650( )
 	local_node_handler.param<bool>("closed_loop_operation", closed_loop_operation, false);
 
 	// Setup publishers
+	propulsion_module_status_publisher = local_node_handler.advertise<msgs::PropulsionModuleStatus>( propulsion_module_status_topic,10 );
 	setSerialPub( local_node_handler.advertise<msgs::serial>( serial_tx_topic,10 ));
 	setEncoderCh1Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch1_topic, 10));
 	setPowerCh1Pub( local_node_handler.advertise<msgs::IntStamped>( power_ch1_topic, 10));
 	setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	ch1.setVelPub(local_node_handler.advertise<std_msgs::Float64>( velocity_topic, 10));
+	ch1.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_topic, 10));
 	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
 
 	// Set up subscribers
