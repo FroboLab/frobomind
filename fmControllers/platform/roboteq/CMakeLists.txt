@@ -69,7 +69,7 @@ include_directories(include
 # add_executable(roboteq_node src/roboteq_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(roboteq ${PROJECT_NAME})
+ add_dependencies(roboteq ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(roboteq_node

@@ -34,7 +34,8 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 	magnetometer.msg
 	motor_status.msg
 	nmea.msg
-	propulsion_module_status.msg
+	PropulsionModuleFeedback.msg
+	PropulsionModuleStatus.msg
 	row.msg
 	rtq.msg
 	rtq_command.msg
