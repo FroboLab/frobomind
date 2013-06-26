@@ -53,7 +53,7 @@ hbl1650::hbl1650( )
 	ch1.ticks_to_meter = 1/tmp;
 
 	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5); //TODO: not used??
-	ch1.last_deadman_received = ros::Time::now();
+	ch1.time_stamp.last_deadman_received = ros::Time::now();
 	ch1.velocity = 0;
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
 
@@ -98,8 +98,8 @@ void hbl1650::spin(void)
 void hbl1650::updateStatus(void)
 {
 	// Update time based status variables.
-	status.deadman_pressed = ((ros::Time::now() - ch1.last_deadman_received) < max_time_diff);
-	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.last_twist_received) < max_time_diff);
+	status.deadman_pressed = ((ros::Time::now() - ch1.time_stamp.last_deadman_received) < max_time_diff);
+	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.time_stamp.last_twist_received) < max_time_diff);
 	status.responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
 }
 

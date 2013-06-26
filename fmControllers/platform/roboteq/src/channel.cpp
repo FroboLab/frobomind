@@ -17,7 +17,6 @@ void Channel::onHallFeedback(ros::Time time, int feedback)
 	last_hall = feedback;
 	// end hack..
 
-	//std::cout << "Channel:" << ch << " Hall value: " << feedback << " Relative: " << hall_value << std::endl;
 	publisher.hall.publish(message.hall);
 }
 
@@ -42,17 +41,19 @@ void Channel::onCmdVel(const geometry_msgs::TwistStamped::ConstPtr& msg)
 	if(velocity >  max_velocity_mps) velocity = max_velocity_mps;
 	if(velocity < -max_velocity_mps) velocity = -max_velocity_mps;
 
-	last_twist_received = ros::Time::now();
+	time_stamp.last_twist_received = ros::Time::now();
 }
 
 void Channel::onDeadman(const std_msgs::Bool::ConstPtr& msg)
 {
 	if(msg->data)
-		last_deadman_received = ros::Time::now();
+		time_stamp.last_deadman_received = ros::Time::now();
 }
 
 void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 {
+	/* Register time */
+	ros::Time now = ros::Time::now();
 	std::stringstream ss, out; /* streams for holding status message and command output */
 
 	if(status.online) /* is set when controller answers to FID request */
@@ -79,37 +80,36 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 							current_setpoint = 0;
 						}
 
-						/* Get new output */
-						double period = (ros::Time::now() - last_regulation).toSec();
-						double feedback = (( (double)hall_value)*ticks_to_meter)/period;
+						/* Calculate period */
+						double period = (now - time_stamp.last_regulation).toSec();
 
-						// reset hall_value after read, so we get the relative hall_ticks since last read
+						/* Get latest feedback and reset */
+						double feedback = (( (double)hall_value)*ticks_to_meter)/period;
 						hall_value = 0;
 
-						double fb_sm = velocity_filter.update(feedback);
-						vel_msg.data = fb_sm;
-						vel_publisher.publish(vel_msg);
-						// calculate desired change in output using pid regulator
-						double sp_change = regulator.output_from_input(velocity, fb_sm , period);
+						/* Filter feedback */
+						double feedback_filtered = velocity_filter.update(feedback);
 
-						// the output to maintain on the motor is then
-						current_setpoint += sp_change;
+						/* Get new setpoint from regulator */
+						current_setpoint += regulator.output_from_input(velocity, feedback_filtered , period);
 
+						/* Implement maximum output*/
 						if(current_setpoint >  max_output) current_setpoint = max_output;
 						if(current_setpoint < -max_output) current_setpoint = -max_output;
 
-						last_regulation = ros::Time::now();
-
-						/* Convert to roboteq format */
-						int output = (current_setpoint);
-
 						/* Send motor output command  */
-						out << "!G " << ch << " " << output << "\r";
+						out << "!G " << ch << " " << (int)current_setpoint << "\r";
 						transmit(out.str());
 
-						std::cout << "Channel: " << ch << " vel " << velocity << " Feedback: " << feedback << " Feedback filtered: " << fb_sm;
-						std::cout << " Setpoint change: " << sp_change << " Current setpoint: " << current_setpoint << " Output: " << output << std::endl;
+						/* Publish feedback */
+						message.feedback.header.stamp = now;
+						message.feedback.thrust = ((int)current_setpoint) * 100.0 / roboteq_max; /* Thrust in % */
+						message.feedback.velocity = feedback_filtered; /* Velocity in m/s */
+						message.feedback.velocity_setpoint = current_setpoint;
+						publisher.feedback.publish(message.feedback);
 
+						// Upkeep
+						time_stamp.last_regulation = now;
 					}
 					else /* deadman not pressed */
 					{
@@ -164,70 +164,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 	}
 
 	/* Publish the status message */
-	//status_out.header.stamp = ros::Time::now();
-	//status_out.data = ss.str();
-	//status_publisher.publish(status_out);
+	message.status.header.stamp = ros::Time::now();
+	message.status.data = ss.str();
+	publisher.status.publish(message.status);
 }
 
-Circular_queue::Circular_queue()
-{
-	size = 5;
-	head = tail = 0;
-	store = new double[size];
-	for(int i = 0 ; i < size ; i++)
-		store[i] = 0;
-}
-
-Circular_queue::Circular_queue( int sz )
-{
-	size = sz;
-	head = tail = 0;
-	store = new double[size];
-
-}
-
-Circular_queue::~Circular_queue()
-{
-	delete store;
-}
-
-void Circular_queue::push_back( double item )
-{
-	if( tail >= size - 1 )
-		tail=0;//resize();
-
-	store[tail++] = item;
-}
-
-double Circular_queue::pop_front( void )
-{
-	if( head != tail )
-		return store[head++];
-	else
-		throw("Fault. Queue is empty");
-}
-
-void Circular_queue::resize( void )
-{
-	double * temp_p = new double[ size * 2 ];
-	for( int i = 0 ; i < size ; i++ )
-		temp_p[i] = store[i];
-	delete store;
-	store = temp_p;
-	size *= 2;
-}
-
-bool Circular_queue::isEmpty( void )
-{
-	return head == tail;
-}
-
-double Circular_queue::average( void )
-{
-	double out = 0;
-
-	for(int i = 0 ; i < size ; i++)
-		out += store[i];
-
-	return out/size;
-}

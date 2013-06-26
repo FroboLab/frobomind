@@ -38,27 +38,10 @@
 #include <std_msgs/Float64.h>
 #include <msgs/StringStamped.h>
 #include <msgs/IntStamped.h>
+#include <msgs/PropulsionModuleFeedback.h>
 #include "roboteq/roboteq.hpp"
 #include "roboteq/regulator.hpp"
 #include "filter/IRR.h"
-
-class Circular_queue
-{
-public:
-	Circular_queue();
-	explicit Circular_queue( int );
-	virtual ~Circular_queue();
-
-	void push_back( double );
-	double pop_front( void );
-	void resize( void );
-	bool isEmpty( void );
-	double average( void );
-
-private:
-	double * store;
-	int head , tail , size;
-};
 
 class BaseCB
 {
@@ -99,27 +82,25 @@ public:
 	{
 		msgs::IntStamped hall, power, temperature;
 		msgs::StringStamped status;
+		msgs::PropulsionModuleFeedback feedback;
 	} message;
 
 	struct
 	{
-		ros::Publisher power, hall, temperature;
+		ros::Publisher power, hall, temperature, feedback, status;
 	} publisher;
 
-	ros::Publisher vel_publisher;
+	struct
+	{
+		ros::Time last_twist_received, last_deadman_received, last_regulation;
+	} time_stamp;
+
+	ros::Subscriber cmd_vel_sub;
 
 	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm;
+	double i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps;
 
-	double i_max,max_output;
-	double current_setpoint;
-	std_msgs::Float64 vel_msg;
-	double velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps;
-	//Circular_queue buffer;
 	IRR velocity_filter;
-	ros::Time last_twist_received, last_deadman_received, last_regulation;
-	ros::Subscriber cmd_vel_sub;
-	ros::Publisher status_publisher;
-	msgs::StringStamped	status_out;
 	Regulator regulator;
 	BaseCB* transmit_cb;
 	BaseCB* init_cb;
@@ -142,8 +123,8 @@ public:
 	void onTimer(const ros::TimerEvent&, RoboTeQ::status_t&);
 
 	// Mutator method for setting up publisher
-	void setStatusPub(ros::Publisher pub){status_publisher = pub;}
-	void setVelPub(ros::Publisher pub){vel_publisher = pub;}
+	void setStatusPub(ros::Publisher pub){publisher.status = pub;}
+	void setVelPub(ros::Publisher pub){publisher.feedback = pub;}
 
 };
 

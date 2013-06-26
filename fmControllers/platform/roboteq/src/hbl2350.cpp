@@ -66,7 +66,7 @@ hbl2350::hbl2350( )
 //	ch2.ticks_to_meter = (1.0/tmp);
 	ch2.ticks_to_meter = (tmp/682.0)/tmp; // TODO: Crappy 1.88 RoboTeQ hack
 
-	ch1.last_deadman_received = ch2.last_deadman_received = ros::Time::now();
+	ch1.time_stamp.last_deadman_received = ch2.time_stamp.last_deadman_received = ros::Time::now();
 	ch1.velocity = ch2.velocity = 0;
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
 	ch2.regulator.set_params(ch2.p_gain , ch2.i_gain , ch2.d_gain ,ch2.i_max , ch2.roboteq_max);
@@ -115,8 +115,8 @@ void hbl2350::spin(void)
 void hbl2350::updateStatus(void)
 {
 	// Update time based status variables.
-	status.deadman_pressed = ((ros::Time::now() - ch1.last_deadman_received) < max_time_diff) || ((ros::Time::now() - ch2.last_deadman_received) < max_time_diff);
-	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.last_twist_received) < max_time_diff) || ( (ros::Time::now() - ch2.last_twist_received) < max_time_diff);
+	status.deadman_pressed = ((ros::Time::now() - ch1.time_stamp.last_deadman_received) < max_time_diff) || ((ros::Time::now() - ch2.time_stamp.last_deadman_received) < max_time_diff);
+	status.cmd_vel_publishing = ( (ros::Time::now() - ch1.time_stamp.last_twist_received) < max_time_diff) || ( (ros::Time::now() - ch2.time_stamp.last_twist_received) < max_time_diff);
 	status.responding = ((ros::Time::now() - last_serial_msg) < max_time_diff);
 }
 
