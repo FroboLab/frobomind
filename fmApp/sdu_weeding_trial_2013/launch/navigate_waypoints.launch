@@ -65,6 +65,8 @@
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="update_rate" value="20" />
+			<param name="publish_relative_pose" type="boolean" value="false" />
 			<param name="ekf_initial_guess_easting" value="651180.0" /> <!-- [m] if unsure set to 0.0 -->
 			<param name="ekf_initial_guess_northing" value="6133758.0" /> <!-- [m] if unsure set to 0.0 -->
 			<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->

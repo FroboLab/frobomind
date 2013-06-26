@@ -77,7 +77,7 @@ for topic, msg, t in bag.read_messages(topics=[topic_wptnav_status]):
 	f.write ('%s,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.2f,%.2f,%.3f,%.3f,%.3f,%.3f,%.2f,%.2f,%.3f,%.3f\n' % (time_stamp(msg.header.stamp), \
 		msg.mode, msg.b_easting, msg.b_northing, msg.a_easting, msg.a_northing, \
 		msg.easting, msg.northing, msg.distance_to_b, msg.bearing_to_b*rad_to_deg, msg.heading_err*rad_to_deg, msg.distance_to_ab_line, \
-		msg.target_easting, msg.target_northing, msg.target_distance, msg.target_bearing, msg.target_heading_err, \
+		msg.target_easting, msg.target_northing, msg.target_distance, msg.target_bearing*rad_to_deg, msg.target_heading_err*rad_to_deg, \
 		msg.linear_speed, msg.angular_speed))
 f.close()
 

@@ -45,8 +45,17 @@ A_E = 4
 A_N = 5
 POSE_E = 6
 POSE_N = 7
+DIST_B = 8
+BEARING_B = 9
+HEADING_ERR = 10
+DIST_AB = 11
 TARGET_E = 12
 TARGET_N = 13
+TARGET_DIST = 14
+TARGET_BEARING = 15
+TARGET_HEAD_ERR = 16
+LINV = 17
+ANGV = 18
 
 class ab_map():
 	def __init__(self, history, window_size, easting_offset, northing_offset, buffer_seconds, save_images):
@@ -68,14 +77,15 @@ class ab_map():
 		ion() # turn interaction mode on
 
 	def append_pose (self, time_stamp, easting, northing):
-		e = easting + self.offset_e
-		n = northing + self.offset_n
+		e = easting #+ self.offset_e
+		n = northing #+ self.offset_n
 		if self.pose == [] or sqrt((e-self.pose[-1][1])**2 + (n-self.pose[-1][2])**2) > self.trkpt_threshold:
 			self.pose.append([time_stamp, e, n])
 			while time_stamp - self.buffer_seconds > self.pose[0][0]:
 				self.pose.pop(0)
 				
 	def append_wptnav_status (self, update):
+		"""
 		update[B_E] += self.offset_e
 		update[B_N] += self.offset_n
 		update[A_E] += self.offset_e
@@ -84,6 +94,7 @@ class ab_map():
 		update[POSE_N] += self.offset_n
 		update[TARGET_E] += self.offset_e
 		update[TARGET_N] += self.offset_n
+		"""		
 		self.wptnav.append(update)
 		while self.wptnav[-1][0] - self.buffer_seconds >  self.wptnav[0][0]:
 			self.wptnav.pop(0)
@@ -119,9 +130,74 @@ class ab_map():
 					pose_dot = plot(self.wptnav[-1][POSE_E],self.wptnav[-1][POSE_N],'bo',markersize=8)
 
 		if self.save_images:
-			self.fig1.savefig ('ab-map%05d.jpg' % self.image_count)
+			self.fig1.savefig ('plot_map%05d.jpg' % self.image_count)
 			self.image_count += 1
 		draw()
+
+	def save_last_plot(self):
+		self.fig1.savefig ('plot_map.jpg')
+
+class vel_plot():
+	def __init__(self, history, window_size, buffer_seconds, save_images):
+        # Get parameters
+		self.history = history
+		self.window_size = window_size
+		self.buffer_seconds = buffer_seconds
+		self.save_images = save_images
+
+		# Initialize plot
+		self.title = 'Robot'
+		self.set_vel_l = []
+		self.set_vel_r = []
+		self.vel_l = []
+		self.vel_r = []
+		self.image_count = 0
+		ion() # turn interaction mode on
+
+	def append_cmd_vel_l (self, time_stamp, vel):
+		self.set_vel_l.append([time_stamp, vel])
+		while time_stamp - self.buffer_seconds > self.set_vel_l[0][0]:
+			self.set_vel_l.pop(0)
+
+	def append_cmd_vel_r (self, time_stamp, vel):
+		self.set_vel_r.append([time_stamp, vel])
+		while time_stamp - self.buffer_seconds > self.set_vel_r[0][0]:
+			self.set_vel_r.pop(0)
+
+	def append_vel_l (self, time_stamp, vel):
+		self.vel_l.append([time_stamp, vel])
+		while time_stamp - self.buffer_seconds > self.vel_l[0][0]:
+			self.vel_l.pop(0)
+
+	def append_vel_r (self, time_stamp, vel):
+		self.vel_r.append([time_stamp, vel])
+		while time_stamp - self.buffer_seconds > self.vel_r[0][0]:
+			self.vel_r.pop(0)
+
+	def update(self):
+		if self.set_vel_l != []:
+			plt.figure(2)
+			clf()
+			self.fig2 = plt.figure(num=2, figsize=(self.window_size, \
+				self.window_size), dpi=80, facecolor='w', edgecolor='w')
+			title (self.title)			
+			xlabel('Time')
+			grid (True)
+			while len(self.set_vel_l) > len(self.set_vel_r):
+				self.set_vel_l.pop(0)
+			while len(self.set_vel_r) > len(self.set_vel_l):
+				self.set_vel_r.pop(0)
+			x = range(len(self.set_vel_l))
+			set_vel_lT = zip(*self.set_vel_l)
+			set_vel_rT = zip(*self.set_vel_r)
+			l = plot (x, set_vel_lT[1],'r')
+			r = plot (x, set_vel_rT[1],'g')
+
+			if self.save_images:
+				self.fig1.savefig ('vel%05d.jpg' % self.image_count)
+				self.image_count += 1
+			draw()
+
 
 class yaw_plot():
 	def __init__(self, window_size, easting_offset, northing_offset):
@@ -166,8 +242,8 @@ class yaw_plot():
 		#	grid (True)
 
 	def append_pose_position (self, easting, northing):
-		x = easting + self.offset_e
-		y = northing + self.offset_n
+		x = easting #+ self.offset_e
+		y = northing #+ self.offset_n
 		if self.pose_pos == [] or sqrt((x-self.pose_pos[-1][0])**2 + (y-self.pose_pos[-1][1])**2) > self.trkpt_threshold:
 			self.pose_pos.append([x, y])
 
@@ -176,8 +252,10 @@ class yaw_plot():
 
 	def set_wptnav (self, mode, dest_easting, dest_northing, target_easting, target_northing):
 		self.wpt_mode = mode
-		self.wpt_destination = [dest_easting + self.offset_e, dest_northing + self.offset_n]
-		self.wpt_target = [target_easting + self.offset_e, target_northing + self.offset_n]
+		#self.wpt_destination = [dest_easting + self.offset_e, dest_northing + self.offset_n]
+		#self.wpt_target = [target_easting + self.offset_e, target_northing + self.offset_n]
+		self.wpt_destination = [dest_easting, dest_northing]
+		self.wpt_target = [target_easting, target_northing]
 
 	def update(self):
 		if self.plot_pose and self.pose_pos != []:

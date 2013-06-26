@@ -91,4 +91,51 @@ class wptnav_data():
 			new_data += 1
 		return (new_data, self.data[self.i-1])
 
+class cmd_vel_data():
+	def __init__(self, filename_left, filename_right, skip_lines, max_lines):
+		self.i_left = 0
+		self.i_right = 0
+		print 'Importing set_speed data'
+	 	self.data_left = []
+	 	self.data_right = []
+		file = open(filename_left, 'r')
+		file_content = csv.reader(file, delimiter=',')
+		i = 0
+		for time_stamp,speed in file_content:
+			if i > skip_lines:
+				self.data_left.append([float(time_stamp), float(speed)])
+			i += 1
+			if max_lines > 0 and i == max_lines:
+				break
+		file.close()
+		self.length_left = len(self.data_left)
+		print '\tTotal samples left: %d' % (self.length_left) 
+
+		file = open(filename_right, 'r')
+		file_content = csv.reader(file, delimiter=',')
+		i = 0
+		for time_stamp,speed in file_content:
+			if i > skip_lines:
+				self.data_right.append([float(time_stamp), float(speed)])
+			i += 1
+			if max_lines > 0 and i == max_lines:
+				break
+		file.close()
+		self.length_right = len(self.data_right)
+		print '\tTotal samples right: %d' % (self.length_right) 
+
+	def get_latest_left(self, time):
+		new_data = 0
+		while self.i_left < self.length_left and self.data_left[self.i_left][0] <= time:
+			self.i_left += 1
+			new_data += 1
+		return (new_data, self.data_left[self.i_left-1])
+
+	def get_latest_right(self, time):
+		new_data = 0
+		while self.i_right < self.length_right and self.data_right[self.i_right][0] <= time:
+			self.i_right += 1
+			new_data += 1
+		return (new_data, self.data_right[self.i_right-1])
+
 
