@@ -42,7 +42,7 @@
 			<param name="i_gain" value="1"/>
 			<param name="d_gain" value="0"/>
 			<param name="i_max" value="1"/>
-			<param name="max_controller_command" value="999" />
+			<param name="max_controller_command" value="300" />
 			<param name="closed_loop_operation" value="true"/>        
 		</node>
 	</group>
