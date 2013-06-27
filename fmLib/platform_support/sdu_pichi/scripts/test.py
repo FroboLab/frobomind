@@ -45,14 +45,17 @@ class TestInterface():
         self.tx_sub = rospy.Subscriber("/fmData/robot_tx", serial, self.onTx)
         self.rx_sub = rospy.Subscriber("/fmData/robot_rx", serial, self.onRx)
         self.msg = serial()
-
+        self.flag = False
+        self.enc = 0.0
         # Spin
         try:
             while not rospy.is_shutdown():
                 self.msg.header.stamp = rospy.Time.now()
-                self.msg.data = "CB=30:30"
+#                self.msg.data = "CB=125:125"
+                self.msg.data = "CB=" + str(int(self.enc)) + ":" + str(-int(self.enc))
+                self.enc += 25.7
                 self.publisher.publish(self.msg)
-                rospy.sleep(0.05)
+                rospy.sleep(0.02)
         except rospy.ROSInterruptException:
             pass
     
@@ -62,34 +65,35 @@ class TestInterface():
             
     def onTx(self,msg):
         print(msg.data)
-        if "?FID" in msg.data :
+        if not self.flag and "?FID" in msg.data :
+            self.flag = True
             self.msg.header.stamp = rospy.Time.now()
             self.msg.data = "FID=Roboteq blah blah"
             self.publisher.publish(self.msg)
-        elif "?V" in msg.data :
-            self.msg.header.stamp = rospy.Time.now()
-            self.msg.data = "V=412:412:5000"
-            self.publisher.publish(self.msg)
-        elif "?BA" in msg.data :
-            self.msg.header.stamp = rospy.Time.now()
-            self.msg.data = "BA=300:300"
-            self.publisher.publish(self.msg)
-        elif "?A" in msg.data :       
-            self.msg.header.stamp = rospy.Time.now()
-            self.msg.data = "A=412:412"
-            self.publisher.publish(self.msg)
-        elif "?T" in msg.data :        
-            self.msg.header.stamp = rospy.Time.now()
-            self.msg.data = "T=85:10:15"
-            self.publisher.publish(self.msg)
-        elif "?FF" in msg.data :        
-            self.msg.header.stamp = rospy.Time.now()
-            self.msg.data = "FF=1"
-            self.publisher.publish(self.msg)
-        elif "?FS" in msg.data :        
-            self.msg.header.stamp = rospy.Time.now()
-            self.msg.data = "FS=2"
-            self.publisher.publish(self.msg)
+#        elif "?V" in msg.data :
+#            self.msg.header.stamp = rospy.Time.now()
+#            self.msg.data = "V=412:412:5000"
+#            self.publisher.publish(self.msg)
+#        elif "?BA" in msg.data :
+#            self.msg.header.stamp = rospy.Time.now()
+#            self.msg.data = "BA=300:300"
+#            self.publisher.publish(self.msg)
+#        elif "?A" in msg.data :       
+#            self.msg.header.stamp = rospy.Time.now()
+#            self.msg.data = "A=412:412"
+#            self.publisher.publish(self.msg)
+#        elif "?T" in msg.data :        
+#            self.msg.header.stamp = rospy.Time.now()
+#            self.msg.data = "T=85:10:15"
+#            self.publisher.publish(self.msg)
+#        elif "?FF" in msg.data :        
+#            self.msg.header.stamp = rospy.Time.now()
+#            self.msg.data = "FF=1"
+#            self.publisher.publish(self.msg)
+#        elif "?FS" in msg.data :        
+#            self.msg.header.stamp = rospy.Time.now()
+#            self.msg.data = "FS=2"
+#            self.publisher.publish(self.msg)
 
 if __name__ == '__main__':
     node = TestInterface()

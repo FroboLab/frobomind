@@ -66,8 +66,8 @@ hbl2350::hbl2350( )
 
 	local_node_handler.param<double>("ticks_per_meter",ticks_per_meter_left,1285.0);
 	local_node_handler.param<double>("ticks_per_meter",ticks_per_meter_right,683.0);
-	ch1.ticks_to_meter = ticks_per_meter_left;
-	ch2.ticks_to_meter = ticks_per_meter_right;
+	ch1.ticks_to_meter = 1.0/ticks_per_meter_left;
+	ch2.ticks_to_meter = 1.0/ticks_per_meter_right;
 
 	ch1.time_stamp.last_deadman_received = ch2.time_stamp.last_deadman_received = ros::Time::now();
 	ch1.velocity = ch2.velocity = 0;
