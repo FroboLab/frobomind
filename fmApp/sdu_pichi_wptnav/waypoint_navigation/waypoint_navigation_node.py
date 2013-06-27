@@ -177,6 +177,9 @@ class WaypointNavigationNode():
 		if self.wptnav.pose != False:
 			self.wptnav_status.easting = self.wptnav.pose[0]
 			self.wptnav_status.northing = self.wptnav.pose[1]
+		else:
+			self.wptnav_status.easting = 0.0
+			self.wptnav_status.northing = 0.0
 		if self.automode != False and self.wptnav.b != False:
 			if  self.wptnav.state == self.wptnav.STATE_STOP or self.wptnav.state == self.wptnav.STATE_STANDBY:
 				self.wptnav_status.mode = 0
@@ -230,12 +233,17 @@ class WaypointNavigationNode():
 				self.goto_previous_wpt()
 
 			if self.automode:
-				ros_time = rospy.Time.now()
-				time = ros_time.secs + ros_time.nsecs*1e-9
-				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
-				if self.status == self.wptnav.UPDATE_ARRIVAL:
-					self.goto_next_wpt()
+				if self.wptnav.pose != False:
+					ros_time = rospy.Time.now()
+					time = ros_time.secs + ros_time.nsecs*1e-9
+					(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
+					if self.status == self.wptnav.UPDATE_ARRIVAL:
+						self.goto_next_wpt()
+					else:
+						self.publish_cmd_vel_message()
 				else:
+					self.linear_speed = 0.0
+					self.angular_speed = 0.0
 					self.publish_cmd_vel_message()
 			if self.status_publish_interval != 0:
 				self.status_publish_count += 1
