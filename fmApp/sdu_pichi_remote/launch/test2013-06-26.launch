@@ -12,7 +12,7 @@
 	</group>
 	
 	<group ns="fmTools">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py" />
+		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
 	</group>
 
 	<group ns="fmControllers">
@@ -36,13 +36,13 @@
 			<param name="propulsion_module_feedback_left_topic" value="/fmInformation/propulsion_module_feedback_left"/>
 			<param name="propulsion_module_feedback_right_topic" value="/fmInformation/propulsion_module_feedback_right"/>
 			<param name="status_topic" value="/fmData/status"/>	
-			<param name="ticks_per_meter_left" value="1285.0"/>
+			<param name="ticks_per_meter_left" value="-1285.0"/>
 			<param name="ticks_per_meter_right" value="683.5"/>
 			<param name="p_gain" value="10"/>
 			<param name="i_gain" value="1"/>
 			<param name="d_gain" value="0"/>
 			<param name="i_max" value="1"/>
-			<param name="max_controller_command" value="300" />
+			<param name="max_controller_command" value="400" />
 			<param name="closed_loop_operation" value="true"/>        
 		</node>
 	</group>
