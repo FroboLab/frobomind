@@ -38,11 +38,13 @@
 			<param name="status_topic" value="/fmData/status"/>	
 			<param name="ticks_per_meter_left" value="-1285.0"/>
 			<param name="ticks_per_meter_right" value="683.5"/>
-			<param name="p_gain" value="1"/>
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="1000" />
+			<param name="p_gain" value="0.5"/>
 			<param name="i_gain" value="1"/>
-			<param name="d_gain" value="1"/>
-			<param name="i_max" value="1"/>
-			<param name="max_controller_command" value="900" />
+			<param name="d_gain" value="0.001"/>
+			<param name="i_max" value="0.2"/>
+			
 			<param name="closed_loop_operation" value="true"/>        
 		</node>
 	</group>

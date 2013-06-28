@@ -26,10 +26,10 @@ double Regulator::output_from_input( double setpoint , double input , double per
 		integrator = -i_max;
 
 	// Calculate differentiator
-	double differentiator = ( previous - error ) / period;
+	double differentiator = ( previous - input ) / period;
 
 	// Calculate output
-	double output = (error * p) + (integrator * i) + (differentiator * d);
+	double output = (error * p) + (integrator * i) - (differentiator * d);
 
 	// Implement output max
 	if(output > out_max)
@@ -38,6 +38,6 @@ double Regulator::output_from_input( double setpoint , double input , double per
 		output = -out_max;
 
 	// Upkeep
-	previous = error;
+	previous = input;
 	return output;
 }

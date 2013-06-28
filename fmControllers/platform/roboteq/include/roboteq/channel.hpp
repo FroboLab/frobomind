@@ -42,6 +42,7 @@
 #include "roboteq/roboteq.hpp"
 #include "roboteq/regulator.hpp"
 #include "filter/IRR.h"
+#include "filter/sliding_window.hpp"
 
 class BaseCB
 {
@@ -97,10 +98,11 @@ public:
 
 	ros::Subscriber cmd_vel_sub;
 
-	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm;
-	double i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps;
+	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm, current_thrust;
+	double i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
 
 	IRR velocity_filter;
+	SlidingWindowFilter feedback_filter;
 	Regulator regulator;
 	BaseCB* transmit_cb;
 	BaseCB* init_cb;

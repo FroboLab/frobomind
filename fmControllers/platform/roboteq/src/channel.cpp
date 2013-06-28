@@ -18,6 +18,7 @@ void Channel::onHallFeedback(ros::Time time, int feedback)
 	// end hack..
 
 	publisher.hall.publish(message.hall);
+	feedback_filter.push(message.hall);
 }
 
 void Channel::onPowerFeedback(ros::Time time, int feedback)
@@ -56,6 +57,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 	ros::Time now = ros::Time::now();
 	std::stringstream ss, out; /* streams for holding status message and command output */
 
+	double period = 0, feedback = 0, feedback_filtered = 0, current_velocity = feedback_filter.get()*ticks_to_meter;
+
 	if(status.online) /* is set when controller answers to FID request */
 	{
 		ss << "controller_online ";
@@ -81,32 +84,28 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						}
 
 						/* Calculate period */
-						double period = (now - time_stamp.last_regulation).toSec();
+						period = (now - time_stamp.last_regulation).toSec();
 
 						/* Get latest feedback and reset */
-						double feedback = (( (double)hall_value)*ticks_to_meter)/period;
+						feedback = (( (double)hall_value)*ticks_to_meter)/period;
 						hall_value = 0;
 
 						/* Filter feedback */
-						double feedback_filtered = velocity_filter.update(feedback);
+						feedback_filtered = velocity_filter.update(feedback);
+
 
 						/* Get new setpoint from regulator */
-						current_setpoint += regulator.output_from_input(velocity, feedback_filtered , period);
+						//current_setpoint += regulator.output_from_input(velocity, feedback_filtered , period);
+						current_setpoint = velocity + regulator.output_from_input(velocity, current_velocity , period);
+						current_thrust =  (int)(current_setpoint * mps_to_thrust);
 
 						/* Implement maximum output*/
-						if(current_setpoint >  max_output) current_setpoint = max_output;
-						if(current_setpoint < -max_output) current_setpoint = -max_output;
+						if(current_thrust >  max_output) current_thrust = max_output;
+						if(current_thrust < -max_output) current_thrust = -max_output;
 
 						/* Send motor output command  */
-						out << "!G " << ch << " " << (int)current_setpoint << "\r";
+						out << "!G " << ch << " " << current_thrust << "\r";
 						transmit(out.str());
-
-						/* Publish feedback */
-						message.feedback.header.stamp = now;
-						message.feedback.thrust = ((int)current_setpoint) * 100.0 / roboteq_max; /* Thrust in % */
-						message.feedback.velocity = feedback_filtered; /* Velocity in m/s */
-						message.feedback.velocity_setpoint = current_setpoint;
-						publisher.feedback.publish(message.feedback);
 
 						// Upkeep
 						time_stamp.last_regulation = now;
@@ -118,7 +117,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						status.emergency_stop = true;
 						transmit("!G 1 0\r");
 						transmit("!G 2 0\r");
-						current_setpoint = 0;
+						current_setpoint = current_thrust = 0;
 						velocity = 0;
 						regulator.reset_integrator();
 					}
@@ -130,7 +129,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 					status.emergency_stop = true;
 					transmit("!G 1 0\r");
 					transmit("!G 2 0\r");
-					current_setpoint = 0;
+					current_setpoint = current_thrust = 0;
 					velocity = 0;
 					regulator.reset_integrator();
 
@@ -162,6 +161,12 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 		/* Try to re-connect and re-initialise */
 		transmit("?FID\r");
 	}
+	/* Publish feedback */
+	message.feedback.header.stamp = now;
+	message.feedback.velocity = current_velocity; /* Velocity in m/s */
+	message.feedback.velocity_setpoint = velocity;
+	message.feedback.thrust = (current_thrust*100)/roboteq_max; /* Thrust in % */
+	publisher.feedback.publish(message.feedback);
 
 	/* Publish the status message */
 	message.status.header.stamp = ros::Time::now();

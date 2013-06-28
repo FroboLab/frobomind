@@ -29,7 +29,7 @@
 import rospy, tf, math, numpy
 import matplotlib.pyplot as plt
 from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
-from msgs.msg import IntStamped
+from msgs.msg import PropulsionModuleFeedback
 
 class Plotter():
     """
@@ -37,86 +37,53 @@ class Plotter():
     """
     def __init__(self):
         # Init node 
-        self.ticks_pr_meter = 1285.0
-        self.right_belt_converion_factor = 1285.0/682.0
-        self.ticks_to_mps_left = 1.0/self.ticks_pr_meter
-        self.ticks_to_mps_right = self.right_belt_converion_factor*self.ticks_pr_meter
-        self.left = []
-        self.right = []
-        self.last_left = 0.0
-        self.last_right = 0.0
-        self.left_value = 0.0
-        self.right_value = 0.0
-        self.filter_left = [0.0]*10
-        self.filter_right = [0.0]*10
-        self.ptr_left = 0
-        self.ptr_right = 0
-        self.time_left = rospy.Time.now()
-        self.time_right = rospy.Time.now()
-        self.initialised_left = False
-        self.initialised_right = False
+        self.left_error = []
+        self.right_error = []
+        self.left_velocity = []
+        self.right_velocity = []
+        self.left_setpoint = []
+        self.right_setpoint = []
+
         self.r = rospy.Rate(50)    
-        self.left_sub = rospy.Subscriber("/fmInformation/encoder_left", IntStamped, self.onLeft )
-        self.right_sub = rospy.Subscriber("/fmInformation/encoder_right", IntStamped, self.onRight )
+        self.left_sub = rospy.Subscriber("/fmInformation/propulsion_module_feedback_left", PropulsionModuleFeedback, self.onLeft )
+        self.right_sub = rospy.Subscriber("/fmInformation/propulsion_module_feedback_right", PropulsionModuleFeedback, self.onRight )
         
         ion() # turn interaction mode on
         
-        plt.figure(num=None, figsize=(12,6), dpi=80, facecolor='w', edgecolor='w')
-        title ('Velocity')
-
-        ylabel('[m/s]')
+        fig1 = plt.figure(num=1, figsize=(12,6), dpi=80, facecolor='w', edgecolor='w')
+        grid (True) 
+        title ('Left')
+        ylabel('t [s]')
+        ylabel('velocity [m/s]')
+        fig2 = plt.figure(num=2, figsize=(12,6), dpi=80, facecolor='w', edgecolor='w')
+        title ('Right')
+        ylabel('t [s]')
+        ylabel('velocity [m/s]')
         grid (True)  
          
     def onLeft(self, msg):
-        now = rospy.Time.now()
-        period = (now - self.time_left).to_sec()
-        self.time_left = now
-        if self.initialised_left :
-            self.left_value = self.last_left - msg.data
-            self.filter_left[self.ptr_left] = self.left_value
-            self.ptr_left += 1
-            if self.ptr_left == len(self.filter_left) :
-                self.ptr_left = 0
-            self.left.append(self.ticks_to_mps( (sum(self.filter_left)/len(self.filter_left)) , period))
-            self.last_left = msg.data
-        else :
-            self.last_left = msg.data
-            self.initialised_left = True
+        self.left_velocity.append(msg.velocity)
+        self.left_setpoint.append(msg.velocity_setpoint)
+        self.left_error.append(msg.velocity - msg.velocity_setpoint)
+
         
     def onRight(self, msg):
-        now = rospy.Time.now()
-        period = (now - self.time_right).to_sec() 
-        self.time_right = now
-        if self.initialised_right :
-             # Make relative
-            self.right_value = -(self.last_right - msg.data)
-            
-            #Push to buffer
-            self.filter_right[self.ptr_right] = self.right_value*self.right_belt_converion_factor
-            self.ptr_right += 1
-            if self.ptr_right == len(self.filter_right) :
-                self.ptr_right = 0
-            
-            # Append average of buffer to plot
-            self.right.append(self.ticks_to_mps( (sum(self.filter_right)/len(self.filter_right)) , period)) 
-            
-            #upkeep
-            self.last_right = msg.data
-            
-        else : # if not initialised
-            self.last_right = msg.data
-            self.initialised_right = True
-        
-    
-    def ticks_to_mps(self, ticks, period) :
-        return (ticks/self.ticks_pr_meter)/period
+        self.right_velocity.append(msg.velocity)
+        self.right_setpoint.append(msg.velocity_setpoint)
+        self.right_error.append(msg.velocity - msg.velocity_setpoint)
     
     # update loop
     def spin(self):
         while not rospy.is_shutdown():
             plt.figure(1)
-            plt.plot(self.left,'r')
-            plt.plot(self.right,'b')
+            plt.plot(self.left_error,'r', label="error")
+            plt.plot(self.left_velocity,'b', label="measured")
+            plt.plot(self.left_setpoint,'g', label="setpoint")
+            plt.figure(2)
+            plt.plot(self.right_error,'r', label="error")
+            plt.plot(self.right_velocity,'b', label="error")
+            plt.plot(self.right_setpoint,'g', label="error")
+#            legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,ncol=2, mode="expand", borderaxespad=0.)
             plt.draw() 
             self.r.sleep()       
 
