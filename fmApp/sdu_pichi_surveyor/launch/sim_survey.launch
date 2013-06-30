@@ -1,6 +1,6 @@
 <launch>
  	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_pichi_surveyor)/world/frobit.world"/>
-	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_pichi_surveyor)/conf/default.rviz"/>
+	<node pkg="rqt_rviz" type="rqt_rviz" name="visualization"/>
 	<node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/>
 	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
 	
