@@ -63,9 +63,11 @@ hbl2350::hbl2350( )
 	ch2.max_output = ch1.max_output;
 	if(ch1.max_output > ch1.roboteq_max) ch1.max_output = ch1.roboteq_max;
 	if(ch2.max_output > ch2.roboteq_max) ch2.max_output = ch2.roboteq_max;
+	local_node_handler.param<double>("mps_to_thrust",ch1.mps_to_thrust,300);
+	ch2.mps_to_thrust = ch1.mps_to_thrust;
 
-	local_node_handler.param<double>("ticks_per_meter",ticks_per_meter_left,1285.0);
-	local_node_handler.param<double>("ticks_per_meter",ticks_per_meter_right,683.0);
+	local_node_handler.param<double>("ticks_per_meter_left",ticks_per_meter_left,1285.0);
+	local_node_handler.param<double>("ticks_per_meter_right",ticks_per_meter_right,683.0);
 	ch1.ticks_to_meter = 1.0/ticks_per_meter_left;
 	ch2.ticks_to_meter = 1.0/ticks_per_meter_right;
 
@@ -132,6 +134,9 @@ void hbl2350::onStatusTimer(const ros::TimerEvent& event)
 	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
 	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
 	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
+	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
+	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
+	transmit(1,	"# 20" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
 }
 
 void hbl2350::updateStatus(void)
@@ -154,7 +159,7 @@ void hbl2350::initController(std::string config)
 	transmit(2,	"^ECHOF", 1 ); sleep(TIME_BETWEEN_COMMANDS);						// Echo is disabled
 	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);								// Clear buffer
 	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
-	transmit(1,	"# 50" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
+	transmit(1,	"# 20" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
 	transmit(1,	"^ALIM 1 700" ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(1,	"^ALIM 2 700" ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(1,	"^BLSTD 1 0" ); sleep(TIME_BETWEEN_COMMANDS);
@@ -163,6 +168,5 @@ void hbl2350::initController(std::string config)
 
 	ROS_INFO("Initialization finished");
 	status.initialised = true;
-	//status.responding = false;
 }
 
