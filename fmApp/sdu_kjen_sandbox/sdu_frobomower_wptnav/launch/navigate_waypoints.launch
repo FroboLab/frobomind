@@ -79,9 +79,9 @@
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
 			<param name="odom_estimate_frame" value="/odom_combined" />
 			<param name="vehicle_frame" value="base_footprint" />
-			<param name="encoder_output" value="absolute" />
-			<param name="ticks_per_meter_left" value="2048" />
-			<param name="ticks_per_meter_right" value="2048" />
+			<param name="encoder_output" value="relative" />
+			<!-- param name="ticks_per_meter_left" value="2048" /-->
+			<!-- param name="ticks_per_meter_right" value="2048" /-->
 			<param name="max_ticks_per_update" value="200" />
 			<param name="yaw_angle_source" value="imu_angular_velocity" />
 			<param name="imu_angular_velocity_yaw_axis" value="z" />
@@ -145,8 +145,8 @@
 			<param name="deadman_sub" value="/fmSignals/deadman"/>
 			<param name="nmea_sub" value="/fmData/nmea_from_robot"/>
 			<param name="nmea_pub" value="/fmData/nmea_to_robot"/>
-			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
-			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
+			<param name="encoder_left_pub" value="/fmInformation/enc_left"/>
+			<param name="encoder_right_pub" value="/fmInformation/enc_right"/>	
 			<param name="castor_front" value="true"/>
 			<param name="nmea_to_frobit_interval" value="0.1"/>          
 			<param name="cmd_vel_timeout" value="1"/>          
