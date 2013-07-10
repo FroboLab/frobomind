@@ -1,0 +1,13 @@
+# FroboMower
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", GROUP="dialout", MODE="0666", NAME:="robot"
+#
+# Kjelds SparkFun IMU
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTF0FAX7", GROUP="dialout",MODE="0666", NAME:="imu"
+#
+# Kjelds ublox LEA-6T GPS
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTFU8AMZ", GROUP="dialout",MODE="0666", NAME:="gps"
+#
+# Copy this file to: /etc/udev/rules.d/
+#
+# Example on how to retrieve FTDI serial:
+#   udevadm info -a -n /dev/ttyUSB1 | grep 'serial'
