@@ -8,7 +8,7 @@
 	<param name="diff_steer_wheel_ticks_per_rev" value="1285"/>
 	<param name="diff_steer_wheel_distance" value="0.85"/>
 
-	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+	<!--node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
 
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
@@ -44,22 +44,22 @@
 
 	<group ns="fmProcessors">
 		<!-- plot maps of pose, gnss and odometry data -->
-		<node pkg="sdu_pichi_wptnav" name="robot_track_map" type="robot_track_map_node.py">
+		<!--node pkg="sdu_pichi_wptnav" name="robot_track_map" type="robot_track_map_node.py">
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
 			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
-			<param name="plot_pose_track" value="true" /> <!-- remember to use proper values for ekf_initial_guess_ at pose_2d_estimator for this plot -->
+			<param name="plot_pose_track" value="true" /> 
 			<param name="plot_gnss_track" value="true" />
 			<param name="plot_odometry_track" value="false" />
 			<param name="plot_pose_yaw" value="false" />
 			<param name="easting_offset" value="-588784.0" />
 			<param name="northing_offset" value="-6137262.0" />
-			<param name="trackpoint_threshold" value="0.05" /> <!-- [m] -->
-			<param name="map_update_frequency" value="20.0" /> <!-- [Hz] -->
+			<param name="trackpoint_threshold" value="0.05" /> 
+			<param name="map_update_frequency" value="20.0" /> 
 			<param name="map_title" value="Robot track" />
-			<param name="map_window_size" value="7.0" /> <!-- [inches] -->
-		</node>
+			<param name="map_window_size" value="7.0" />
+		</node-->
 
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
@@ -130,28 +130,35 @@
 		</node>
 	     
 		<node pkg="sdu_pichi" name="robot_interface" type="sdu_pichi_node" output="screen" >
-            <param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
-            <param name="cmd_vel_ch2_topic" value="/fmSignals/cmd_vel_right"/>
-            <param name="serial_rx_topic" value="/fmData/robot_rx"/>
-            <param name="serial_tx_topic" value="/fmData/robot_tx"/>
-            <param name="deadman_topic" value="/fmSignals/deadman"/>
-            <param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
-            <param name="encoder_ch2_topic" value="/fmInformation/encoder_right"/>   
-            <param name="power_ch1_topic" value="/fmData/power_left"/>
-            <param name="power_ch2_topic" value="/fmData/power_right"/>
-            <param name="status_topic" value="/fmData/status"/>   
-            <param name="mps_to_rpm" value="1285"/>
-            <param name="p_gain" value="8"/>
-            <param name="i_gain" value="0.1"/>
-            <param name="d_gain" value="0.0"/> 
-            <param name="i_max" value="0.1"/> <!-- No longer in percent -->    
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
+			<param name="cmd_vel_ch2_topic" value="/fmSignals/cmd_vel_right"/>
+			<param name="serial_rx_topic" value="/fmData/robot_rx"/>
+			<param name="serial_tx_topic" value="/fmData/robot_tx"/>
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
+			<param name="encoder_ch2_topic" value="/fmInformation/encoder_right"/>	
+			<param name="power_ch1_topic" value="/fmData/power_left"/>
+			<param name="power_ch2_topic" value="/fmData/power_right"/>
+			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
+			<param name="propulsion_module_feedback_left_topic" value="/fmInformation/propulsion_module_feedback_left"/>
+			<param name="propulsion_module_feedback_right_topic" value="/fmInformation/propulsion_module_feedback_right"/>
+			<param name="status_topic" value="/fmData/status"/>	
+			<param name="ticks_per_meter_left" value="-1353" />
+			<param name="ticks_per_meter_right" value="755" />
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="1000" />
+			<param name="p_gain" value="1"/>
+			<param name="i_gain" value="1"/>
+			<param name="d_gain" value="0.001"/>
+			<param name="i_max" value="1"/>
+			<param name="closed_loop_operation" value="true"/>        
 		</node>
 	</group>
 
 	<group ns="fmLib">
 		<!-- Wiimote interface -->
 		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-			<param name="fixed_wiimote_address" value="00:19:1D:73:C2:EF"/>
+			<!--param name="fixed_wiimote_address" value="00:19:1D:73:C2:EF"/-->
 		</node >		
 
 		<!-- serial communication with the Armadillo Pichi robot -->

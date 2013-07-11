@@ -20,12 +20,19 @@
 			<param name="encoder_ch2_topic" value="/fmInformation/encoder_right"/>	
 			<param name="power_ch1_topic" value="/fmData/power_left"/>
 			<param name="power_ch2_topic" value="/fmData/power_right"/>
+			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
+			<param name="propulsion_module_feedback_left_topic" value="/fmInformation/propulsion_module_feedback_left"/>
+			<param name="propulsion_module_feedback_right_topic" value="/fmInformation/propulsion_module_feedback_right"/>
 			<param name="status_topic" value="/fmData/status"/>	
-			<param name="mps_to_rpm" value="1320"/> 
-			<param name="p_gain" value="1.0"/>
-            <param name="i_gain" value="0.8"/>
-            <param name="d_gain" value="0.0"/>  
-            <param name="i_max" value="0.5"/> <!-- No longer in percent -->     
-        </node>
+			<param name="ticks_per_meter_left" value="-1353" />
+			<param name="ticks_per_meter_right" value="755" />
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="1000" />
+			<param name="p_gain" value="1"/>
+			<param name="i_gain" value="1"/>
+			<param name="d_gain" value="0.001"/>
+			<param name="i_max" value="1"/>
+			<param name="closed_loop_operation" value="true"/>        
+		</node>
 	</group>
 </launch>
