@@ -75,9 +75,9 @@ add_executable(wads_implement_communication src/wads_implement_communication.cpp
 
 
 ## Add dependencies to the executable
-add_dependencies(wads_implement_node ${PROJECT_NAME} sensor_msgs_gencpp std_msgs_gencpp)
-add_dependencies(wads_implement_visualizer ${PROJECT_NAME})
-add_dependencies(wads_implement_communication ${PROJECT_NAME})
+add_dependencies(wads_implement_node ${PROJECT_NAME} sensor_msgs_gencpp std_msgs_gencpp msgs_gencpp)
+add_dependencies(wads_implement_visualizer ${PROJECT_NAME} sensor_msgs_gencpp std_msgs_gencpp msgs_gencpp)
+add_dependencies(wads_implement_communication ${PROJECT_NAME} sensor_msgs_gencpp std_msgs_gencpp msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(wads_implement_node
