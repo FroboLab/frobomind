@@ -69,7 +69,7 @@ include_directories(include
  add_executable(row_odom_kf_node src/row_odom_kf_node.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(row_odom_kf_node ${PROJECT_NAME} nav_msgs_gencpp)
+add_dependencies(row_odom_kf_node ${PROJECT_NAME} nav_msgs_gencpp msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(row_odom_kf_node

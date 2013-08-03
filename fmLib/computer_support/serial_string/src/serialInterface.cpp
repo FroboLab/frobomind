@@ -165,7 +165,6 @@ void serialInterface::writeHandler(const msgs::serial::ConstPtr& msg)
 		{
 			ROS_ERROR("%s: Write operation failed",ros::this_node::getName().c_str());
 		}
-
 	}
 }
 
