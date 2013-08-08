@@ -28,6 +28,9 @@
 #ifndef FROBIT_INTERFACE_H_
 #define FROBIT_INTERFACE_H_
 
+#define PFBHI_DATA_LENGTH 2
+#define PFBST_DATA_LENGTH 4
+
 #include <ros/ros.h>
 #include <string.h>
 #include <sstream>
@@ -145,13 +148,22 @@ public:
   } publishers;
 
   FrobitInterface();
-
-  void makeItSpin(void);
   void on_vel_msg_left(const geometry_msgs::TwistStamped::ConstPtr&);
   void on_vel_msg_right(const geometry_msgs::TwistStamped::ConstPtr&);
   void on_deadman(const std_msgs::Bool::ConstPtr&);
-  void on_encoder(const msgs::nmea::ConstPtr&);
+  void on_nmea(const msgs::nmea::ConstPtr&);
+  void handle_startup_message(const msgs::nmea::ConstPtr&);
+  void handle_status_message(const msgs::nmea::ConstPtr&);
+  void handle_control_message(void);
+  void handle_communication_parameters_message(void);
+  void handle_wheel_parameters_message(void);
+  void handle_corrupt_data(const msgs::nmea::ConstPtr&);
+  void handle_unknown_id(const msgs::nmea::ConstPtr&);
+  void handle_invalid_message(const msgs::nmea::ConstPtr&);
+  bool all_ok(void);
+  int correct_to_max_velocity(int);
   void on_timer(const ros::TimerEvent&);
+  void makeItSpin(void);
 };
 /** @}*/
 #endif /*FROBIT_INTERFACE_H_*/
