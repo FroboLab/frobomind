@@ -161,7 +161,7 @@ public:
   void handle_unknown_id(const msgs::nmea::ConstPtr&);
   void handle_invalid_message(const msgs::nmea::ConstPtr&);
   bool all_ok(void);
-  int correct_to_max_velocity(int);
+  double correct_to_max_velocity(double);
   void on_timer(const ros::TimerEvent&);
   void makeItSpin(void);
 };

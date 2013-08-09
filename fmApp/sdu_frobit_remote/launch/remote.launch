@@ -1,5 +1,5 @@
 <launch>
-	<param name="robot_max_velocity" value="1.0"/>
+	<param name="robot_max_velocity" value="2.0"/>
 	<param name="diff_steer_wheel_radius" value="0.051"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
 	<param name="diff_steer_wheel_distance" value="0.215"/>
@@ -10,8 +10,8 @@
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="max_linear_velocity" value="1.5"/>
 			<param name="max_angular_velocity" value="1.8"/>
-			<param name="deadband" value="5"/>
-			<param name="reduced_range" value="40"/>
+			<param name="deadband" value="1"/>
+			<param name="reduced_range" value="20"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
 			<param name="status_topic" value="/fmData/status"/>
@@ -57,7 +57,7 @@
 		<node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
 			<param name="publisher_topic" value="/fmData/frobit_rx" />	 
 			<param name="subscriber_topic" value="/fmData/frobit_tx" />
-			<param name="device" value="/dev/ttyUSB0" />	
+			<param name="device" value="/dev/frobit" />	
 			<param name="baudrate" value="57600" />
 			<param name="termination_character" value="10"/>
 		</node> 	

@@ -190,12 +190,15 @@ bool FrobitInterface::all_ok(void)
 	return active && deadman;
 }
 
-int FrobitInterface::correct_to_max_velocity(int vel)
+double FrobitInterface::correct_to_max_velocity(double vel)
 {
-	if (vel > parameters.max_velocity)
-		vel = parameters.max_velocity;
-	else if (vel < -parameters.max_velocity)
-		vel = -parameters.max_velocity;
+    double corr_max_velocity = parameters.max_velocity + abs(abs(left_vel)-abs(right_vel))/2;
+
+    if (vel > corr_max_velocity)
+      vel = corr_max_velocity;
+    else if (vel < -corr_max_velocity)
+      vel = -corr_max_velocity;
+
 	return vel;
 }
 
@@ -215,8 +218,10 @@ void FrobitInterface::on_timer(const ros::TimerEvent& e)
 		}
 
 		//correct to max velocity and convert from [m/s] to [ticks/s]
+		std::cout << "Vel left:" << left_vel << " Vel right:"<< right_vel << std::endl;
 		left_vel = correct_to_max_velocity(left_vel) * meters_to_ticks;
 		right_vel = correct_to_max_velocity(right_vel) * meters_to_ticks;
+
 	}
 	else
 	{
