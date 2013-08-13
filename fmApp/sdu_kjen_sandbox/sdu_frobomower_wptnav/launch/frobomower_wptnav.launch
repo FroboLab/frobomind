@@ -104,7 +104,7 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_pichi_wptnav" name="mission_control" type="simple_mission.py">
+		<node pkg="sdu_frobomower_wptnav" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
             <param name="max_linear_velocity" value="1.0"/>
@@ -139,7 +139,7 @@
 	</group>
 
 	<group ns="fmLib">
-		<node pkg="sdu_frobit" name="frobomower_node" type="frobit_node" output="screen" >
+		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" output="screen" >
 			<param name="cmd_vel_left_sub" value="/fmSignals/cmd_vel_left"/>
 			<param name="cmd_vel_right_sub" value="/fmSignals/cmd_vel_right"/>
 			<param name="deadman_sub" value="/fmSignals/deadman"/>

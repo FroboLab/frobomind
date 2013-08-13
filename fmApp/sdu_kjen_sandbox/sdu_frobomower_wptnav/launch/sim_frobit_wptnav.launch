@@ -1,0 +1,59 @@
+<!-- FroboMower launch file -->
+
+<launch>
+	<!-- Frobit parameters --> 
+	<param name="robot_max_velocity" value="1.0"/>
+	<param name="diff_steer_wheel_radius" value="0.051"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
+	<param name="diff_steer_wheel_distance" value="0.215"/>
+
+ 	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_frobomower_wptnav)/world/frobit.world"/>
+	<!-- node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_frobomower_wptnav)/conf/default.rviz"/ -->
+	<!-- node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/ -->
+	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
+	<node pkg="position_action_server" name="positionActionServer" type="positionGoalActionServer.py"/>
+	
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_frobomower_wptnav" name="mission_control" type="simple_mission.py">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="1.0"/>
+			<param name="deadband" value="3"/>
+			<param name="reduced_range" value="45"/>
+			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
+			<param name="joy_topic" value="/fmLib/joy" />
+			<param name="status_topic" value="/fmData/state"/>
+			<param name="publish_frequency" value="10"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="sdu_frobomower_wptnav" type="waypoint_navigation_node.py" name="navigate_waypoints" output="screen">
+			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+			<param name="pose_sub" value="/odom" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" />
+			<param name="status_pub" value="/fmData/wptnav_status" />
+			<param name="status_publish_interval" value="2" />
+			<param name="print_debug_information" value="true" />
+		</node>		
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- Wiimote interface -->
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/> <!-- Kjeld -->
+		</node >		
+	</group>
+</launch>
+

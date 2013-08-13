@@ -1,0 +1,205 @@
+<!-- FroboMower launch file -->
+
+<launch>
+	<!-- Frobit parameters --> 
+	<param name="robot_max_velocity" value="1.0"/>
+	<param name="diff_steer_wheel_radius" value="0.051"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
+	<param name="diff_steer_wheel_distance" value="0.215"/>
+
+
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+
+	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
+		<!--node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
+		 </node-->
+
+		<!-- extract data from messages transmitted by the SparkFun Razor IMU -->
+		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="true"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
+		 </node>
+
+		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
+		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen" respawn="true">
+		    <param name="subscribe_topic_id" value="/fmData/gps_rx" />
+			<param name="publish_topic_id" value="/fmInformation/gpgga" />
+		</node>
+
+		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
+		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/gpgga" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+	</group>
+
+	<group ns="fmProcessors">
+		<!-- plot maps of pose, gnss and odometry data -->
+		<node pkg="sdu_frobomower_wptnav" name="robot_track_map" type="robot_track_map_node.py">
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="plot_pose_track" value="true" />
+			<param name="plot_gnss_track" value="true" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="easting_offset" value="0.0" />
+			<param name="northing_offset" value="0.0" />
+			<param name="trackpoint_threshold" value="0.05" />
+			<param name="map_update_frequency" value="20.0" />
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="6.0" />
+		</node>
+
+		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/enc_left" />
+			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<param name="odom_estimate_frame" value="/odom_combined" />
+			<param name="vehicle_frame" value="base_footprint" />
+			<param name="encoder_output" value="relative" />
+			<!-- param name="ticks_per_meter_left" value="2048" /-->
+			<!-- param name="ticks_per_meter_right" value="2048" /-->
+			<param name="max_ticks_per_update" value="200" />
+			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="imu_angular_velocity_yaw_axis" value="-z" />
+		</node>
+
+		<!-- estimate robot 2d pose -->
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="update_rate" value="20" />
+			<param name="publish_relative_pose" type="boolean" value="false" />
+			<param name="ekf_initial_guess_easting" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
+			<param name="ekf_initial_guess_northing" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
+			<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->
+			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
+			<param name="odometry_angular_variance" value="0.00035" /> <!-- [rad/update] -->
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_frobomower_wptnav" name="mission_control" type="simple_mission.py">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="1.0"/>
+			<param name="deadband" value="3"/>
+			<param name="reduced_range" value="45"/>
+			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
+			<param name="joy_topic" value="/fmLib/joy" />
+			<param name="status_topic" value="/fmData/state"/>
+			<param name="publish_frequency" value="10"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="sdu_frobomower_wptnav" type="waypoint_navigation_node.py" name="navigate_waypoints" output="screen">
+			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" />
+			<param name="status_pub" value="/fmData/wptnav_status" />
+			<param name="status_publish_interval" value="2" />
+			<param name="print_debug_information" value="true" />
+		</node>		
+	</group>
+
+	<group ns="fmControllers">
+		<node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
+			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
+			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left"/>
+			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right"/>
+		</node>	     
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" output="screen" >
+			<param name="cmd_vel_left_sub" value="/fmSignals/cmd_vel_left"/>
+			<param name="cmd_vel_right_sub" value="/fmSignals/cmd_vel_right"/>
+			<param name="deadman_sub" value="/fmSignals/deadman"/>
+			<param name="nmea_sub" value="/fmData/nmea_from_robot"/>
+			<param name="nmea_pub" value="/fmData/nmea_to_robot"/>
+			<param name="encoder_left_pub" value="/fmInformation/enc_left"/>
+			<param name="encoder_right_pub" value="/fmInformation/enc_right"/>	
+			<param name="castor_front" value="true"/>
+			<param name="nmea_to_frobit_interval" value="0.1"/>          
+			<param name="cmd_vel_timeout" value="1"/>          
+        </node>
+
+		<!-- Wiimote interface -->
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/> <!-- Kjeld -->
+		</node >		
+
+		<!-- serial communication with the FroboMower robot -->
+		<node pkg="serial_nmea" name="robot_nmea_node" type="nmea_node" output="screen">
+		    <param name="str_to_msg_sub" value="/fmData/robot_rx" />   
+		    <param name="str_to_msg_pub" value="/fmData/nmea_from_robot" />
+		    <param name="msg_to_str_sub" value="/fmData/nmea_to_robot" />   
+		    <param name="msg_to_str_pub" value="/fmData/robot_tx" />           
+		    <param name="use_nmea_checksum" type="boolean" value="true" />
+		</node>
+
+		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/robot_rx" />	 
+			<param name="subscriber_topic" value="/fmData/robot_tx" />
+			<param name="device" value="/dev/robot" />	
+			<param name="baudrate" value="57600" />
+			<param name="termination_character" value="10"/>
+		</node>
+
+		<!-- serial communication with the RTK-GNSS -->
+		<node pkg="serial_string" name="gnss_serial_string_node" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/gps_rx" />	 
+			<param name="subscriber_topic" value="/fmData/gps_tx" />
+			<param name="device" value="/dev/gps" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+
+		<!-- serial communication with the IMU -->
+		<node pkg="serial_nmea" name="imu_nmea_node" type="nmea_node" output="screen">
+		    <param name="str_to_msg_sub" value="/fmData/imu_rx" />   
+		    <param name="str_to_msg_pub" value="/fmData/nmea_from_imu" />
+		    <param name="msg_to_str_sub" value="/fmData/nmea_to_imu" />   
+		    <param name="msg_to_str_pub" value="/fmData/imu_tx" />           
+		    <param name="use_nmea_checksum" type="boolean" value="true" />
+		</node>
+
+		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="57600" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+	</group>
+</launch>
+
