@@ -108,6 +108,7 @@ class WaypointNavigationNode():
 		casmo_width = rospy.get_param("~casmo_width", 0.8)
 		casmo_default_length = rospy.get_param("~casmo_default_length", 100)
 		self.max_linear_velocity = rospy.get_param("~max_linear_velocity", 0.5)
+		self.wpt_tolerance = rospy.get_param("~wpt_tolerance", 0.5)
 		self.wptnav = waypoint_navigation(self.update_rate, self.debug)
 		self.casmo = area_coverage_casmo()
 		self.casmo.param_set_width(casmo_width)
@@ -137,7 +138,7 @@ class WaypointNavigationNode():
 
 	def goto_pos (self, pos):
 		self.prev_wpt = self.wpt
-		self.wpt = (pos[0], pos[1], 0, 'MCTE', 0.5, self.max_linear_velocity)
+		self.wpt = (pos[0], pos[1], 0, 'MCTE', self.wpt_tolerance, self.max_linear_velocity)
 		if self.wpt != False:
 			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[2])
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
@@ -146,7 +147,7 @@ class WaypointNavigationNode():
 			self.wptnav.stop()
 
 	def on_automode_message(self, msg):
-		if self.pos == False:
+		if self.pos == False and msg.data == True:
 			rospy.loginfo("Cannot enter automode without pose information")
 			return
 			

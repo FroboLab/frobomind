@@ -3,7 +3,7 @@
 
 <launch>
 	<!-- Armadillo Pichi parameters --> 
-	<param name="robot_max_velocity" value="0.6"/>
+	<param name="robot_max_velocity" value="0.4"/>
 	<param name="diff_steer_wheel_radius" value="0.159"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="1285"/>
 	<param name="diff_steer_wheel_distance" value="0.85"/>
@@ -22,6 +22,7 @@
 			<param name="covariance_z" value="0.001"/>
 		 </node>
 
+		<!-- Low cost GPS -->
 		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
 		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen" respawn="true">
 		    <param name="subscribe_topic_id" value="/fmData/rtk_gnss_rx" />
@@ -41,10 +42,32 @@
 			<param name="transverse_mercator_false_northing" value="0.0" />
 		</node>
 
+		<!-- Ground truth GPS (trimble) -->
+		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
+		<node pkg="gps_gpgga" name="nmea_to_gpgga_trimble" type="gps_gpgga_node" output="screen" respawn="true">
+			<param name="subscribe_topic_id" value="/fmData/trimble_rx" />
+			<param name="publish_topic_id" value="/fmInformation/trimble_gpgga" />
+		</node>
+	<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc_trimble" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/trimble_gpgga" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/trimble_gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+
  		<!-- WADS sensor communication -->
-		<node pkg="wads_implement" name="wads_converter" type="wads_implement_communication" output="screen">
-		      <param name="rx_topic" value="/fmData/wads" />
+		<node pkg="wads_implement" name="wads_converter" type="wads_implement_communication">
+		      <param name="rx_topic" value="/fmData/wads_rx" />
 		      <param name="wads_topic" value="/fmInformation/wads" />
+			<param name="map_from_min" value="0" />
+			<param name="map_from_max" value="1000" />
+			<param name="map_to_min" value="0" />
+			<param name="map_to_max" value="1000" />
 		</node>
 	</group>
 
@@ -103,11 +126,11 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_pichi_hudem" name="mission_control" type="simple_mission.py">
+		<node pkg="sdu_pichi_wptnav" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-            		<param name="max_linear_velocity" value="0.6"/>
-            		<param name="max_angular_velocity" value="0.9"/>
+            		<param name="max_linear_velocity" value="0.4"/>
+            		<param name="max_angular_velocity" value="0.4"/>
 			<param name="deadband" value="5"/>
 			<param name="reduced_range" value="50"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
@@ -118,7 +141,7 @@
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="sdu_pichi_hudem" type="casmo_wriggle_navigation.py" name="navigate_waypoints" output="screen">
+		<node pkg="sdu_pichi_wptnav" type="casmo_wriggle_navigation.py" name="navigate_waypoints" output="screen">
 			<param name="automode_sub" value="/fmDecisionMakers/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
@@ -126,6 +149,12 @@
 			<param name="status_pub" value="/fmData/wptnav_status" />
 			<param name="status_publish_interval" value="2" />
 			<param name="print_debug_information" value="true" />
+			<param name="sensor_penalty_distance" value="0.3" />
+			<param name="casmo_width" value="1.0" />
+			<param name="turn_angle_left" value="0.6" />
+			<param name="turn_angle_right" value="-0.6" />
+			<param name="wads_threshold" value="100" />
+			<param name="wpt_tolerance" value="0.2" />
 		</node>		
 	</group>
 
@@ -155,17 +184,17 @@
 			<param name="mps_to_thrust" value="500"/>
 			<param name="max_controller_command" value="1000" />
 			<param name="p_gain" value="1"/>
-			<param name="i_gain" value="1"/>
+			<param name="i_gain" value="2"/>
 			<param name="d_gain" value="0.001"/>
-			<param name="i_max" value="1"/>
-			<param name="closed_loop_operation" value="true"/>        
+			<param name="i_max" value="2"/>
+			<param name="closed_loop_operation" value="false"/>        
 		</node>
 	</group>
 
 	<group ns="fmLib">
 		<!-- Wiimote interface -->
 		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-			<!--param name="fixed_wiimote_address" value="00:19:1D:73:C2:EF"/-->
+			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/>
 		</node >		
 
 		<!-- serial communication with the Armadillo Pichi robot -->
@@ -185,6 +214,15 @@
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
 		</node> 	
+
+		<!-- serial communication with the trimble GPS / Ground truth -->
+		<node pkg="serial_string" name="trimble_serial_string_node" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/trimble_rx" />	 
+			<param name="subscriber_topic" value="/fmData/trimble_tx" />
+			<param name="device" value="/dev/trimble" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 
 
 		<!-- serial communication with the IMU -->
 		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">

@@ -56,10 +56,10 @@ class Turn():
         
         if math.fabs(angular_speed) > math.fabs(self.last_angular_speed):
             angular_speed = angular_speed + speed_step
-            if angular_speed < desired_angular_speed:
+            if math.fabs(angular_speed) > math.fabs(desired_angular_speed):
                 angular_speed = desired_angular_speed
 
-        self.last_angular_speed = angular_seed
+        self.last_angular_speed = angular_speed
 
         return (turn_done, angular_speed)
 
