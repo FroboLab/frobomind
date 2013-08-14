@@ -46,7 +46,7 @@ from track_map import track_map
 # parameters
 ekf_easting_init = 651180.0   # set these EKF initial guess coordinates close
 ekf_northing_init = 6133758.0 # to actual transverse mercator coordinates.
-plot_pose = True
+plot_pose = False
 plot_gnss = True
 plot_odometry = True
 plot_yaw = True

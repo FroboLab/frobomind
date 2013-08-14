@@ -27,16 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-This file contains a 2D pose mapping class designed for field robots.
-
-The pose follows the ENU coordinate system to allow use of GNSS based
-coordinates represented in a Transverse Mercator projection. 
-
-	Pose position vector: [easting, northing]
-	Pose orientation vector: [yaw] positive rotation CCW origo at the easting axis 
-
 Revision
-2013-04-25 KJ First version
+2013-08-14 KJ First version
 """
 # imports
 import matplotlib.pyplot as plt
@@ -53,12 +45,15 @@ class track_map():
 		self.plot_odometry = plot_odometry
 		self.plot_yaw = plot_yaw
 		self.trkpt_threshold = 0.1 # [m]
-        
+		self.save_time_lapse_images = True
+ 		self.pose_image_save = True # save an image for time-lapse video generation
+       
 		# Initialize map
 		self.offset_e = easting_offset
 		self.offset_n = northing_offset
 		self.map_window_size = map_window_size
 		self.map_title = map_title
+		self.map_image_cnt = 0
 		self.odo = []
 		self.gnss = []
 		self.pose_pos = []
@@ -67,42 +62,16 @@ class track_map():
 		self.ahrs_yaw = []
 		self.pose_yaw = []
 		self.wpt_mode = 0
-		self.wpt_destination = False
+		self.wpt_a = False
+		self.wpt_b = False
 		self.wpt_target = False
-
-		self.pose_image_save = True # save an image for time-lapse video generation
-		self.pose_image_count = 0
+		self.wpt_list = []
+		self.wpt_first = True
 
 		ion() # turn interaction mode on
 		if self.plot_gnss or self.plot_pose:
 			self.fig1 = plt.figure(num=1, figsize=(self.map_window_size, \
 				self.map_window_size), dpi=80, facecolor='w', edgecolor='w')
-
-			# this is a temporary hack to show the SDU test field
-			#test_field = [[588787.7447,6137275.3330], [588795.7513,6137275.1412], [588795.9340,6137283.1338], [588787.9458,6137283.3454], [588788.1267,6137291.3197], [588796.1145,6137291.1133]]
-			#test_field.pop (-1)
-			#test_field.pop (-1)
-			#for i in xrange(len(test_field)):
-			#	test_field[i][0] += self.offset_e
-			#	test_field[i][1] += self.offset_n
-			#test_field.append(test_field[0])
-			#self.test_fieldT = zip(*test_field)
-
-			# this is a temporary hack to show the temporary test field at Flakkebjerg
-			#test_field = [[651183.096,6133753.717], [651179.863,6133758.452], [651180.992,6133763.590], [651199.168,6133758.523], [651196.819,6133749.232]]
-			#for i in xrange(len(test_field)):
-			#	test_field[i][0] += self.offset_e
-			#	test_field[i][1] += self.offset_n
-			#test_field.append(test_field[0])
-			#self.test_fieldT = zip(*test_field)
-	
-			test_field = []
-			file = open('waypoints.txt', 'rb')
-			lines = csv.reader(file, delimiter=',')
-			for easting, northing, a, wptid, b, c, d, e in lines:
-				test_field.append([float(easting) + self.offset_e, float(northing) + self.offset_n])
-			file.close()
-			self.test_fieldT = zip(*test_field)
 
 		if self.plot_odometry:
 			self.fig2 = plt.figure(num=2, figsize=(map_window_size, \
@@ -149,9 +118,14 @@ class track_map():
 	def append_odo_yaw (self, yaw):
 		self.odo_yaw.append(yaw*self.rad_to_deg)
 
-	def set_wptnav (self, mode, dest_easting, dest_northing, target_easting, target_northing):
+	def set_wptnav (self, mode, a_easting, a_northing, b_easting, b_northing, target_easting, target_northing):
 		self.wpt_mode = mode
-		self.wpt_destination = [dest_easting + self.offset_e, dest_northing + self.offset_n]
+		self.wpt_a = [a_easting + self.offset_e, a_northing + self.offset_n]
+		self.wpt_b = [b_easting + self.offset_e, b_northing + self.offset_n]
+		if self.wpt_first == True:
+			self.wpt_first = False
+			self.wpt_list.append(self.wpt_a)
+		self.wpt_list.append(self.wpt_b)
 		self.wpt_target = [target_easting + self.offset_e, target_northing + self.offset_n]
 
 	def update(self):
@@ -165,36 +139,42 @@ class track_map():
 			ylabel('Northing [m]')
 			axis('equal')
 			grid (True)
-			plot (self.test_fieldT[0], self.test_fieldT[1], 'g')
-			plot (self.test_fieldT[0], self.test_fieldT[1], 'go',markersize=7)
+			#plot (self.test_fieldT[0], self.test_fieldT[1], 'g')
+			#plot (self.test_fieldT[0], self.test_fieldT[1], 'go',markersize=7)
 
+			wptlistT = zip(*self.wpt_list)
+			wptlist_plt = plot(wptlistT[0],wptlistT[1],'#ff0000')
+			plot (self.wpt_a[0], self.wpt_a[1], 'g')
+			
 			gnssT = zip(*self.gnss)		
-			gnss_plt = plot(gnssT[0],gnssT[1],'black')
+			gnss_plt = plot(gnssT[0],gnssT[1],'#000000')
+
 		if self.plot_pose and self.pose_pos != []:
 			plt.figure(1)
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
 		if self.plot_pose or self.plot_gnss:
 			if self.wpt_mode == 1 or self.wpt_mode == 2:
-				if self.wpt_mode > 0 and self.wpt_destination != False:
-					dest_plt = plot(self.wpt_destination[0],self.wpt_destination[1],'ro',markersize=8)
+				if self.wpt_mode > 0 and self.wpt_b != False:
+					a_plt = plot(self.wpt_a[0],self.wpt_a[1],'go',markersize=6)
+					b_plt = plot(self.wpt_b[0],self.wpt_b[1],'ro',markersize=6)
 				if self.wpt_mode == 1:
 					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
-						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=8)
+						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=6)
 					if self.wpt_target != False:
 						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
 				elif self.wpt_mode == 2:
 					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
-						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bo',markersize=8)
+						pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bo',markersize=6)
 					if self.wpt_target != False:
 						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
 			elif self.wpt_mode == -1:
 				if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
-					pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=8)
+					pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=6)
 
-		if self.pose_image_save:
-			self.fig1.savefig ('img%05d.jpg' % self.pose_image_count)
-			self.pose_image_count += 1
+		if self.save_time_lapse_images == True:
+			self.fig1.savefig ('img%05d.jpg' % self.map_image_cnt)
+			self.map_image_cnt += 1
 
 		if self.plot_odometry and self.odo != []:
 			plt.figure(2)

@@ -112,9 +112,9 @@ class track_map_node():
 	def on_odom_topic(self, msg):
 		self.plot.append_odometry_position(msg.pose.pose.position.x, msg.pose.pose.position.y)
 
-	# handle incoming destination waypoint messages
+	# handle incoming waypoint navigation status messages
 	def on_wptnav_status_topic(self, msg):
-		self.plot.set_wptnav (msg.mode, msg.b_easting, msg.b_northing, msg.target_easting, msg.target_northing)
+		self.plot.set_wptnav (msg.mode, msg.a_easting, msg.a_northing, msg.b_easting, msg.b_northing, msg.target_easting, msg.target_northing)
 
 	# update loop
 	def updater(self):
