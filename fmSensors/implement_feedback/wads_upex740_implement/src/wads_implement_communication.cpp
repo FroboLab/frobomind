@@ -12,17 +12,36 @@ protected:
   
   ros::Publisher pub_;
   ros::Subscriber sub_;
+  ros::Timer statstimer_;
 
   // Parameters
-  double gain_;
-  double offset_;
+  double map_from_min_;
+  double map_from_max_;
+  double map_to_min_;
+  double map_to_max_;
   std::string rx_topic_;
   std::string wads_topic_;
+
+  // Calculated
+  double gain_;
+  double offset_in_; // Offset before gain
+  double offset_out_; // Offset after gain
 
   // Stats
   double read_max_;
   double read_min_;
 	
+
+  double mapValue(int value)
+  {
+    double mapped = ((double)value - offset_in_) * gain_ + offset_out_;
+    if (mapped > map_to_max_)
+      mapped = map_to_max_;
+    if (mapped < map_to_min_)
+      mapped = map_to_min_;
+    return mapped;
+  }
+
   void onMsg(const msgs::serial::ConstPtr& msg)
   {
     // Find starting position of value
@@ -46,34 +65,44 @@ protected:
       read_max_ = value;
 
     //outvalue.data = offset_ + value * gain_;
-    outvalue.data = value;
+    outvalue.data = mapValue(value);
     this->pub_.publish(outvalue);
   }
-  void showStats(const ros::TimerEvent&)
+  void showStats(const ros::TimerEvent& event)
   {
-    ROS_INFO("was here...");
-    ROS_INFO("WADS Values - min: %f \t max: %f", read_min_, read_max_);
+    showStats();
+  }
+  void showStats()
+  {
+    ROS_INFO("WADS raw values - min: %f \t max: %f", read_min_, read_max_);
   }
   void setupParametersAll()
   {
     read_max_ = 0;
     read_min_ = 0;
-    nh_.param<double>("gain", this->gain_, 1);
-    nh_.param<double>("offset", this->offset_, 0.0);
+    //nh_.param<double>("gain", this->gain_, 1);
+    //nh_.param<double>("offset", this->offset_, 0.0);
+    nh_.param<double>("map_from_min", this->map_from_min_, 0.0);
+    nh_.param<double>("map_from_max", this->map_from_max_, 1024.0);
+    nh_.param<double>("map_to_min", this->map_to_min_, 0.0);
+    nh_.param<double>("map_to_max", this->map_to_max_, 5.0);
     nh_.param<std::string>("rx_topic", this->rx_topic_, "/fmData/wads_rx");
-    nh_.param<std::string>("wads_topic", this->wads_topic_, "/wads");
-    ROS_INFO("Gain: %f", gain_);
-    ROS_INFO("Offset: %f", offset_);
+    nh_.param<std::string>("wads_topic", this->wads_topic_, "/fmInformation/wads");
+
+    // Calculate gain + offset
+    gain_ = (map_to_max_ - map_to_min_) / (map_from_max_ - map_from_min_);
+    offset_in_ = map_from_min_;
+    offset_out_ = map_to_min_;
   }
 
 public:
-  WADSImplementCommunicator() : n_("~")
+  WADSImplementCommunicator() : nh_("~")
   {
     setupParametersAll();
     pub_ = nh_.advertise<std_msgs::Float64>(wads_topic_, 10);
     sub_ = nh_.subscribe(rx_topic_, 10, &WADSImplementCommunicator::onMsg, this);
 
-    ros::Timer timer = nh_.createTimer(ros::Duration(1), &WADSImplementCommunicator::showStats, this);
+    statstimer_ = nh_.createTimer(ros::Duration(5), &WADSImplementCommunicator::showStats, this);
   }
   void spin()
   {
