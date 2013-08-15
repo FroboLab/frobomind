@@ -59,6 +59,7 @@ void FrobitInterface::makeItSpin(void)
 	local_node_handler.param<std::string>("cmd_vel_right_sub", topics.cmd_vel_right, "/fmDecision/twist");
 	local_node_handler.param<std::string>("encoder_left_pub", topics.encoder_left, "/fmInformation/encoder_left");
 	local_node_handler.param<std::string>("encoder_right_pub", topics.encoder_right, "/fmInformation/encoder_right");
+	local_node_handler.param<std::string>("adc_data_pub", topics.adc_data, "/fmInformation/adc_data");
 	local_node_handler.param<bool>("castor_front", parameters.castor_front, true);
 	local_node_handler.param<double>("cmd_vel_timeout", parameters.timeout, 1);
 	local_node_handler.param<double>("nmea_to_frobit_interval", parameters.interval, 0.1);
@@ -73,8 +74,9 @@ void FrobitInterface::makeItSpin(void)
 	subscribers.nmea = global_node_handler.subscribe<msgs::nmea>(topics.nmea_sub, 2, &FrobitInterface::on_nmea, this);
 
 	publishers.nmea = global_node_handler.advertise<msgs::nmea>(topics.nmea_pub, 1);
-	publishers.encoder_left = global_node_handler.advertise<msgs::encoder>(topics.encoder_left, 1);
-	publishers.encoder_right = global_node_handler.advertise<msgs::encoder>(topics.encoder_right, 1);
+	publishers.encoder_left = global_node_handler.advertise<msgs::IntStamped>(topics.encoder_left, 1);
+	publishers.encoder_right = global_node_handler.advertise<msgs::IntStamped>(topics.encoder_right, 1);
+	publishers.data = global_node_handler.advertise<msgs::IntArrayStamped>(topics.adc_data, 1);
 
 	ros::Timer t1 = global_node_handler.createTimer(ros::Duration(parameters.interval), &FrobitInterface::on_timer, this);
 
@@ -122,7 +124,7 @@ void FrobitInterface::on_nmea(const msgs::nmea::ConstPtr& msg)
 			handle_data_message(msg);
 		}
 		else
-			handle_unknown_id(msg);
+			handle_unknown_type(msg);
 	}
 	else
 		handle_invalid_message(msg);
@@ -134,19 +136,21 @@ void FrobitInterface::handle_startup_message(const msgs::nmea::ConstPtr& msg)
 void FrobitInterface::handle_status_message(const msgs::nmea::ConstPtr& msg)
 {
 	messages.encoder.header.stamp = msg->header.stamp;
-	messages.encoder.encoderticks = boost::lexical_cast<int>(msg->data.at(1));
+	messages.encoder.data = boost::lexical_cast<int>(msg->data.at(1));
 	publishers.encoder_left.publish(messages.encoder);
 
-	messages.encoder.encoderticks = boost::lexical_cast<int>(msg->data.at(2));
+	messages.encoder.data = boost::lexical_cast<int>(msg->data.at(2));
 	publishers.encoder_right.publish(messages.encoder);
 }
 
 void FrobitInterface::handle_data_message(const msgs::nmea::ConstPtr& msg)
 {
 	messages.data.header.stamp = msg->header.stamp;
-	for(int i = 0 ; i < msg->data.size() ; i++)
+	messages.data.data.clear();
+	for(int i = 0 ; i < msg->data.size()-1 ; i++)
 	{
-		messages.data.data.push_back(boost::lexical_cast<int>(msg->data[i]));
+		int received = boost::lexical_cast<int>(msg->data.at(i));
+		messages.data.data.push_back(received);
 	}
 	publishers.data.publish(messages.data);
 }
@@ -168,17 +172,20 @@ void FrobitInterface::handle_wheel_parameters_message()
 
 void FrobitInterface::handle_corrupt_data(const msgs::nmea::ConstPtr& msg)
 {
-	ROS_ERROR("%s: Received NMEA message with corrupted data",ros::this_node::getName().c_str());
+	ROS_ERROR("%s: Received NMEA message with corrupted data.",ros::this_node::getName().c_str());
+	std::cout << *msg;
 }
 
-void FrobitInterface::handle_unknown_id(const msgs::nmea::ConstPtr& msg)
+void FrobitInterface::handle_unknown_type(const msgs::nmea::ConstPtr& msg)
 {
-	ROS_ERROR("%s: Received NMEA message with unknown id",ros::this_node::getName().c_str());
+	ROS_ERROR("%s: Received NMEA message with unknown id.",ros::this_node::getName().c_str());
+	std::cout << *msg;
 }
 
 void FrobitInterface::handle_invalid_message(const msgs::nmea::ConstPtr& msg)
 {
-	ROS_ERROR("%s: Received NMEA message with unknown type",ros::this_node::getName().c_str());
+	ROS_ERROR("%s: Received NMEA message with invalid checksum.",ros::this_node::getName().c_str());
+	std::cout << *msg;
 }
 
 bool FrobitInterface::all_ok(void)

@@ -36,7 +36,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <msgs/nmea.h>
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 #include <msgs/IntArrayStamped.h>
 #include <std_msgs/Bool.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -96,7 +96,7 @@ private:
     geometry_msgs::TwistStamped cmd_vel_left;
     geometry_msgs::TwistStamped cmd_vel_right;
     msgs::nmea motor_command;
-    msgs::encoder encoder;
+    msgs::IntStamped encoder;
     msgs::IntArrayStamped data;
     /** @} */
   } messages;
@@ -115,6 +115,7 @@ private:
     std::string encoder_left; //!< the encoder input from lower layers @type \ref encoder
     std::string encoder_right; //!< the encoder input from lower layers @type \ref encoder
     std::string nmea_pub; //!< the nmea output to lower layers @type \ref nmea
+    std::string adc_data; //!< the adc data @type \ref IntArrayStamped
     /** @} */
   } topics;
 
@@ -162,7 +163,7 @@ public:
   void handle_communication_parameters_message(void);
   void handle_wheel_parameters_message(void);
   void handle_corrupt_data(const msgs::nmea::ConstPtr&);
-  void handle_unknown_id(const msgs::nmea::ConstPtr&);
+  void handle_unknown_type(const msgs::nmea::ConstPtr&);
   void handle_invalid_message(const msgs::nmea::ConstPtr&);
   bool all_ok(void);
   double correct_to_max_velocity(double);
