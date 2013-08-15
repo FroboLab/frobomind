@@ -29,6 +29,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 	FloatStamped.msg
 	gpgga.msg
 	gpgga_tranmerc.msg
+	IntArrayStamped.msg
 	IntStamped.msg
 	lidar_safety_zone.msg
 	magnetometer.msg
