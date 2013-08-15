@@ -110,13 +110,16 @@ void FrobitInterface::on_nmea(const msgs::nmea::ConstPtr& msg)
 			else
 				handle_corrupt_data(msg);
 		}
-
 		else if(msg->type == "PFBST")
 		{
 			if(msg->data.size() == PFBST_DATA_LENGTH)
 				handle_status_message(msg);
 			else
 				handle_corrupt_data(msg);
+		}
+		else if(msg->type == "PFDAT")
+		{
+			handle_data_message(msg);
 		}
 		else
 			handle_unknown_id(msg);
@@ -136,6 +139,16 @@ void FrobitInterface::handle_status_message(const msgs::nmea::ConstPtr& msg)
 
 	messages.encoder.encoderticks = boost::lexical_cast<int>(msg->data.at(2));
 	publishers.encoder_right.publish(messages.encoder);
+}
+
+void FrobitInterface::handle_data_message(const msgs::nmea::ConstPtr& msg)
+{
+	messages.data.header.stamp = msg->header.stamp;
+	for(int i = 0 ; i < msg->data.size() ; i++)
+	{
+		messages.data.data.push_back(boost::lexical_cast<int>(msg->data[i]));
+	}
+	publishers.data.publish(messages.data);
 }
 
 void FrobitInterface::handle_control_message()

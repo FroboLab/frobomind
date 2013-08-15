@@ -37,6 +37,7 @@
 #include <boost/lexical_cast.hpp>
 #include <msgs/nmea.h>
 #include <msgs/encoder.h>
+#include <msgs/IntArrayStamped.h>
 #include <std_msgs/Bool.h>
 #include <geometry_msgs/TwistStamped.h>
 
@@ -96,6 +97,7 @@ private:
     geometry_msgs::TwistStamped cmd_vel_right;
     msgs::nmea motor_command;
     msgs::encoder encoder;
+    msgs::IntArrayStamped data;
     /** @} */
   } messages;
 
@@ -144,6 +146,7 @@ public:
     ros::Publisher nmea;
     ros::Publisher encoder_left;
     ros::Publisher encoder_right;
+    ros::Publisher data;
     /** @} */
   } publishers;
 
@@ -154,6 +157,7 @@ public:
   void on_nmea(const msgs::nmea::ConstPtr&);
   void handle_startup_message(const msgs::nmea::ConstPtr&);
   void handle_status_message(const msgs::nmea::ConstPtr&);
+  void handle_data_message(const msgs::nmea::ConstPtr&);
   void handle_control_message(void);
   void handle_communication_parameters_message(void);
   void handle_wheel_parameters_message(void);
