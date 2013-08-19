@@ -8,7 +8,7 @@
 	<param name="diff_steer_wheel_ticks_per_rev" value="1285"/>
 	<param name="diff_steer_wheel_distance" value="0.85"/>
 
-	<!--node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
 
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
