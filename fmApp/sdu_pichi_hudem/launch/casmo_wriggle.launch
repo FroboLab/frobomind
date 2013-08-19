@@ -42,6 +42,19 @@
 			<param name="transverse_mercator_false_northing" value="0.0" />
 		</node>
 
+		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
+		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc_ref" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/trimble_gpgga" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc_ref" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+
 		<!-- Ground truth GPS (trimble) -->
 		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
 		<node pkg="gps_gpgga" name="nmea_to_gpgga_trimble" type="gps_gpgga_node" output="screen" respawn="true">
@@ -126,7 +139,7 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_pichi_wptnav" name="mission_control" type="simple_mission.py">
+		<node pkg="sdu_pichi_hudem" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
             		<param name="max_linear_velocity" value="0.4"/>
@@ -141,7 +154,7 @@
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="sdu_pichi_wptnav" type="casmo_wriggle_navigation.py" name="navigate_waypoints" output="screen">
+		<node pkg="sdu_pichi_hudem" type="casmo_wriggle_navigation.py" name="navigate_waypoints" output="screen">
 			<param name="automode_sub" value="/fmDecisionMakers/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
@@ -219,7 +232,7 @@
 		<node pkg="serial_string" name="trimble_serial_string_node" type="serial_string_node" output="screen" respawn="true">
 			<param name="publisher_topic" value="/fmData/trimble_rx" />	 
 			<param name="subscriber_topic" value="/fmData/trimble_tx" />
-			<param name="device" value="/dev/trimble" />	
+			<param name="device" value="/dev/refgps" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
 		</node> 

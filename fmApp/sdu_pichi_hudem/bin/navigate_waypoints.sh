@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WAYPOINT_LIST=waypoints_sdu_s.txt
+WAYPOINT_LIST=waypoints_sdu_grass_square.txt
 
 # determine the script directory
 APPDIR=`dirname $(readlink -f $0)`
@@ -14,6 +14,6 @@ cp ../waypoint_lists/$WAYPOINT_LIST ~/.ros/waypoints.txt
 export ROS_HOSTNAME=localhost
 
 # run FroboMind
-source ~/frobowork/devel/setup.bash
+#source ~/frobowork/devel/setup.bash
 roslaunch ../launch/navigate_waypoints.launch
 

@@ -45,7 +45,7 @@ class track_map():
 		self.plot_odometry = plot_odometry
 		self.plot_yaw = plot_yaw
 		self.trkpt_threshold = 0.1 # [m]
-		self.save_time_lapse_images = True
+		self.save_time_lapse_images = False
  		self.pose_image_save = True # save an image for time-lapse video generation
        
 		# Initialize map

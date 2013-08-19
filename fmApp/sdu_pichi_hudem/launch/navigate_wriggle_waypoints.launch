@@ -103,7 +103,7 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_pichi_wptnav" name="mission_control" type="simple_mission.py">
+		<node pkg="sdu_pichi_hudem" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
             		<param name="max_linear_velocity" value="0.6"/>
@@ -118,7 +118,7 @@
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="sdu_pichi_wptnav" type="waypoint_wriggle_navigation.py" name="navigate_waypoints" output="screen">
+		<node pkg="sdu_pichi_hudem" type="waypoint_wriggle_navigation.py" name="navigate_waypoints" output="screen">
 			<param name="automode_sub" value="/fmDecisionMakers/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />

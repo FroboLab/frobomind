@@ -8,7 +8,7 @@
 	<param name="diff_steer_wheel_ticks_per_rev" value="1285"/>
 	<param name="diff_steer_wheel_distance" value="0.85"/>
 
-	<!--node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
 
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
@@ -24,8 +24,14 @@
 
 		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
 		<node pkg="gps_gpgga" name="nmea_to_gpgga" type="gps_gpgga_node" output="screen" respawn="true">
-		    <param name="subscribe_topic_id" value="/fmData/rtk_gnss_rx" />
+		    <param name="subscribe_topic_id" value="/fmData/gps_rx" />
 			<param name="publish_topic_id" value="/fmInformation/gpgga" />
+		</node>
+
+		<!-- extract data from $GPGGA NMEA messages transmitted by the REFERENCE GPS -->
+		<node pkg="gps_gpgga" name="nmea_to_gpgga_ref" type="gps_gpgga_node" output="screen" respawn="true">
+		    <param name="subscribe_topic_id" value="/fmData/gps_ref_rx" />
+			<param name="publish_topic_id" value="/fmInformation/gpgga_ref" />
 		</node>
 
 		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
@@ -40,11 +46,24 @@
 			<param name="transverse_mercator_central_meridian" value="9.0" />
 			<param name="transverse_mercator_false_northing" value="0.0" />
 		</node>
+
+		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
+		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc_ref" type="gpgga_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/gpgga_ref" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc_ref" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
 	</group>
 
 	<group ns="fmProcessors">
 		<!-- plot maps of pose, gnss and odometry data -->
-		<!--node pkg="sdu_pichi_hudem" name="robot_track_map" type="robot_track_map_node.py">
+		<node pkg="sdu_pichi_hudem" name="robot_track_map" type="robot_track_map_node.py">
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
@@ -53,13 +72,15 @@
 			<param name="plot_gnss_track" value="true" />
 			<param name="plot_odometry_track" value="false" />
 			<param name="plot_pose_yaw" value="false" />
-			<param name="easting_offset" value="-588784.0" />
-			<param name="northing_offset" value="-6137262.0" />
+			<!--param name="easting_offset" value="-588784.0" />
+			<param name="northing_offset" value="-6137262.0" /-->
+			<param name="easting_offset" value="0.0" />
+			<param name="northing_offset" value="0.0" />
 			<param name="trackpoint_threshold" value="0.05" /> 
-			<param name="map_update_frequency" value="20.0" /> 
+			<param name="map_update_frequency" value="1.0" /> 
 			<param name="map_title" value="Robot track" />
 			<param name="map_window_size" value="7.0" />
-		</node-->
+		</node>
 
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
@@ -99,10 +120,10 @@
 		<node pkg="sdu_pichi_hudem" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-            <param name="max_linear_velocity" value="1.3"/>
-            <param name="max_angular_velocity" value="0.9"/>
-			<param name="deadband" value="5"/>
-			<param name="reduced_range" value="50"/>
+            <param name="max_linear_velocity" value="0.9"/>
+            <param name="max_angular_velocity" value="0.8"/>
+			<param name="deadband" value="2"/>
+			<param name="reduced_range" value="45"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
 			<param name="joy_topic" value="/fmLib/joy" />
 			<param name="status_topic" value="/fmData/state"/>
@@ -165,16 +186,25 @@
 		<node pkg="serial_string" name="robot_serial" type="serial_string_node" output="screen" respawn="true">
 			<param name="publisher_topic" value="/fmData/robot_rx" />	 
 			<param name="subscriber_topic" value="/fmData/robot_tx" />
-			<param name="device" value="/dev/robot" />	
+			<param name="device" value="/dev/ttyUSB0" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="13"/>
 		</node>
 
 		<!-- serial communication with the RTK-GNSS -->
 		<node pkg="serial_string" name="gnss_serial_string_node" type="serial_string_node" output="screen" respawn="true">
-			<param name="publisher_topic" value="/fmData/rtk_gnss_rx" />	 
-			<param name="subscriber_topic" value="/fmData/rtk_gnss_tx" />
+			<param name="publisher_topic" value="/fmData/gps_rx" />	 
+			<param name="subscriber_topic" value="/fmData/gps_tx" />
 			<param name="device" value="/dev/gps" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+
+		<!-- serial communication with the REFERENCE RTK-GNSS -->
+		<node pkg="serial_string" name="gnss_ref_serial_string_node" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/gps_ref_rx" />	 
+			<param name="subscriber_topic" value="/fmData/gps_ref_tx" />
+			<param name="device" value="/dev/refgps" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
 		</node> 	
