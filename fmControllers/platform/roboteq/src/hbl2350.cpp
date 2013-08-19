@@ -162,8 +162,8 @@ void hbl2350::initController(std::string config)
 	transmit(1,	"# 20" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
 	transmit(1,	"^ALIM 1 700" ); sleep(TIME_BETWEEN_COMMANDS);
 	transmit(1,	"^ALIM 2 700" ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(1,	"^BLSTD 1 0" ); sleep(TIME_BETWEEN_COMMANDS);
-	transmit(1,	"^BLSTD 2 0" ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(1,	"^BLSTD 1 1" ); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(1,	"^BLSTD 2 1" ); sleep(TIME_BETWEEN_COMMANDS);
 	sleep(2);
 
 	ROS_INFO("Initialization finished");
