@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(msgs)
+project(nmea_to_tranmerc)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs)
+find_package(catkin REQUIRED COMPONENTS msgs roscpp transverse_mercator)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
@@ -18,35 +18,11 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 #######################################
 
 ## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-	adc.msg
-	BoolStamped.msg
-	can.msg
-	claas_row_cam.msg
-	encoder.msg
-	engine_rpm.msg
-	FloatStamped.msg
-	gpgga.msg
-	gpgga_tranmerc.msg
-	IntArrayStamped.msg
-	IntStamped.msg
-	lidar_safety_zone.msg
-	magnetometer.msg
-	motor_status.msg
-	nmea.msg
-	PropulsionModuleFeedback.msg
-	PropulsionModuleStatus.msg
-	row.msg
-	rtq.msg
-	rtq_command.msg
-	rtq_lamp_command.msg
-	serial.msg
-	steering_angle_cmd.msg
-	StringStamped.msg
-	waypoint_navigation_status.msg
-	velocity.msg
- )
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -56,11 +32,10 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-	std_msgs
-
- )
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -70,37 +45,36 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-#  LIBRARIES msgs
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS message_generation#system_lib
+   INCLUDE_DIRS include
+  LIBRARIES transverse_mercator
+#  CATKIN_DEPENDS msgs roscpp
+#  DEPENDS system_lib
 )
 
 ###########
 ## Build ##
 ###########
+
+## Specify additional locations of header files
 include_directories(include
   ${catkin_INCLUDE_DIRS}
 )
 
-## Specify additional locations of header files
-# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-
 ## Declare a cpp library
-# add_library(msgs
-#   src/${PROJECT_NAME}/msgs.cpp
+# add_library(gpgga_to_utm
+#   src/${PROJECT_NAME}/gpgga_to_utm.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(msgs_node src/msgs_node.cpp)
+ add_executable(nmea_to_tranmerc_node src/nmea_to_tranmerc_node.cpp src/nmea_to_tranmerc.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(msgs_node ${PROJECT_NAME})
+ add_dependencies(nmea_to_tranmerc_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(msgs_node
-#   ${catkin_LIBRARIES}
-# )
+ target_link_libraries(nmea_to_tranmerc_node
+   ${catkin_LIBRARIES}
+ )
 
 #############
 ## Install ##
@@ -114,7 +88,7 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS msgs msgs_node
+# install(TARGETS gpgga_to_utm gpgga_to_utm_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -139,7 +113,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_msgs.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gpgga_to_utm.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

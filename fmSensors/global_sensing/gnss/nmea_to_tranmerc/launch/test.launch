@@ -1,0 +1,29 @@
+<launch>
+		<node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
+			<param name="publisher_topic" value="/fmData/gps_rx" />	 
+			<param name="subscriber_topic" value="/fmData/gps_tx" />
+			<param name="device" value="/dev/gps" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 
+
+		<node pkg="serial_nmea" name="nmea_node" type="nmea_node" output="screen">
+		    <param name="str_to_msg_sub" value="/fmData/gps_rx" />   
+		    <param name="str_to_msg_pub" value="/fmData/nmea_from_gps" />
+		    <param name="msg_to_str_sub" value="/fmData/nmea_to_gps" />   
+		    <param name="msg_to_str_pub" value="/fmData/gps_tx" />           
+		    <param name="use_nmea_checksum" type="boolean" value="true" />
+		</node>
+
+		<node pkg="nmea_to_tranmerc" name="nmea_to_tranmerc" type="nmea_to_tranmerc_node" output="screen">
+			<param name="gpgga_sub" value="/fmInformation/nmea_from_gps" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+</launch>
