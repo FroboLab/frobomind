@@ -1,5 +1,5 @@
 /****************************************************************************
- # FroboMind frobit_interface_node.cpp
+ # FroboMind
  # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
  # All rights reserved.
  #
