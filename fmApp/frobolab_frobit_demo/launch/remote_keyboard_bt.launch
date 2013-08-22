@@ -1,0 +1,52 @@
+<launch>
+	<arg name="bluetooth_mac" default="00:06:66:04:B0:1C"/>
+
+ 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard"/>		
+	
+    <node pkg="serial_bluetooth" name="serial_bluetooth" type="bluetooth_node" output="screen" >
+        <param name="subscriber_topic" value="/fmData/frobit_tx"/>
+        <param name="publisher_topic" value="/fmData/frobit_rx"/>
+        <param name="device" value="bluetooth" />   
+        <param name="baudrate" value="57600" />
+        <param name="bluetooth_address" value="$(arg bluetooth_mac)" />
+        <param name="termination_character" value="10"/>
+    </node>
+        
+	<node pkg="serial_nmea" name="nmea_node" type="nmea_node" output="screen">
+	    <param name="str_to_msg_sub" value="/fmData/frobit_rx" />   
+	    <param name="str_to_msg_pub" value="/fmData/nmea_from_frobit" />
+	    <param name="msg_to_str_sub" value="/fmData/nmea_to_frobit" />   
+	    <param name="msg_to_str_pub" value="/fmData/frobit_tx" />           
+	    <param name="use_nmea_checksum" type="boolean" value="true" />
+	</node>
+	
+	<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" output="screen" >
+		<param name="cmd_vel_left_sub" value="/fmSignals/cmd_vel_left"/>
+		<param name="cmd_vel_right_sub" value="/fmSignals/cmd_vel_right"/>
+		<param name="deadman_sub" value="/fmSignals/deadman"/>
+		<param name="nmea_sub" value="/fmData/nmea_from_frobit"/>
+		<param name="nmea_pub" value="/fmData/nmea_to_frobit"/>
+		<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
+		<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
+		<param name="castor_front" value="true"/>
+		<param name="nmea_to_frobit_interval" value="0.1"/>          
+		<param name="cmd_vel_timeout" value="1"/>          
+   	</node>
+
+	<node pkg="differential_ifk" name="diff" type="differential_ifk_node" output="screen" >
+		<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>
+		<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left"/>
+		<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right"/>
+		<param name="distance_center_to_wheel" value="0.1075" />
+	</node>
+
+	<node pkg="frobolab_frobit_demo" name="frobit_remote" type="remote.py">
+		<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+		<param name="deadman_topic" value="/fmSignals/deadman" />
+		<param name="key_topic" value="/fmHMI/keyboard" />
+		<param name="max_linear_velocity" value="3"/>
+		<param name="max_angular_velocity" value="3"/>
+		<param name="publish_frequency" value="5"/>
+		<param name="step_size" value="0.5"/>
+	</node>
+</launch>
