@@ -1,5 +1,5 @@
 <launch>
-    <arg name="bluetooth_mac" default="00:06:66:04:9E:1E"/>
+    <arg name="bluetooth_mac" default="00:06:66:04:B0:1C"/>
     
 	<param name="robot_max_velocity" value="1.0"/>
 	<param name="diff_steer_wheel_radius" value="0.051"/>
@@ -8,7 +8,7 @@
 
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_frobit_remote" name="frobit_remote" type="remote.py" output="screen">
-    			<param name="deadman_topic" value="/fmSignals/deadman" />
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
 			<param name="max_linear_velocity" value="1.5"/>
 			<param name="max_angular_velocity" value="1.8"/>
@@ -45,7 +45,8 @@
 			<param name="cmd_vel_timeout" value="1"/>          
         	</node>
 
-        	<node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
+        <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
+        	<param name="fixed_wiimote_address" value="00:22:4C:8D:6F:5E"/>
 		</node>
 
 		<node pkg="serial_nmea" name="nmea_node" type="nmea_node" output="screen">
