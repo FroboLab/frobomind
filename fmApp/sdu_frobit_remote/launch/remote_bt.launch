@@ -46,7 +46,6 @@
         	</node>
 
         <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true">
-        	<param name="fixed_wiimote_address" value="00:22:4C:8D:6F:5E"/>
 		</node>
 
 		<node pkg="serial_nmea" name="nmea_node" type="nmea_node" output="screen">

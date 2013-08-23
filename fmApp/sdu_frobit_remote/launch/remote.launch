@@ -39,7 +39,7 @@
 			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
 			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
 			<param name="castor_front" value="true"/>
-			<param name="nmea_to_frobit_interval" value="0.1"/>          
+			<param name="nmea_to_frobit_interval" value="0.1"/>         
 			<param name="cmd_vel_timeout" value="1"/>          
         	</node>
 
@@ -57,7 +57,7 @@
 		<node pkg="serial_string" name="serial_string_node" type="serial_string_node" output="screen" >
 			<param name="publisher_topic" value="/fmData/frobit_rx" />	 
 			<param name="subscriber_topic" value="/fmData/frobit_tx" />
-			<param name="device" value="/dev/frobit" />	
+			<param name="device" value="/dev/ttyUSB0" />	
 			<param name="baudrate" value="57600" />
 			<param name="termination_character" value="10"/>
 		</node> 	
