@@ -35,9 +35,10 @@ import rosbag
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Quaternion
 
-bag = rosbag.Bag ('test.bag')
+#bag = rosbag.Bag ('test.bag')
+bag = rosbag.Bag ('2013-08-22-13-31-42.bag')
 
-topic_reference_gnss = '/fmInformation/trimble_gpgga_tranmerc'
+topic_reference_gnss = '/fmInformation/gpgga_tranmerc_ref'
 
 def time_stamp (stamp):
 	secs = stamp.secs

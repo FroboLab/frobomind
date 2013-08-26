@@ -44,13 +44,13 @@ from sim_import import odometry_data, imu_data, gnss_data, gnss_tranmerc_data
 from track_map import track_map
 
 # parameters
-ekf_easting_init = 651180.0   # set these EKF initial guess coordinates close
-ekf_northing_init = 6133758.0 # to actual transverse mercator coordinates.
-plot_pose = False
+ekf_easting_init = 588784.0   # set these EKF initial guess coordinates close
+ekf_northing_init = 6137262.0 # to actual transverse mercator coordinates.
+plot_pose = True
 plot_gnss = True
 plot_odometry = True
 plot_yaw = True
-plot_pose_yaw = True # used only in this simulation to determine which values to append
+plot_pose_yaw = False # used only in this simulation to determine which values to append
 plot_gnss_yaw = True # used only in this simulation to determine which values to append
 plot_ahrs_yaw =  False # used only in this simulation to determine which values to append
 plot_odo_yaw = True # used only in this simulation to determine which values to append
@@ -68,7 +68,7 @@ ref_gnss_file = 'sim_ref_gnss.txt'
 ref_gnss_skip_lines = 0
 ref_gnss_max_lines = 0 
 sim_step_interval = 0.01 # 100 Hz
-steps_btw_plot_updates = 1000
+steps_btw_plot_updates = 10000
 steps_btw_yaw_plot_points = 10
 min_gnss_fix_msg_before_pose_plot = 5 # used to avoid the high initial variance causes odd plots
 var_dist = 0.001**2 # per meter
