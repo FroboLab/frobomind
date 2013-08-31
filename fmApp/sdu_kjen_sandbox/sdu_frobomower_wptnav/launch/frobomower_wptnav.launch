@@ -53,24 +53,6 @@
 	</group>
 
 	<group ns="fmProcessors">
-		<!-- plot maps of pose, gnss and odometry data -->
-		<node pkg="sdu_frobomower_wptnav" name="robot_track_map" type="robot_track_map_node.py">
-			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
-			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
-			<param name="plot_pose_track" value="true" /> <!-- remember to use proper values for ekf_initial_guess_ at pose_2d_estimator for this plot -->
-			<param name="plot_gnss_track" value="true" />
-			<param name="plot_odometry_track" value="false" />
-			<param name="plot_pose_yaw" value="false" />
-			<param name="easting_offset" value="0.0" />
-			<param name="northing_offset" value="0.0" />
-			<param name="trackpoint_threshold" value="0.05" /> <!-- [m] -->
-			<param name="map_update_frequency" value="20.0" /> <!-- [Hz] -->
-			<param name="map_title" value="Robot track" />
-			<param name="map_window_size" value="6.0" /> <!-- [inches] -->
-		</node>
-
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />
@@ -107,8 +89,8 @@
 		<node pkg="sdu_frobomower_wptnav" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmSignals/deadman" />
 			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-            <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="1.0"/>
+            <param name="max_linear_velocity" value="0.6"/>
+            <param name="max_angular_velocity" value="0.4"/>
 			<param name="deadband" value="3"/>
 			<param name="reduced_range" value="45"/>
 			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
@@ -139,14 +121,21 @@
 	</group>
 
 	<group ns="fmLib">
-		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" output="screen" >
+		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py">
+			<param name="left_sub" value="/fmInformation/encoder_left" />
+			<param name="right_sub" value="/fmInformation/encoder_right" />
+			<param name="left_pub" value="/fmInformation/enc_left" />
+			<param name="right_pub" value="/fmInformation/enc_right" />
+		</node>
+
+		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" >
 			<param name="cmd_vel_left_sub" value="/fmSignals/cmd_vel_left"/>
 			<param name="cmd_vel_right_sub" value="/fmSignals/cmd_vel_right"/>
 			<param name="deadman_sub" value="/fmSignals/deadman"/>
 			<param name="nmea_sub" value="/fmData/nmea_from_robot"/>
 			<param name="nmea_pub" value="/fmData/nmea_to_robot"/>
-			<param name="encoder_left_pub" value="/fmInformation/enc_left"/>
-			<param name="encoder_right_pub" value="/fmInformation/enc_right"/>	
+			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
+			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
 			<param name="castor_front" value="true"/>
 			<param name="nmea_to_frobit_interval" value="0.1"/>          
 			<param name="cmd_vel_timeout" value="1"/>          
@@ -154,7 +143,8 @@
 
 		<!-- Wiimote interface -->
 		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/> <!-- Kjeld -->
+			<param name="fixed_wiimote_address" value="00:19:1D:91:DC:27"/> <!-- RoboLab -->
+			<!--param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/--> <!-- Kjeld -->
 		</node >		
 
 		<!-- serial communication with the FroboMower robot -->

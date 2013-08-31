@@ -14,5 +14,5 @@ cp ../waypoint_lists/$WAYPOINT_LIST ~/.ros/waypoints.txt
 export ROS_HOSTNAME=localhost
 
 # launch FroboMind
-roslaunch ../launch/navigate_waypoints.launch
+roslaunch ../launch/frobomower_wptnav.launch
 
