@@ -1,0 +1,33 @@
+<!-- FroboMower launch file -->
+
+<launch>
+	<!-- Frobit parameters --> 
+	<param name="robot_max_velocity" value="1.0"/>
+	<param name="diff_steer_wheel_radius" value="0.051"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
+	<param name="diff_steer_wheel_distance" value="0.215"/>
+
+
+	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/ -->
+
+
+	<node pkg="smr_interface" name="smr_control" type="smr_control" output="screen" >
+    </node>
+
+
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+	</group>
+</launch>
+
