@@ -36,6 +36,7 @@ Navigation modes:
   MCTE: Minimize cross track error from origin (a) to destination (b)
 
 2013-06-07 KJ First version
+2013-09-22 KJ Added support for initialization of some of the parameters
 """
 
 # imports
@@ -51,7 +52,8 @@ WPT_TOLERANCE = 4
 WPT_SPEED = 5
 
 class waypoint_navigation():
-	def __init__(self, update_rate, debug):
+	def __init__(self, update_rate, drive_kp, drive_ki, drive_kd, drive_int_max, turn_kp, turn_ki, turn_kd, turn_int_max, lin_spd_max, ang_spd_max, wpt_tol_default, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, wpt_linear_velocity, wpt_ramp_down_velocity_at_distance, wpt_ramp_down_minimum_velocity, debug):
+
 		# constants
 		self.UPDATE_NONE = 0
 		self.UPDATE_ARRIVAL = 1
@@ -62,24 +64,24 @@ class waypoint_navigation():
 		# parameters
 		self.update_rate = update_rate # [Hz]
 		self.update_interval = (1.0/self.update_rate) # [s]
-		self.wpt_linear_speed_default = 0.7 # [m/s]
-		self.linear_speed_max = 0.35 # [m/s]
-		self.wpt_linear_ramp_down_speed_default = 0.3 # [m/s]
-		self.wpt_linear_ramp_down_at_dist_default = 1.0 # [m]
-		self.angular_speed_max = 0.30 # [radians/s]
-		self.turn_start_at_heading_err = 17.0*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot9
-		self.turn_acceptable_heading_err = 2.0*self.deg_to_rad # [radians]
-		self.drive_kp =2.0
-		self.drive_ki = 0.20
-		self.drive_kd = 0.0
-		self.drive_integral_max = 0.7
-		self.turn_kp = 5.5
-		self.turn_ki = 0.0
-		self.turn_kd = 0.0
-		self.turn_integral_max = 1.0
-		self.target_ahead = 1.3 # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
+		self.linear_speed_max = lin_spd_max # [m/s]
+		self.angular_speed_max = ang_spd_max # [radians/s]
+		self.drive_kp = drive_kp
+		self.drive_ki = drive_ki
+		self.drive_kd = drive_kd
+		self.drive_integral_max = drive_int_max
+		self.turn_kp = turn_kp
+		self.turn_ki = turn_ki
+		self.turn_kd = turn_kd
+		self.turn_integral_max = turn_int_max
+		self.wpt_tolerance_default = wpt_tol_default # [m]
+		self.target_ahead = wpt_target_distance # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
 		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
-		self.wpt_tolerance_default = 0.5 # [m]
+		self.turn_start_at_heading_err = wpt_turn_start_at_heading_err*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot9
+		self.turn_acceptable_heading_err = wpt_turn_stop_at_heading_err*self.deg_to_rad # [radians]
+		self.wpt_linear_speed_default = wpt_linear_velocity # [m/s]
+		self.wpt_linear_ramp_down_at_dist_default = wpt_ramp_down_velocity_at_distance # [m]
+		self.wpt_linear_ramp_down_speed_default = wpt_ramp_down_minimum_velocity # [m/s]
 		self.print_interval = 10
 
 		# navigation controller state machine

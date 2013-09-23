@@ -40,6 +40,8 @@ The library does not perform any error checking, so functions must be
 called in the correct order.
 
 2013-08-06 KJ First version
+2013-09-22 KJ Corrected a bug that caused the default length to always be 100m
+              Added supportt for some launch parameters
 """
 
 # imports
@@ -62,6 +64,7 @@ class area_coverage_casmo():
         self.S_MOVE_RIGHT = 5
         self.state = self.S_IDLE
         self.width = default_width
+        self.default_length = default_length
         self.left = False
         self.right = False
         self.a = False
@@ -71,14 +74,14 @@ class area_coverage_casmo():
     def start(self, pos, bearing):
         if self.state == self.S_IDLE:
             self.state = self.S_MOVE_FIRST
-            self.length = default_length
+            self.length = self.default_length
             self.left = False
             self.right = False
             self.a = pos
             # define bearing norm vector
             self.ab_norm = self.vec2d_rot([1, 0], bearing)
             # define destination waypoint (current pos plus navigation vector)
-            self.b = self.vec2d_add(pos, self.vec2d_multiply(self.ab_norm, default_length))
+            self.b = self.vec2d_add(pos, self.vec2d_multiply(self.ab_norm, self.default_length))
             return (self.b)
         else:
             return False
@@ -145,7 +148,7 @@ class area_coverage_casmo():
 
     def reset_length(self):
         if self.state == self.S_MOVE_LEFT or self.state == self.S_MOVE_RIGHT:
-            self.length = default_length
+            self.length = self.default_length
             nav = self.vec2d_multiply (self.ab_norm, self.length) # update navigation vector
             self.b = self.vec2d_add(self.a, nav) # calculate new waypoint
             # forget that we know the reset limit
@@ -161,7 +164,7 @@ class area_coverage_casmo():
         self.state = self.S_IDLE
 	
     def param_set_default_length(self, length):
-        self.length = length
+        self.default_length = length
 
     def param_set_width(self, width):
         self.width = width

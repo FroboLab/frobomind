@@ -29,6 +29,7 @@
 """
 Revision
 2013-08-14 KJ First version
+2013-09-23 KJ Corrected a bug wen only plotting the pose position
 """
 # imports
 import matplotlib.pyplot as plt
@@ -46,8 +47,7 @@ class track_map():
 		self.plot_yaw = plot_yaw
 		self.trkpt_threshold = 0.1 # [m]
 		self.save_time_lapse_images = False
- 		self.pose_image_save = True # save an image for time-lapse video generation
-       
+        
 		# Initialize map
 		self.offset_e = easting_offset
 		self.offset_n = northing_offset
@@ -129,7 +129,7 @@ class track_map():
 		self.wpt_target = [target_easting + self.offset_e, target_northing + self.offset_n]
 
 	def update(self):
-		if self.plot_gnss and self.gnss != []:
+		if self.plot_gnss or self.plot_pose:
 			plt.figure(1)
 			clf()
 			self.fig1 = plt.figure(num=1, figsize=(self.map_window_size, \
@@ -139,6 +139,9 @@ class track_map():
 			ylabel('Northing [m]')
 			axis('equal')
 			grid (True)
+			track_plot_reset = True	
+
+		if (self.plot_gnss and self.gnss != []):
 			#plot (self.test_fieldT[0], self.test_fieldT[1], 'g')
 			#plot (self.test_fieldT[0], self.test_fieldT[1], 'go',markersize=7)
 
@@ -150,7 +153,6 @@ class track_map():
 			gnss_plt = plot(gnssT[0],gnssT[1],'#000000')
 
 		if self.plot_pose and self.pose_pos != []:
-			plt.figure(1)
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
 		if self.plot_pose or self.plot_gnss:

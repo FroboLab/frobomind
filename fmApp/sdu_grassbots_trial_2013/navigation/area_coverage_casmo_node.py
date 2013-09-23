@@ -30,6 +30,9 @@
 2013-06-06 KJ First version
 2013-08-05 RH Implemented wriggle for minesweeping
 2013-08-10 RH Implemented casmo
+2013-09-22 KJ Ported to GrassBots application
+              (removed wriggle and added support for implement elevation)
+              Fixed a bug causing the velocity to always be the maximum velocity
 """
 
 # imports
@@ -44,11 +47,13 @@ from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
 from area_coverage_casmo import area_coverage_casmo
-
-from wriggle import Wriggle
 from std_msgs.msg import Float64
 
-class WaypointNavigationNode():
+S_IMP_IDLE = 0
+S_IMP_RAISING = 1
+S_IMP_LOWERING = 2
+
+class AreaCoverageCasmoNode():
 	def __init__(self):
 		# defines
 		self.update_rate = 20 # set update frequency [Hz]
@@ -59,9 +64,9 @@ class WaypointNavigationNode():
 		self.prev_wpt = False
 		self.linear_speed = 0.0
 		self.angular_speed = 0.0
-
 		self.pos = False
 		self.bearing = False
+		self.implement_state = S_IMP_IDLE
 
 		rospy.loginfo(rospy.get_name() + ": Start")
 		self.quaternion = np.empty((4, ), dtype=np.float64)
@@ -78,7 +83,6 @@ class WaypointNavigationNode():
 		self.wii_right = False
 		self.wii_right_changed = False
 
-
 		# get parameters
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
  		if self.debug:
@@ -88,7 +92,7 @@ class WaypointNavigationNode():
 		# get topic names
 		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecisionMakers/automode')
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
-		self.joy_topic = rospy.get_param("~joy_sub",'/fmHMI/joy')
+		self.joy_topic = rospy.get_param("~joy_sub",'/fmLib/joy')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
 		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmData/wptnav_status')
 
@@ -104,29 +108,35 @@ class WaypointNavigationNode():
 		self.wptnav_status = waypoint_navigation_status()
 		self.status_publish_count = 0
 
-		# configure waypoint navigation and casmo
-		casmo_width = rospy.get_param("~casmo_width", 0.8)
-		casmo_default_length = rospy.get_param("~casmo_default_length", 100)
-		self.max_linear_velocity = rospy.get_param("~max_linear_velocity", 0.5)
+		# configure waypoint navigation
+		drive_kp = rospy.get_param("~drive_kp", 1.0)
+		drive_ki = rospy.get_param("~drive_ki", 0.0)
+		drive_kd = rospy.get_param("~drive_kd", 0.0)
+		drive_integral_max = rospy.get_param("~drive_integral_max", 1.0)
+		turn_kp = rospy.get_param("~turn_kp", 1.0)
+		turn_ki = rospy.get_param("~turn_ki", 0.0)
+		turn_kd = rospy.get_param("~turn_kd", 0.0)
+		turn_integral_max = rospy.get_param("~turn_integral_max", 1.0)
+
+		max_linear_velocity = rospy.get_param("~max_linear_velocity", 0.4)
+		max_angular_velocity = rospy.get_param("~max_angular_velocity", 0.4)
+
 		self.wpt_tolerance = rospy.get_param("~wpt_tolerance", 0.5)
-		self.wptnav = waypoint_navigation(self.update_rate, self.debug)
+		wpt_target_distance = rospy.get_param("~wpt_target_distance", 1.0)
+		wpt_turn_start_at_heading_err = rospy.get_param("~wpt_turn_start_at_heading_err", 20.0)
+		wpt_turn_stop_at_heading_err = rospy.get_param("~wpt_turn_stop_at_heading_err", 1.0)
+		self.wpt_linear_velocity = rospy.get_param("~wpt_linear_velocity", 0.5)
+		wpt_ramp_down_velocity_at_distance = rospy.get_param("~wpt_ramp_down_velocity_at_distance", 1.0)
+		wpt_ramp_down_minimum_velocity = rospy.get_param("~wpt_ramp_down_minimum_velocity", 0.3)
+
+		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_integral_max, turn_kp, turn_ki, turn_kd, turn_integral_max, max_linear_velocity, max_angular_velocity, self.wpt_tolerance, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, self.wpt_linear_velocity, wpt_ramp_down_velocity_at_distance, wpt_ramp_down_minimum_velocity, self.debug)
+
+		# configure casmo
+		casmo_width = rospy.get_param("~casmo_width", 0.8)
+		casmo_default_length = rospy.get_param("~casmo_default_length", 20)
 		self.casmo = area_coverage_casmo()
 		self.casmo.param_set_width(casmo_width)
 		self.casmo.param_set_default_length(casmo_default_length)
-
-		# Configure wriggle
-		turn_angle_left = rospy.get_param("~turn_angle_left",pi/6)
-		turn_angle_right = rospy.get_param("~turn_angle_right",pi/6 * -1)
-		turn_max_speed = rospy.get_param("~max_angular_velocity", 0.3)
-		speed_gain = rospy.get_param("~turn_angular_speed_gain", 5)
-		sensor_penalty_distance = rospy.get_param("~sensor_penalty_distance", 5)
-		self.wriggle = Wriggle(turn_angle_left, turn_angle_right, turn_max_speed, speed_gain, sensor_penalty_distance)
-
-		# Configure wads sensor
-		self.wads_topic = rospy.get_param("~wads_sub",'/fmInformation/wads')
-		self.wads_threshold = rospy.get_param("~wads_threshold", 3)
-		rospy.Subscriber(self.wads_topic, Float64, self.on_wads_sensor_msg)
-		self.wads_value = 0.0
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -138,7 +148,7 @@ class WaypointNavigationNode():
 
 	def goto_pos (self, pos):
 		self.prev_wpt = self.wpt
-		self.wpt = (pos[0], pos[1], 0, 'MCTE', self.wpt_tolerance, self.max_linear_velocity)
+		self.wpt = (pos[0], pos[1], 0, 'MCTE', self.wpt_tolerance, self.wpt_linear_velocity)
 		if self.wpt != False:
 			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[2])
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
@@ -177,9 +187,6 @@ class WaypointNavigationNode():
 		qw = msg.pose.pose.orientation.w
 		yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
 		self.wptnav.pose_update (msg.pose.pose.position.x, msg.pose.pose.position.y, yaw)
-
-		# Update wriggle
-		self.wriggle.pose_update(msg.pose.pose.position.x, msg.pose.pose.position.y, yaw)
 
 		self.pos = (msg.pose.pose.position.x, msg.pose.pose.position.y)
 		self.bearing = yaw
@@ -258,20 +265,6 @@ class WaypointNavigationNode():
 			if self.wii_a == True and self.wii_a_changed == True:
 				self.wii_a_changed = False
 				rospy.loginfo(rospy.get_name() + ': Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1]))
-			#if self.wii_home == True and self.wii_home_changed == True:
-			#	self.wii_home_changed = False
-			#	rospy.loginfo(rospy.get_name() + ": User reloaded waypoint list")
-			#	self.load_wpt_list()				
-			#	self.goto_next_wpt()
-			#if self.wii_up == True and self.wii_up_changed == True:
-			#	self.wii_up_changed = False
-			#	rospy.loginfo(rospy.get_name() + ": User skipped waypoint")
-			#	self.goto_next_wpt()
-			#if self.wii_down == True and self.wii_down_changed == True:
-			#	self.wii_down_changed = False
-			#	rospy.loginfo(rospy.get_name() + ": User selected previous waypoint")
-			#	self.goto_previous_wpt()
-
 			if self.wii_left == True and self.wii_left_changed == True:
 				self.wii_left_changed = False
 				rospy.loginfo(rospy.get_name() + ": Casmo turn left")
@@ -286,16 +279,15 @@ class WaypointNavigationNode():
 					self.goto_pos(b)
 
 			if self.automode:
-				# Start wriggle?
-				if self.wads_value >= self.wads_threshold and not self.wriggle.has_sensor_penalty():
-					self.wriggle.start_wriggle()
-					print "Starting wriggle"
+				# Start raising/lowering implement?
+				if False:
+					print "Raising implement"
 				
-				# If wriggle is currently active, carry on
-				if not self.wriggle.is_done():
-					self.linear_speed = 0.0
-					(state, self.angular_speed) = self.wriggle.update()
-					self.publish_cmd_vel_message()
+				# If implement is moving
+				if not True:
+					pass
+					#self.linear_speed = 0.0
+					# self.publish_raise_implement()
 
 				# Else follow the waypoint navigation
 				else:
@@ -316,11 +308,11 @@ class WaypointNavigationNode():
 # Main function.    
 if __name__ == '__main__':
     # Initialize the node and name it.
-    rospy.init_node('waypoint_navigation_node')
+    rospy.init_node('area_coverage_casmo_node')
 
     # Go to class functions that do all the heavy lifting. Do error checking.
     try:
-        node_class = WaypointNavigationNode()
+        node_class = AreaCoverageCasmoNode()
     except rospy.ROSInterruptException:
 		pass
 
