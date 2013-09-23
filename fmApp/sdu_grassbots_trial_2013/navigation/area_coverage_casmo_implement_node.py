@@ -55,6 +55,10 @@ S_IMP_LOWERING = 2
 
 class AreaCoverageCasmoImplementNode():
 	def __init__(self):
+		# parameters not added to launch file
+		self.implement_raise_time = 2.0
+		self.implement_lower_time = 3.0
+
 		# defines
 		self.update_rate = 20 # set update frequency [Hz]
 		self.automode = False
@@ -100,11 +104,6 @@ class AreaCoverageCasmoImplementNode():
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
 		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmData/wptnav_status')
 
-		# setup subscription topic callbacks
-		rospy.Subscriber(self.automode_topic, Bool, self.on_automode_message)
-		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
-		rospy.Subscriber(self.joy_topic, Joy, self.on_joy_message)
-
 		# setup publish topics
 		self.cmd_vel_pub = rospy.Publisher(self.cmdvel_topic, TwistStamped)
 		self.twist = TwistStamped()
@@ -113,12 +112,12 @@ class AreaCoverageCasmoImplementNode():
 		self.status_publish_count = 0
 
 		# configure implement
-		self.implement_active_pub = rospy.Publisher('/fmSignals/implement_active', Bool)
-		self.implement_raise_pub = rospy.Publisher('/fmSignals/implement_raise', Bool)
-		self.implement_lower_pub = rospy.Publisher('/fmSignals/implement_lower', Bool)
+		self.implement_active_pub = rospy.Publisher('/fmCommands/implement_active', Bool)
+		self.implement_raise_pub = rospy.Publisher('/fmCommands/implement_raise', Bool)
+		self.implement_lower_pub = rospy.Publisher('/fmCommands/implement_lower', Bool)
 		self.implement_active = False
-		self.implement_raise = False
-		self.implement_lower = False
+		self.implement_raise = 0.0
+		self.implement_lower = 0.0
 
 		# configure waypoint navigation
 		drive_kp = rospy.get_param("~drive_kp", 1.0)
@@ -149,6 +148,11 @@ class AreaCoverageCasmoImplementNode():
 		self.casmo = area_coverage_casmo()
 		self.casmo.param_set_width(casmo_width)
 		self.casmo.param_set_default_length(casmo_default_length)
+
+		# setup subscription topic callbacks
+		rospy.Subscriber(self.automode_topic, Bool, self.on_automode_message)
+		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
+		rospy.Subscriber(self.joy_topic, Joy, self.on_joy_message)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -238,8 +242,13 @@ class AreaCoverageCasmoImplementNode():
 
 	def publish_implement_messages(self):
 		self.implement_active_pub.publish (self.implement_active)
-		self.implement_raise_pub.publish (self.implement_raise)
-		self.implement_lower_pub.publish (self.implement_lower)
+		imp_raise = (self.implement_raise > rospy.get_time())
+		imp_lower = (self.implement_lower > rospy.get_time())
+		if imp_raise == True and imp_lower == True:
+			imp_raise = False
+			imp_lower = False
+		self.implement_raise_pub.publish (imp_raise)
+		self.implement_lower_pub.publish (imp_lower)
 
 	def publish_status_message(self):
 		self.wptnav_status.header.stamp = rospy.Time.now()
@@ -291,46 +300,48 @@ class AreaCoverageCasmoImplementNode():
 				(b) = self.casmo.turn_left(self.pos)
 				if b:
 					self.goto_pos(b)
+					self.implement_raise = rospy.get_time() + self.implement_raise_time
+					print 'Raise implement'
+
 			if self.wii_right == True and self.wii_right_changed == True:
 				self.wii_right_changed = False
 				(b) = self.casmo.turn_right(self.pos)
 				rospy.loginfo(rospy.get_name() + ": Casmo turn right")
 				if b:
 					self.goto_pos(b)
+					self.implement_raise = rospy.get_time() + self.implement_raise_time
+					print 'Raise implement'
 
 			# wiimote input to implement
 			if self.wii_home == True and self.wii_home_changed == True:
 				self.wii_home_changed = False
 				self.implement_active = not self.implement_active
-
 			if not self.automode:
-				self.implement_raise = self.wii_plus
-				self.implement_lower = self.wii_minus
-				if self.implement_raise and self.implement_lower:
-					self.implement_raise = False
-					self.implement_lower = False
+				if self.wii_plus == True:
+					self.implement_raise = rospy.get_time() + 0.2
+				if self.wii_minus == True:
+					self.implement_lower = rospy.get_time() + 0.2
 
 			if self.automode:
-				# Start raising/lowering implement?
-				if False:
-					print "Raising implement"
-				
-				# If implement is moving
-				if not True:
-					pass
-					#self.linear_speed = 0.0
-					# self.publish_raise_implement()
+				ros_time = rospy.Time.now()
+				time = ros_time.secs + ros_time.nsecs*1e-9
+				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
+				if self.status == self.wptnav.UPDATE_ARRIVAL:
+					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint")
+					self.goto_next_wpt()
 
-				# Else follow the waypoint navigation
+					# handle implement raise/lower
+					if self.casmo.state == self.casmo.S_TURN_LEFT or self.casmo.state == self.casmo.S_TURN_RIGHT:
+						self.implement_raise = rospy.get_time() + self.implement_raise_time
+						print 'Raise implement'
+					elif self.casmo.state == self.casmo.S_MOVE_LEFT or self.casmo.state == self.casmo.S_MOVE_RIGHT:
+						self.implement_lower = rospy.get_time() + self.implement_lower_time
+						print 'Lower implement'
+
 				else:
-					ros_time = rospy.Time.now()
-					time = ros_time.secs + ros_time.nsecs*1e-9
-					(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
-					if self.status == self.wptnav.UPDATE_ARRIVAL:
-						rospy.loginfo(rospy.get_name() + ": Arrived at waypoint")
-						self.goto_next_wpt()
-					else:
-						self.publish_cmd_vel_message()
+					self.publish_cmd_vel_message()
+
+
 			if self.status_publish_interval != 0:
 				self.status_publish_count += 1
 				if (self.status_publish_count % self.status_publish_interval) == 0:
