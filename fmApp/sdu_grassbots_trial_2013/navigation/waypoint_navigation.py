@@ -82,7 +82,7 @@ class waypoint_navigation():
 		self.wpt_linear_speed_default = wpt_linear_velocity # [m/s]
 		self.wpt_linear_ramp_down_at_dist_default = wpt_ramp_down_velocity_at_distance # [m]
 		self.wpt_linear_ramp_down_speed_default = wpt_ramp_down_minimum_velocity # [m/s]
-		self.print_interval = 10
+		self.print_interval = self.update_rate
 
 		# navigation controller state machine
 		self.STATE_STOP = 0

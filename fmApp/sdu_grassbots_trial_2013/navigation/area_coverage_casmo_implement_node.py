@@ -53,7 +53,7 @@ S_IMP_IDLE = 0
 S_IMP_RAISING = 1
 S_IMP_LOWERING = 2
 
-class AreaCoverageCasmoNode():
+class AreaCoverageCasmoImplementNode():
 	def __init__(self):
 		# defines
 		self.update_rate = 20 # set update frequency [Hz]
@@ -72,8 +72,10 @@ class AreaCoverageCasmoNode():
 		self.quaternion = np.empty((4, ), dtype=np.float64)
 		self.wii_a = False
 		self.wii_a_changed = False
-		self.wii_home = False
-		self.wii_home_changed = False
+		self.wii_plus = False
+		self.wii_plus_changed = False
+		self.wii_minus = False
+		self.wii_minus_changed = False
 		self.wii_up = False
 		self.wii_up_changed = False
 		self.wii_down = False
@@ -82,6 +84,8 @@ class AreaCoverageCasmoNode():
 		self.wii_left_changed = False
 		self.wii_right = False
 		self.wii_right_changed = False
+		self.wii_home = False
+		self.wii_home_changed = False
 
 		# get parameters
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
@@ -107,6 +111,14 @@ class AreaCoverageCasmoNode():
 		self.wptnav_status_pub = rospy.Publisher(self.wptnav_status_topic, waypoint_navigation_status)
 		self.wptnav_status = waypoint_navigation_status()
 		self.status_publish_count = 0
+
+		# configure implement
+		self.implement_active_pub = rospy.Publisher('/fmSignals/implement_active', Bool)
+		self.implement_raise_pub = rospy.Publisher('/fmSignals/implement_raise', Bool)
+		self.implement_lower_pub = rospy.Publisher('/fmSignals/implement_lower', Bool)
+		self.implement_active = False
+		self.implement_raise = False
+		self.implement_lower = False
 
 		# configure waypoint navigation
 		drive_kp = rospy.get_param("~drive_kp", 1.0)
@@ -195,6 +207,18 @@ class AreaCoverageCasmoNode():
 		if int(msg.buttons[2]) != self.wii_a:
 			self.wii_a =  int(msg.buttons[2])
 			self.wii_a_changed = True
+		if int(msg.buttons[4]) != self.wii_plus:
+			self.wii_plus = int(msg.buttons[4])
+			self.wii_plus_changed = True
+		if int(msg.buttons[5]) != self.wii_minus:
+			self.wii_minus = int(msg.buttons[5])
+			self.wii_minus_changed = True
+		if int(msg.buttons[6]) != self.wii_left:
+			self.wii_left = int(msg.buttons[6])
+			self.wii_left_changed = True
+		if int(msg.buttons[7]) != self.wii_right:
+			self.wii_right =  int(msg.buttons[7])
+			self.wii_right_changed = True
 		if int(msg.buttons[8]) != self.wii_up:
 			self.wii_up =  int(msg.buttons[8])
 			self.wii_up_changed = True
@@ -204,18 +228,18 @@ class AreaCoverageCasmoNode():
 		if int(msg.buttons[10]) != self.wii_home:
 			self.wii_home =  int(msg.buttons[10])
 			self.wii_home_changed = True
-		if int(msg.buttons[6]) != self.wii_left:
-			self.wii_left = int(msg.buttons[6])
-			self.wii_left_changed = True
-		if int(msg.buttons[7]) != self.wii_right:
-			self.wii_right =  int(msg.buttons[7])
-			self.wii_right_changed = True
-
+	
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
 		self.twist.twist.linear.x = self.linear_speed
 		self.twist.twist.angular.z = self.angular_speed		
 		self.cmd_vel_pub.publish (self.twist)
+
+
+	def publish_implement_messages(self):
+		self.implement_active_pub.publish (self.implement_active)
+		self.implement_raise_pub.publish (self.implement_raise)
+		self.implement_lower_pub.publish (self.implement_lower)
 
 	def publish_status_message(self):
 		self.wptnav_status.header.stamp = rospy.Time.now()
@@ -274,6 +298,18 @@ class AreaCoverageCasmoNode():
 				if b:
 					self.goto_pos(b)
 
+			# wiimote input to implement
+			if self.wii_home == True and self.wii_home_changed == True:
+				self.wii_home_changed = False
+				self.implement_active = not self.implement_active
+
+			if not self.automode:
+				self.implement_raise = self.wii_plus
+				self.implement_lower = self.wii_minus
+				if self.implement_raise and self.implement_lower:
+					self.implement_raise = False
+					self.implement_lower = False
+
 			if self.automode:
 				# Start raising/lowering implement?
 				if False:
@@ -299,16 +335,17 @@ class AreaCoverageCasmoNode():
 				self.status_publish_count += 1
 				if (self.status_publish_count % self.status_publish_interval) == 0:
 					self.publish_status_message()
+			self.publish_implement_messages()
 			self.r.sleep()
 
 # Main function.    
 if __name__ == '__main__':
     # Initialize the node and name it.
-    rospy.init_node('area_coverage_casmo_node')
+    rospy.init_node('area_coverage_casmo_implement_node')
 
     # Go to class functions that do all the heavy lifting. Do error checking.
     try:
-        node_class = AreaCoverageCasmoNode()
+        node_class = AreaCoverageCasmoImplementNode()
     except rospy.ROSInterruptException:
 		pass
 

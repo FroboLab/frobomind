@@ -6,6 +6,7 @@ d = generate_distutils_setup(
   'mission/simple_mission.py',
   'navigation/waypoint_navigation_node.py',
   'navigation/area_coverage_casmo_node.py',
+  'navigation/area_coverage_casmo_implement_node.py',
   'monitor/robot_track_map_node.py'],
 )
 
