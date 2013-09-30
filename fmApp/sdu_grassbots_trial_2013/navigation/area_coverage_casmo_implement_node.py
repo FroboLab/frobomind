@@ -6,14 +6,14 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#	* Redistributions of source code must retain the above copyright
+#	  notice, this list of conditions and the following disclaimer.
+#	* Redistributions in binary form must reproduce the above copyright
+#	  notice, this list of conditions and the following disclaimer in the
+#	  documentation and/or other materials provided with the distribution.
+#	* Neither the name FroboMind nor the
+#	  names of its contributors may be used to endorse or promote products
+#	  derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -31,8 +31,8 @@
 2013-08-05 RH Implemented wriggle for minesweeping
 2013-08-10 RH Implemented casmo
 2013-09-22 KJ Ported to GrassBots application
-              (removed wriggle and added support for implement elevation)
-              Fixed a bug causing the velocity to always be the maximum velocity
+			  (removed wriggle and added support for implement elevation)
+			  Fixed a bug causing the velocity to always be the maximum velocity
 """
 
 # imports
@@ -293,15 +293,28 @@ class AreaCoverageCasmoImplementNode():
 			# WiiMote input
 			if self.wii_a == True and self.wii_a_changed == True:
 				self.wii_a_changed = False
-				rospy.loginfo(rospy.get_name() + ': Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1]))
+				#rospy.loginfo(rospy.get_name() + ': Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1]))
+				if self.automode:
+					# going into automode
+					rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
+					self.casmo.state = self.casmo.S_IDLE
+					(b) = self.casmo.start(self.pos, self.bearing)
+					if b != False:
+						# Casmo init, set starting waypoint
+						rospy.loginfo(rospy.get_name() + ": Setting casmo starting point")
+						self.wpt = self.pos
+						self.goto_pos(b)
+					else:
+						rospy.logwarn(rospy.get_name() + ": Error")
 			if self.wii_left == True and self.wii_left_changed == True:
 				self.wii_left_changed = False
 				rospy.loginfo(rospy.get_name() + ": Casmo turn left")
 				(b) = self.casmo.turn_left(self.pos)
 				if b:
 					self.goto_pos(b)
-					self.implement_raise = rospy.get_time() + self.implement_raise_time
-					print 'Raise implement'
+					#self.goto_next_wpt()
+					#self.implement_raise = rospy.get_time() + self.implement_raise_time
+					#print 'Raise implement'
 
 			if self.wii_right == True and self.wii_right_changed == True:
 				self.wii_right_changed = False
@@ -309,14 +322,15 @@ class AreaCoverageCasmoImplementNode():
 				rospy.loginfo(rospy.get_name() + ": Casmo turn right")
 				if b:
 					self.goto_pos(b)
-					self.implement_raise = rospy.get_time() + self.implement_raise_time
-					print 'Raise implement'
+					#self.goto_next_wpt()
+					#self.implement_raise = rospy.get_time() + self.implement_raise_time
+					#print 'Raise implement'
 
 			# wiimote input to implement
 			if self.wii_home == True and self.wii_home_changed == True:
 				self.wii_home_changed = False
 				self.implement_active = not self.implement_active
-			if not self.automode:
+			if True: #not self.automode:
 				if self.wii_plus == True:
 					self.implement_raise = rospy.get_time() + 0.2
 				if self.wii_minus == True:
@@ -329,14 +343,15 @@ class AreaCoverageCasmoImplementNode():
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
 					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint")
 					self.goto_next_wpt()
+					#self.goto_next_wpt()
 
 					# handle implement raise/lower
-					if self.casmo.state == self.casmo.S_TURN_LEFT or self.casmo.state == self.casmo.S_TURN_RIGHT:
-						self.implement_raise = rospy.get_time() + self.implement_raise_time
-						print 'Raise implement'
-					elif self.casmo.state == self.casmo.S_MOVE_LEFT or self.casmo.state == self.casmo.S_MOVE_RIGHT:
-						self.implement_lower = rospy.get_time() + self.implement_lower_time
-						print 'Lower implement'
+					#if self.casmo.state == self.casmo.S_TURN_LEFT or self.casmo.state == self.casmo.S_TURN_RIGHT:
+						#self.implement_raise = rospy.get_time() + self.implement_raise_time
+						#print 'Raise implement'
+					#elif self.casmo.state == self.casmo.S_MOVE_LEFT or self.casmo.state == self.casmo.S_MOVE_RIGHT:
+						#self.implement_lower = rospy.get_time() + self.implement_lower_time
+						#print 'Lower implement'
 
 				else:
 					self.publish_cmd_vel_message()
@@ -349,14 +364,14 @@ class AreaCoverageCasmoImplementNode():
 			self.publish_implement_messages()
 			self.r.sleep()
 
-# Main function.    
+# Main function.	
 if __name__ == '__main__':
-    # Initialize the node and name it.
-    rospy.init_node('area_coverage_casmo_implement_node')
+	# Initialize the node and name it.
+	rospy.init_node('area_coverage_casmo_implement_node')
 
-    # Go to class functions that do all the heavy lifting. Do error checking.
-    try:
-        node_class = AreaCoverageCasmoImplementNode()
-    except rospy.ROSInterruptException:
+	# Go to class functions that do all the heavy lifting. Do error checking.
+	try:
+		node_class = AreaCoverageCasmoImplementNode()
+	except rospy.ROSInterruptException:
 		pass
 

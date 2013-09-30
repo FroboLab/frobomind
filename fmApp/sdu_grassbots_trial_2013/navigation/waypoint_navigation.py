@@ -82,7 +82,7 @@ class waypoint_navigation():
 		self.wpt_linear_speed_default = wpt_linear_velocity # [m/s]
 		self.wpt_linear_ramp_down_at_dist_default = wpt_ramp_down_velocity_at_distance # [m]
 		self.wpt_linear_ramp_down_speed_default = wpt_ramp_down_minimum_velocity # [m/s]
-		self.print_interval = self.update_rate
+		self.print_interval = self.update_rate/2
 
 		# navigation controller state machine
 		self.STATE_STOP = 0
@@ -227,7 +227,7 @@ class waypoint_navigation():
 			self.state = self.STATE_DRIVE_INIT
 		else:
 			self.angular_speed = self.pid_turn.update (self.target_heading_err) # get controller output
-			self.linear_speed = 0.0
+			self.linear_speed = 0.1
 
 	# return true if we have arrived at the destination (b) waypoint
 	def arrived_at_waypoint(self):

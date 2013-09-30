@@ -61,7 +61,7 @@ class Pose2DEstimatorNode():
 		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
 		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
 
-		robot_max_velocity = rospy.get_param("~/robot_max_velocity", "1.0") # Robot maximum velocity [m/s]
+		robot_max_velocity = float(rospy.get_param("~/robot_max_velocity", "1.0")) # Robot maximum velocity [m/s]
 		self.update_rate = int(rospy.get_param("~update_rate", "20")) # set update frequency [Hz]
 		self.publish_rel_pose = rospy.get_param("~publish_relative_pose", True)
 		ekf_init_guess_easting = rospy.get_param("~ekf_initial_guess_easting", "0.0")
