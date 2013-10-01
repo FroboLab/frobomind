@@ -1,0 +1,99 @@
+<!--
+This launch file simulates a SMR navigating a waypoint list.
+-->
+
+<launch>
+	<!-- Simulation -->
+ 	<node pkg="stage" type="stageros" name="simulator" args="$(find dtu_smr_wptnav)/sim/empty.world"/>
+	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
+	<remap from="/fmKnowledge/pose" to="/odom" />
+	<!-- node pkg="rviz" type="rviz" name="visualization" args="$(find find dtu_smr_wptnav)/conf/default.rviz"/ -->
+	<!-- node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/ -->
+
+	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/ -->
+
+	<!-- FroboMind -->	    	
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="dtu_smr_wptnav" name="mission_control" type="simple_mission.py">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="0.4"/>
+			<param name="deadband" value="5"/>
+			<param name="reduced_range" value="50"/>
+			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
+			<param name="joy_topic" value="/fmLib/joy" />
+			<param name="status_topic" value="/fmData/state"/>
+			<param name="publish_frequency" value="10"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="dtu_smr_wptnav" type="waypoint_navigation_node.py" name="waypoint_navigation" output="screen">
+			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" />
+			<param name="status_pub" value="/fmData/wptnav_status" />
+			<param name="status_publish_interval" value="2" />
+			<param name="print_debug_information" value="true" />
+
+            <param name="drive_kp" value="2.0"/>
+            <param name="drive_ki" value="0.2"/>
+            <param name="drive_kd" value="1.0"/>
+            <param name="drive_integral_max" value="0.7"/>
+
+            <param name="turn_kp" value="5.5"/>
+            <param name="turn_ki" value="0.0"/>
+            <param name="turn_kd" value="0.0"/>
+            <param name="turn_integral_max" value="1.0"/>
+
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="0.4"/>
+
+			<param name="wpt_tolerance" value="0.5" />
+			<param name="wpt_target_distance" value="0.5" />
+			<param name="wpt_turn_start_at_heading_err" value="20.0" />
+			<param name="wpt_turn_stop_at_heading_err" value="1.0" />
+			<param name="wpt_linear_velocity" value="0.5" />
+			<param name="wpt_ramp_down_velocity_at_distance" value="0.3" />
+			<param name="wpt_ramp_down_minimum_velocity" value="0.05" />
+		</node>		
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- Wiimote interface -->
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
+			<param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/> <!-- Kjelds Wiimote -->
+		</node >		
+
+		<!-- plot maps of pose, gnss and odometry data as well as waypoint navigation state -->
+		<node pkg="dtu_smr_wptnav" name="track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="plot_pose_track" value="true" />
+			<param name="plot_gnss_track" value="false" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="easting_offset" value="0.0" />
+			<param name="northing_offset" value="0.0" />
+			<param name="trackpoint_threshold" value="0.05" />
+			<param name="map_update_frequency" value="10.0" />
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="6.0" />
+		</node>
+	</group>
+</launch>
+
+
