@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # parameters
-WPTLIST='square_1m.txt'
+WPTLIST='square_2m.txt'
 
 # change dir to the location of the shell script
 APPDIR=`dirname $(readlink -f $0)`
