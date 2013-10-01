@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(dtu_smr)
+project(dtu_smr_wptnav)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -50,7 +50,7 @@ catkin_python_setup()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES dtu_smr
+#  LIBRARIES dtu_smr_wptnav
 #  CATKIN_DEPENDS msgs roscpp rospy
 #  DEPENDS system_lib
 )
@@ -67,19 +67,19 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(dtu_smr
-#   src/${PROJECT_NAME}/dtu_smr.cpp
+# add_library(dtu_smr_wptnav
+#   src/${PROJECT_NAME}/dtu_smr_wptnav.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(dtu_smr_node src/dtu_smr_node.cpp)
+# add_executable(dtu_smr_wptnav_node src/dtu_smr_wptnav_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(dtu_smr_node dtu_smr_generate_messages_cpp)
+# add_dependencies(dtu_smr_wptnav_node dtu_smr_wptnav_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(dtu_smr_node
+# target_link_libraries(dtu_smr_wptnav_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -98,7 +98,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS dtu_smr dtu_smr_node
+# install(TARGETS dtu_smr_wptnav dtu_smr_wptnav_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -123,7 +123,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_dtu_smr.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_dtu_smr_wptnav.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
