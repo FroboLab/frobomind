@@ -1,0 +1,14 @@
+drive @v0.3 :($drivendist > 0.75)
+stop
+turnr 0.3 90 @v0.2
+drive @v0.2 :($drivendist > 0.3)
+stop
+turnr 0.3 90 @v0.2
+drive @v0.2 :($drivendist > 0.3)
+stop
+turnr 0.3 90 @v0.2
+drive @v0.2 :($drivendist > 0.3)
+stop
+turnr 0.3 90 @v0.2
+drive @v0.2 :($drivendist > 0.3)
+stop
