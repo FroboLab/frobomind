@@ -1,4 +1,4 @@
-#include "roboteq_sdc2130/hbl2350.hpp"
+#include "roboteq_sdc2130/sdc2130.hpp"
 
 Channel::Channel( ) : velocity_filter(8) // do not change!!
 {
