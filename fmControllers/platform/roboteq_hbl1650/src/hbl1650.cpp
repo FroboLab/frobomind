@@ -27,20 +27,20 @@ hbl1650::hbl1650( )
 	propulsion_module_status_topic, propulsion_module_feedback_topic;
 
 	// Parse from parameter server
-	local_node_handler.param<std::string>("cmd_vel_ch1_topic", cmd_vel_ch1_topic, "/fmActuators/cmd_vel_ch1");
+
 	local_node_handler.param<std::string>("serial_rx_topic", serial_rx_topic, "/fmCSP/S0_rx");
 	local_node_handler.param<std::string>("serial_tx_topic", serial_tx_topic, "/fmCSP/S0_tx");
 	local_node_handler.param<std::string>("command_relay_topic", command_relay_topic, "/fmData/command");
 	local_node_handler.param<std::string>("deadman_topic", deadman_topic, "/fmHMI/joy");
+	local_node_handler.param<std::string>("cmd_vel_ch1_topic", cmd_vel_ch1_topic, "/fmActuators/cmd_vel_ch1");
 	local_node_handler.param<std::string>("encoder_ch1_topic", encoder_ch1_topic, "/fmSensors/encoder_ch1");
 	local_node_handler.param<std::string>("power_ch1_topic", power_ch1_topic, "/fmSensors/power_ch1");
 	local_node_handler.param<std::string>("status_topic", status_topic, "/fmActuators/status");
 	local_node_handler.param<std::string>("temperature_topic", temperature_topic, "/fmActuators/temperature");
-	local_node_handler.param<std::string>("velocity_topic", velocity_topic, "/fmActuators/velocity");
+	//local_node_handler.param<std::string>("velocity_topic", velocity_topic, "/fmActuators/velocity");
 	local_node_handler.param<std::string>("propulsion_module_status_topic", propulsion_module_status_topic, "/fmInformation/propulsion_module_status");
 	local_node_handler.param<std::string>("propulsion_module_feedback_topic", propulsion_module_feedback_topic, "/fmInformation/propulsion_module_feedback");
 
-	ch1.roboteq_max = 1000; //Motor controller constant open loop max outputmax_output
 	// Init channel parameters
 	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
 	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
@@ -48,15 +48,15 @@ hbl1650::hbl1650( )
 	local_node_handler.param<double>("i_max",ch1.i_max,50);
 
 	local_node_handler.param<double>("/robot_max_velocity",ch1.max_velocity_mps,1.0);
-
 	local_node_handler.param<double>("max_controller_command",ch1.max_output,300);
 	if(ch1.max_output > ch1.roboteq_max) ch1.max_output = ch1.roboteq_max;
 
+	local_node_handler.param<double>("mps_to_thrust",ch1.mps_to_thrust,300);
+
 	double tmp;
 	local_node_handler.param<double>("ticks_per_meter",tmp,650);
-	ch1.ticks_to_meter = 1/tmp;
+	ch1.ticks_to_meter = 1.0/tmp;
 
-	local_node_handler.param<double>("mps_to_rpm",ch1.mps_to_rpm,5); //TODO: not used??
 	ch1.time_stamp.last_deadman_received = ros::Time::now();
 	ch1.velocity = 0;
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
