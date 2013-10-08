@@ -4,7 +4,7 @@ project(sdu_armadillo4)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp roboteq)
+find_package(catkin REQUIRED COMPONENTS msgs roscpp roboteq_hbl1650)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

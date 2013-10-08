@@ -1,4 +1,4 @@
-#include "roboteq/sdc2130.hpp"
+#include "roboteq_sdc2130/sdc2130.hpp"
 
 int main (int argc, char** argv)
 {
