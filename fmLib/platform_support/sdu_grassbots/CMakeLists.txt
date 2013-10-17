@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sdu_pichi)
+project(sdu_grassbots)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs roscpp roboteq_hbl2350)
+find_package(catkin REQUIRED COMPONENTS msgs roscpp roboteq_sdc2130)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -66,16 +66,16 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
- add_executable(sdu_pichi_node src/sdu_pichi_node.cpp)
-#add_executable(sdu_grassbots_roboteq_node src/sdu_grassbots_roboteq_node.cpp)
+# add_executable(sdu_pichi_node src/sdu_pichi_node.cpp)
+add_executable(sdu_grassbots_roboteq_node src/sdu_grassbots_roboteq_node.cpp)
 ## Add dependencies to the executable
- add_dependencies(sdu_pichi_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp)
-# add_dependencies(sdu_grassbots_roboteq_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp)
+# add_dependencies(sdu_pichi_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp)
+ add_dependencies(sdu_grassbots_roboteq_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp)
 ## Specify libraries to link a library or executable target against
- target_link_libraries(sdu_pichi_node
+  target_link_libraries(sdu_grassbots_roboteq_node
    ${catkin_LIBRARIES}
  )
- 
+
 #############
 ## Install ##
 #############

@@ -1,9 +1,9 @@
-#include "roboteq_hbl2350/hbl2350.hpp"
+#include "roboteq_sdc2130/sdc2130.hpp"
 
 int main (int argc, char** argv)
 {
 	ros::init(argc,argv,"roboteq_controller");
-	hbl2350 controller;
+	sdc2130 controller;
 	controller.spin();
 
 	return 0;
