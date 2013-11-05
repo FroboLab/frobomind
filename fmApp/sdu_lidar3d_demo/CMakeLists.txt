@@ -74,18 +74,23 @@ include_directories(
 ## Declare a cpp executable
 
 add_executable(dmm_tech_abs_node src/dmm_tech_abs_node.cpp)
+#add_executable(periodic_snapshotter src/periodic_snapshotter.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 
 #add_dependencies(dmm_tech_abs_node sdu_lidar3d_demo_generate_messages_cpp)
 add_dependencies(dmm_tech_abs_node ${PROJECT_NAME} msgs_gencpp)
+#add_dependencies(periodic_snapshotter ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 
 target_link_libraries(dmm_tech_abs_node
    ${catkin_LIBRARIES}
 )
+#target_link_libraries(periodic_snapshotter
+#   ${catkin_LIBRARIES}
+#)
 
 #############
 ## Install ##

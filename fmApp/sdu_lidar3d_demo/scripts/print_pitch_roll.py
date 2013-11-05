@@ -54,6 +54,7 @@ rospy.Subscriber(encoder_topic, encoder, on_encoder_topic)
 
 # loop until shutdown
 while not rospy.is_shutdown():
+
 	# sleep the defined interval
 	rospy.sleep(update_interval)
 
