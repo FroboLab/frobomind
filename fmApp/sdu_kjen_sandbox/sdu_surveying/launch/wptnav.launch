@@ -6,19 +6,42 @@
 	<param name="ticks_per_meter_left" value="2627" />
 	<param name="ticks_per_meter_right" value="2627" />
 
-	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/ -->
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
 
 	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
+		 </node>
 	</group>
 
 	<group ns="fmProcessors">
+		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/enc_left" />
+			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_pub" value="/fmKnowledge/pose" />
+			<param name="odom_estimate_frame" value="/odom_combined" />
+			<param name="vehicle_frame" value="base_footprint" />
+			<param name="encoder_output" value="absolute" />
+			<param name="max_ticks_per_update" value="200" />
+			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="imu_angular_velocity_yaw_axis" value="y" />
+		</node>
 	</group>
 
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_surveying" name="mission_control" type="simple_mission.py">
     		<param name="deadman_topic" value="/fmCommand/deadman" />
 			<param name="cmd_vel_topic" value="/fmCommand/cmd_vel" />
-            <param name="max_linear_velocity" value="0.6"/>
+            <param name="max_linear_velocity" value="0.4"/>
             <param name="max_angular_velocity" value="0.35"/>
 			<param name="deadband" value="3"/>
 			<param name="reduced_range" value="45"/>
@@ -30,18 +53,55 @@
 	</group>
 
 	<group ns="fmExecutors">
+		<node pkg="sdu_surveying" type="waypoint_navigation_node.py" name="waypoint_navigation" output="screen">
+			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="status_pub" value="/fmData/wptnav_status" />
+			<param name="status_publish_interval" value="5" />
+			<param name="print_debug_information" value="true" />
+
+            <param name="drive_kp" value="0.6"/>
+            <param name="drive_ki" value="0.1"/>
+            <param name="drive_kd" value="0.1"/>
+            <param name="drive_integral_max" value="0.7"/>
+
+            <param name="turn_kp" value="1.5"/>
+            <param name="turn_ki" value="0.0"/>
+            <param name="turn_kd" value="0.0"/>
+            <param name="turn_integral_max" value="1.0"/>
+
+            <param name="max_linear_velocity" value="0.5"/>
+            <param name="max_angular_velocity" value="0.3"/>
+
+			<param name="wpt_tolerance" value="0.05" />
+			<param name="wpt_target_distance" value="0.2" />
+			<param name="wpt_turn_start_at_heading_err" value="20.0" />
+			<param name="wpt_turn_stop_at_heading_err" value="1.0" />
+			<param name="wpt_linear_velocity" value="0.25" />
+			<param name="wpt_ramp_down_velocity_at_distance" value="0.05" />
+			<param name="wpt_ramp_down_minimum_velocity" value="0.05" />
+		</node>		
 	</group>
 
 	<group ns="fmControllers">
 	</group>
 
 	<group ns="fmLib">
+		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py">
+			<param name="left_sub" value="/fmInformation/encoder_left" />
+			<param name="right_sub" value="/fmInformation/encoder_right" />
+			<param name="left_pub" value="/fmInformation/enc_left" />
+			<param name="right_pub" value="/fmInformation/enc_right" />
+		</node>
+
 		<!-- FroboScout interface node -->
 		<node pkg="cetus_froboscout" name="froboscout" type="froboscout_interface_node.py" output="screen" >
     		<param name="deadman_sub" value="/fmCommand/deadman" />
 			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
-			<param name="enc_left_pub" value="/fmInformation/enc_left" />
-			<param name="enc_right_pub" value="/fmInformation/enc_right" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
 			<param name="wheel_left_sub" value="/fmData/wheel_left_nmea_in" />	 
 			<param name="wheel_left_pub" value="/fmSignal/wheel_left_nmea_out" /> 
 			<param name="wheel_right_sub" value="/fmData/wheel_right_nmea_in" />	 
@@ -90,6 +150,15 @@
 			<param name="baudrate" value="57600" />
 			<param name="termination_character" value="10"/>
 		</node> 
+
+		<!-- serial communication with the IMU -->
+		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
 	</group>
 </launch>
 
