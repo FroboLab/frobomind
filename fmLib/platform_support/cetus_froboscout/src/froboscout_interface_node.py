@@ -33,6 +33,7 @@
 # imports
 import rospy
 from msgs.msg import nmea, IntStamped
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist, TwistStamped
 from differential_kinematics import differential_kinematics
 
@@ -44,6 +45,7 @@ class FroboScoutInterfaceNode():
 		self.pid_update_interval = 20 # [ms]
 
 		# locally defined parameters
+		self.deadman_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
 
 		# get parameters
@@ -53,11 +55,15 @@ class FroboScoutInterfaceNode():
 		self.wheel_kp = rospy.get_param("~wheel_kp",'1.0')
 		self.wheel_ki = rospy.get_param("~wheel_ki",'0.0')
 		self.wheel_kd = rospy.get_param("~wheel_kd",'0.0')
+		rospy.loginfo (rospy.get_name() + ': Differential wheel distance %.2f' % self.wheel_dist)
+		rospy.loginfo (rospy.get_name() + ': Ticks per meter left %d' % self.ticks_per_meter_left)
+		rospy.loginfo (rospy.get_name() + ': Ticks per meter right %d' % self.ticks_per_meter_right)
 
 		# instantiate differntial kinemaics class
 		self.dk = differential_kinematics(self.wheel_dist)
 
 		# get topic names
+		self.deadman_topic = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
 		self.cmd_vel_topic = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
 		self.enc_left_topic = rospy.get_param("~enc_left_pub",'/fmInformation/enc_left')
 		self.enc_right_topic = rospy.get_param("~enc_right_pub",'/fmInformation/enc_right')
@@ -85,10 +91,12 @@ class FroboScoutInterfaceNode():
 		self.intstamp = IntStamped()
 
 		# setup subscription topic callbacks
+		self.deadman_tout = 0
+		rospy.Subscriber(self.deadman_topic, Bool, self.on_deadman_message)
 		self.reset_vel() # set velocity to zero
-		self.cmd_vel_tout = rospy.get_time()
+		self.cmd_vel_tout = 0
 		self.cmd_vel_tout_active = True
-		rospy.Subscriber(self.cmd_vel_topic, Twist, self.on_cmd_vel_message)
+		rospy.Subscriber(self.cmd_vel_topic, TwistStamped, self.on_cmd_vel_message)
 		rospy.Subscriber(self.wheel_left_sub_topic, nmea, self.on_wheel_left_message)
 		rospy.Subscriber(self.wheel_right_sub_topic, nmea, self.on_wheel_right_message)
 
@@ -101,20 +109,27 @@ class FroboScoutInterfaceNode():
 		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
+	def on_deadman_message(self, msg):
+		if msg.data == True:
+			self.deadman_tout = rospy.get_time() + self.deadman_tout_duration
+		else:
+			self.deadman_tout = 0
+
 	def on_cmd_vel_message(self, msg):
 		# update timeout
 		self.cmd_vel_tout = rospy.get_time() + self.cmd_vel_tout_duration
 
 		# retrieve linear and angular velocity from the message
-		self.vel_lin = msg.linear.x
-		self.vel_ang = msg.angular.z
+		self.vel_lin = msg.twist.linear.x
+		self.vel_ang = msg.twist.angular.z
 
 		# calculate coresponding left and right wheel speed [m/s]
 		(self.ref_vel_left, self.ref_vel_right) = self.dk.inverse (self.vel_lin, self.vel_ang)
+		#print 'lin %.1f ang %.2f left %.1f right %.1f' % (self.vel_lin, self.vel_ang, self.ref_vel_left, self.ref_vel_right)
 
 		# convert to [ticks/update_interval]
-		self.ref_ticks_left = self.ref_vel_left 
-		self.ref_ticks_right = self.ref_vel_right
+		self.ref_ticks_left = self.ref_vel_left*self.ticks_per_meter_left;
+		self.ref_ticks_right = self.ref_vel_right*self.ticks_per_meter_right;
 
 		if self.cmd_vel_tout_active:
 			self.cmd_vel_tout_active = False
@@ -123,9 +138,9 @@ class FroboScoutInterfaceNode():
 	def on_wheel_left_message(self, msg):
 		if msg.valid == True:
 			if msg.type == 'PFSST':
-				self.state_left += int(msg.data[0])
+				self.state_left = int(msg.data[0])
 				self.enc_left += int(msg.data[1])
-				self.volt_left += int(msg.data[2])
+				self.volt_left = int(msg.data[2])
 			elif msg.type == 'PFSHI':
 				rospy.logwarn (rospy.get_name() + ': Left wheel module reset')
 				self.publish_wheel_parameter_message()
@@ -133,9 +148,9 @@ class FroboScoutInterfaceNode():
 	def on_wheel_right_message(self, msg):
 		if msg.valid == True:
 			if msg.type == 'PFSST':
-				self.state_right += int(msg.data[0])
+				self.state_right = int(msg.data[0])
 				self.enc_right += int(msg.data[1])
-				self.volt_right += int(msg.data[2])
+				self.volt_right = int(msg.data[2])
 			elif msg.type == 'PFSHI':
 				rospy.logwarn (rospy.get_name() + ': Right wheel module reset')
 				self.publish_wheel_parameter_message()
@@ -143,20 +158,25 @@ class FroboScoutInterfaceNode():
 	def publish_enc_messages(self):
 		self.intstamp.header.stamp = rospy.Time.now()
 		self.intstamp.data = self.enc_left
-		self.enc_left = 0
+		#self.enc_left = 0
 		self.enc_left_pub.publish (self.intstamp)
 		self.intstamp.data = self.enc_right
-		self.enc_right = 0
+		#self.enc_right = 0
 		self.enc_right_pub.publish (self.intstamp)
 
 	def publish_wheel_ctrl_messages(self):
 		self.nmea.header.stamp = rospy.Time.now()
 		self.nmea.type = 'PFSCT'
 		self.nmea.length = 1
-		self.nmea.data[0] = ('%d' % self.ref_ticks_left)
-		self.wheel_left_pub.publish (self.nmea)
-		self.nmea.data[0] = ('%d' % self.ref_ticks_right)
-		self.wheel_right_pub.publish (self.nmea)
+		if self.deadman_tout > rospy.get_time():
+			self.nmea.data[0] = ('%d' % (self.ref_ticks_left + 0.5))
+			self.wheel_left_pub.publish (self.nmea)
+			self.nmea.data[0] = ('%d' % (self.ref_ticks_right + 0.5))
+			self.wheel_right_pub.publish (self.nmea)
+		else:
+			self.nmea.data[0] = '0'
+			self.wheel_left_pub.publish (self.nmea)
+			self.wheel_right_pub.publish (self.nmea)
 
 	def publish_wheel_parameter_message(self):
 		nmea_pid = nmea()

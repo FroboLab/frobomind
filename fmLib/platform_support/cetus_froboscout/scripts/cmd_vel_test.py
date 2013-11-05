@@ -38,7 +38,7 @@ from geometry_msgs.msg import Vector3
 # parameters
 topic_cmd_vel = '/fmCommand/cmd_vel'
 update_interval = 0.1 # [s]
-vel_lin = 10.0 # [m/s]
+vel_lin = 1.0 # [m/s]
 vel_ang = 0.0 # [rad/s]
 
 # launch node and create a publisher

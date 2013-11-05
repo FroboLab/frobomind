@@ -45,7 +45,7 @@ The inverse kinematic model describes how the speed of the wheels
 
 class differential_kinematics():
 	def __init__(self, wheel_distance):
-		self.wd = wheel_distance
+		self.wheel_dist = wheel_distance
 		self.vel_lin = 0.0 
 		self.vel_ang = 0.0 
 		self.vel_left = 0.0 
@@ -53,12 +53,12 @@ class differential_kinematics():
 
 	def forward (self, vel_left, vel_right):
 		self.vel_lin = (vel_right + vel_left)/2.0 # [m/s]
-		self.vel_ang = (vel_right - vel_left)/self.wd # [rad/s]
+		self.vel_ang = (vel_right - vel_left)/self.wheel_dist # [rad/s]
 		return (self.vel_lin, self.vel_ang)
 
 	def inverse (self, vel_lin, vel_ang):
-		self.vel_left  = vel_lin + self.wd*vel_ang # [m/s]
-		self.vel_right = vel_lin - self.wd*vel_ang # [m/s]
+		self.vel_left  = vel_lin - self.wheel_dist*vel_ang # [m/s]
+		self.vel_right = vel_lin + self.wheel_dist*vel_ang # [m/s]
 		return (self.vel_left, self.vel_right) 
 
 		
