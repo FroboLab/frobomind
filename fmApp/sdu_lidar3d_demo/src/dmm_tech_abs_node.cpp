@@ -79,7 +79,7 @@ int main(int argc, char **argv)
   n.param<int>("encoder_offset", encoder_offset, 0);
 
   /* keep trying until connection is made */
-  ros::Rate loop(20);
+  ros::Rate loop(300);
   uint8_t wr_cmd = 0x0;
   uint16_t in_cmd = 0x0;
 
@@ -101,8 +101,9 @@ int main(int argc, char **argv)
 	 }
 
 	 double angle = vl/16384.0*2*M_PI;
-	 double roll = -M_PI/6 * sin(angle);
-	 double pitch = -M_PI/6 * cos(angle);
+	 double valTwo = 0.58;
+	 double roll = -atan(valTwo*sin(angle));
+	 double pitch = atan(valTwo*cos(angle));
 	 //std::cout << "val: " <<  angle << std::endl;
 	 //std::cout << "roll: " << RAD_2_DEG(roll) << std::endl;
 	 //std::cout << "pitch: " << RAD_2_DEG(pitch) << std::endl;
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
 	 link_trans.child_frame_id = "laser";
 	 link_trans.transform.translation.x = 0;
 	 link_trans.transform.translation.y = 0;
-	 link_trans.transform.translation.z = 0.1;
+	 link_trans.transform.translation.z = 0;
 	 link_trans.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(roll,pitch,0);
 	 link_broadcaster.sendTransform(link_trans);
 

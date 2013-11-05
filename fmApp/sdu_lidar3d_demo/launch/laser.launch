@@ -1,0 +1,8 @@
+<launch>
+	<node name="LaserScannerLMS111" pkg="sick_lms111" type="sick_lms111_node">
+		<!--param name="host" value="10.0.42.75" /-->
+		<param name="host" value="192.168.0.11" />"
+		<param name="topic_id" value="/laser_lms111" />
+		<param name="frame_id" value="/laser_lms111" />
+	</node>
+</launch>

@@ -4,10 +4,14 @@ project(sdu_lidar3d_demo)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs geometry_msgs msgs nav_msgs roscpp rospy sensor_msgs tf)
+find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs geometry_msgs msgs nav_msgs roscpp rospy sensor_msgs tf pcl pcl_ros laser_geometry)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+
+find_package(Eigen REQUIRED)
+include_directories(${EIGEN_INCLUDE_DIRS})
+add_definitions(${EIGEN_DEFINITIONS})
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -139,3 +143,9 @@ target_link_libraries(dmm_tech_abs_node
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+
+add_executable(TriangleDrawer src/TriangleDrawer.cpp)
+target_link_libraries(TriangleDrawer ${catkin_LIBRARIES})
+add_dependencies(TriangleDrawer ${catkin_EXPORTED_TARGETS} msgs_gencpp)
+
