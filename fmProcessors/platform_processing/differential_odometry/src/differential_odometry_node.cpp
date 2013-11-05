@@ -384,12 +384,21 @@ int main(int argc, char** argv) {
 	nh.param<string>("imu_sub", subscribe_imu, "/fmInformation/imu");
 
 	// robot parameters
+	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);
+	nh.param<double>("/ticks_per_meter_left", ticks_per_meter_left, -1.0);
+	nh.param<double>("/ticks_per_meter_right", ticks_per_meter_right, -1.0);
+
+	// OBS the following is for backwards compatibility, these parameters should not be used anymore
 	nh.param<double>("/diff_steer_wheel_radius", wheel_radius, 0.25);
 	nh.param<double>("/diff_steer_wheel_ticks_per_rev", wheel_ticks_rev, 360);
-	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);
+		
+	if (ticks_per_meter_left == -1.0 or ticks_per_meter_left == -1.0)
+	{
+		nh.param<double>("ticks_per_meter_left", ticks_per_meter_left, -1.0);
+		nh.param<double>("ticks_per_meter_right", ticks_per_meter_right, -1.0);
+	}
+	// /OBS
 
-	nh.param<double>("ticks_per_meter_left", ticks_per_meter_left, -1.0);
-	nh.param<double>("ticks_per_meter_right", ticks_per_meter_right, -1.0);
 	nh.param<double>("max_ticks_per_update", max_ticks_per_update, 1000000.0);
 
 	if (ticks_per_meter_right != -1.0 and ticks_per_meter_left != -1.0)
