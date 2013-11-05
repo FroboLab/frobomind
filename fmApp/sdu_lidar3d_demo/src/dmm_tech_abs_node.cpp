@@ -47,6 +47,7 @@
 #include <boost/system/system_error.hpp>
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <msgs/encoder.h>
 
 #define RAD_2_DEG(x) (x/M_PI*180)
 
@@ -58,20 +59,24 @@ int main(int argc, char **argv)
   /* parameters */
   std::string device;
   int baudrate=38400;
+  int encoder_offset;
 
   /* initialize ros usage */
   ros::init(argc, argv, "vic_serial_interface");
 
   tf::TransformBroadcaster link_broadcaster;
   geometry_msgs::TransformStamped link_trans;
-
-
-  /* private nodehandlers */
+   /* private nodehandlers */
   ros::NodeHandle nh;
   ros::NodeHandle n("~");
 
+  ros::Publisher enc_pub;
+  msgs::encoder enc;
+  enc_pub = n.advertise<msgs::encoder>("/fmInformation/encoder_value", 25); 
+
   /* read parameters from ros parameter server if available otherwise use default values */
   n.param<std::string> ("device", device, "/dev/ttyUSB0");
+  n.param<int>("encoder_offset", encoder_offset, 0);
 
   /* keep trying until connection is made */
   ros::Rate loop(20);
@@ -82,13 +87,14 @@ int main(int argc, char **argv)
   boost::asio::serial_port serial_(io,device);
   serial_.set_option(boost::asio::serial_port_base::baud_rate(38400));
 
+
   while(ros::ok())
   {
 	 boost::asio::write(serial_,boost::asio::buffer(&wr_cmd,1));
 	 loop.sleep();
 	 boost::asio::read(serial_,boost::asio::buffer(&in_cmd,2));
 	 uint16_t val = ((in_cmd & 0xff)) << 8 | (in_cmd >> 8);
-	 int16_t vl = val - 1965;
+	 int16_t vl = val - encoder_offset;
 	 if( vl < 0)
 	 {
 		 vl = 16384 + vl;
@@ -109,6 +115,15 @@ int main(int argc, char **argv)
 	 link_trans.transform.translation.z = 0.1;
 	 link_trans.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(roll,pitch,0);
 	 link_broadcaster.sendTransform(link_trans);
+
+
+	enc.header.stamp = ros::Time::now();
+	enc.header.frame_id = "laser";
+	enc.encoderticks = vl;
+	enc_pub.publish(enc);
+
+
+
 
 	 ros::spinOnce();
   }
