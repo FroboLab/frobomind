@@ -1,7 +1,7 @@
 <!-- SDU Lidar 3d demo launch file -->
 
 <launch>
-	<node pkg="rosbag" name="robot" type="play" args="--rate=1 $(find sdu_lidar3d_demo)/bagfiles/2013-11-05-14-38-55.bag" output="screen">
+	<node pkg="rosbag" name="robot" type="play" args="--rate=1 $(find sdu_lidar3d_demo)/bagfiles/2013-11-06-11-00-23.bag" output="screen">
 		<remap from="/rosbag/clock" to="/clock"/>
 	</node>
 	

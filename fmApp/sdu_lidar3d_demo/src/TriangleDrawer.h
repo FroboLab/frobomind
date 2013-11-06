@@ -73,6 +73,15 @@ class TriangleDrawer
 	visualization_msgs::Marker triangle_list;
 	void publishTriangleSurfaces(int counter);
 	void publishPointsCloseToScanner();
+	bool shouldThisTriangleBeDrawn(PointT p0, PointT p1, PointT p2);
+	void drawTriangle(PointT p0, PointT p1, PointT p2);
+	bool isPointWithinDesiredArea(PointT p);
+	bool isPointsWithinACertainDistance(PointT a, PointT b, double thresholdDist);
+	double distanceBetweenPoints(PointT a, PointT b);
+	PointT getPointFromCurrentScan(int index);
+	PointT getPointFromPreviousScan(int index);
+	void addPointToTriangleList(PointT p);
+	void addColorToTriangleList(double r, double g, double b);
 	void addPointFromCurrentScan(int index);
 	void addPointFromPreviousScan(int index);
 
