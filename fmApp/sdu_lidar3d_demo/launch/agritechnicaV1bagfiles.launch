@@ -20,7 +20,7 @@
 		<param name="minDist" type="double" value="0.01" />
 	</node>
 
-	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_lidar3d_demo)/conf/default.rviz"/>
+	<node pkg="rviz" type="rviz" name="visualization" args="-d $(find sdu_lidar3d_demo)/conf/default.rviz"/>
 
 </launch>
 
