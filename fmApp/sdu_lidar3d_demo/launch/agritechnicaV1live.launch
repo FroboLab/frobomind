@@ -12,10 +12,6 @@
 		<param name="frame_id" value="/laser" />
 	</node>
 
-	<!-- node pkg="sdu_lidar3d_demo" name="print_pitch_roll" type="print_pitch_roll.py" output="screen">
-		<param name="encoder_topic" value="/fmInformation/encoder_value" />"
-	</node -->
-
 	<node type="laser_scan_assembler" pkg="laser_assembler" name="sick_lms111_assembler">
 		<remap from="scan" to="/laser_lms111"/>
 		<param name="max_scans" type="int" value="400" />
@@ -27,6 +23,8 @@
 
 	<node pkg="sdu_lidar3d_demo" name="TriangleDrawer" type="TriangleDrawer" output="screen">
 		<remap from="/scan" to="/laser_lms111"/>
+		<param name="maxDist" type="double" value="2" />
+		<param name="minDist" type="double" value="0.01" />
 	</node>
 
 	<node pkg="rviz" type="rviz" name="visualization" args="$(find sdu_lidar3d_demo)/conf/default.rviz"/>
