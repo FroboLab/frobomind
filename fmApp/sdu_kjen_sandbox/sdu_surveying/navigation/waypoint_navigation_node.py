@@ -175,7 +175,7 @@ class WptNavNode():
 					rospy.loginfo(rospy.get_name() + ": Resuming waypoint navigation")
 			else:
 				self.wptnav.standby() 
-				rospy.loginfo(rospy.get_name() + ": Switching to Wiimote control")			
+				rospy.loginfo(rospy.get_name() + ": Switching to manual control")			
 
 	def on_pose_message(self, msg):
 		qx = msg.pose.pose.orientation.x

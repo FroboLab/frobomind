@@ -4,10 +4,14 @@ This launch file simulates a SMR navigating a waypoint list.
 
 <launch>
 	<!-- Simulation -->
- 	<node pkg="stage" type="stageros" name="simulator" args="$(find dtu_smr_wptnav)/sim/empty.world"/>
-	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py"/>
+ 	<node pkg="stage" type="stageros" name="simulator" args="$(find sdu_surveying)/sim/empty.world"/>
+	<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py" output="screen">
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+    		<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+   			<param name="cmd_vel_pub" value="/cmd_vel" />
+	</node>
 	<remap from="/fmKnowledge/pose" to="/odom" />
-	<!-- node pkg="rviz" type="rviz" name="visualization" args="$(find find dtu_smr_wptnav)/conf/default.rviz"/ -->
+	<!-- node pkg="rviz" type="rviz" name="visualization" args="$(find find sdu_surveying)/conf/default.rviz"/ -->
 	<!-- node pkg="smach_viewer" name="stateMachine_viewer" type="smach_viewer.py"/ -->
 
 	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/ -->
@@ -20,26 +24,25 @@ This launch file simulates a SMR navigating a waypoint list.
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_surveying" name="mission_control" type="simple_mission.py">
-    		<param name="deadman_topic" value="/fmSignals/deadman" />
-			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+		<node pkg="sdu_surveying" name="mission" type="keyboard_mission.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
             <param name="max_linear_velocity" value="1.0"/>
             <param name="max_angular_velocity" value="0.4"/>
-			<param name="deadband" value="5"/>
-			<param name="reduced_range" value="50"/>
-			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
-			<param name="joy_topic" value="/fmLib/joy" />
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.1"/>
 			<param name="status_topic" value="/fmData/state"/>
-			<param name="publish_frequency" value="10"/>
 		</node>
 	</group>
 
 	<group ns="fmExecutors">
 		<node pkg="sdu_surveying" type="waypoint_navigation_node.py" name="waypoint_navigation" output="screen">
-			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+			<param name="automode_sub" value="/fmDecision/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
-			<param name="cmd_vel_pub" value="/fmSignals/cmd_vel" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
 			<param name="status_publish_interval" value="2" />
 			<param name="print_debug_information" value="true" />
@@ -71,11 +74,9 @@ This launch file simulates a SMR navigating a waypoint list.
 	</group>
 
 	<group ns="fmLib">
-		<!-- Wiimote interface -->
-		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true">
-			<param name="fixed_wiimote_address" value="00:1E:35:03:B8:81"/> <!-- Kjeld SDU -->
-			<!--param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/--> <!-- Kjeld -->
-		</node >		
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
 
 		<!-- plot maps of pose, gnss and odometry data as well as waypoint navigation state -->
 		<node pkg="sdu_surveying" name="track_map" type="robot_track_map_node.py" output="screen" >

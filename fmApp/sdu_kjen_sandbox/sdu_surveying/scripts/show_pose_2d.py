@@ -53,7 +53,7 @@ topic_pose = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 update_interval = rospy.get_param("~update_interval", 0.1) # [s]
 
 rospy.init_node('show_pose_2d')
-rospy.Subscriber(pose_topic, Odometry, on_pose_topic)
+rospy.Subscriber(topic_pose, Odometry, on_pose_topic)
 
 while not rospy.is_shutdown():
  	print 'Pose x: %.2f y: %.2f yaw: %.1f' % (pose_x, pose_y, pose_yaw)

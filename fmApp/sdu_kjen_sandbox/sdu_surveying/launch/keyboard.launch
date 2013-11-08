@@ -19,25 +19,6 @@
 			<param name="covariance_y" value="0.001"/>
 			<param name="covariance_z" value="0.001"/>
 		 </node>
-
-		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
-		<node pkg="gps_gpgga" name="gnss_gpgga" type="gps_gpgga_node" output="screen" respawn="true">
-		    <param name="subscribe_topic_id" value="/fmData/gnss_rx" />
-			<param name="publish_topic_id" value="/fmInformation/gpgga" />
-		</node>
-
-		<!-- append Transverse Mercator projection coordinates to NMEA $GPGGA message -->
-		<node pkg="gpgga_to_tranmerc" name="gpgga_to_tranmerc" type="gpgga_to_tranmerc_node" output="screen">
-			<param name="gpgga_sub" value="/fmInformation/gpgga" />
-			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="transverse_mercator_a" value="6378137.0" />
-			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
-			<param name="transverse_mercator_false_easting" value="500000.0" />
-			<param name="transverse_mercator_scale_factor" value="0.9996" />
-			<param name="transverse_mercator_origin_latitude" value="0.0" />
-			<param name="transverse_mercator_central_meridian" value="9.0" />
-			<param name="transverse_mercator_false_northing" value="0.0" />
-		</node>
 	</group>
 
 	<group ns="fmProcessors">
@@ -46,7 +27,7 @@
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />
 			<param name="enc_right_sub" value="/fmInformation/enc_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
-			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<param name="odom_pub" value="/fmKnowledge/pose" />
 			<param name="odom_estimate_frame" value="/odom_combined" />
 			<param name="vehicle_frame" value="base_footprint" />
 			<param name="encoder_output" value="absolute" />
@@ -54,35 +35,19 @@
 			<param name="yaw_angle_source" value="imu_angular_velocity" />
 			<param name="imu_angular_velocity_yaw_axis" value="y" />
 		</node>
-
-		<!-- estimate robot 2d pose -->
-		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
-			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
-			<param name="imu_sub" value="/fmInformation/imu" />
-			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="pose_pub" value="/fmKnowledge/pose" />
-			<param name="update_rate" value="20" />
-			<param name="publish_relative_pose" type="boolean" value="false" />
-			<param name="ekf_initial_guess_easting" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
-			<param name="ekf_initial_guess_northing" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
-			<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->
-			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
-			<param name="odometry_angular_variance" value="0.00035" /> <!-- [rad/update] -->
-		</node>
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_surveying" name="mission_control" type="simple_mission.py">
-    		<param name="deadman_topic" value="/fmCommand/deadman" />
-			<param name="cmd_vel_topic" value="/fmCommand/cmd_vel" />
+		<node pkg="sdu_surveying" name="mission" type="keyboard_mission.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
             <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="0.23"/>
-			<param name="deadband" value="3"/>
-			<param name="reduced_range" value="45"/>
-			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
-			<param name="joy_topic" value="/fmLib/joy" />
+            <param name="max_angular_velocity" value="0.4"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.1"/>
 			<param name="status_topic" value="/fmData/state"/>
-			<param name="publish_frequency" value="20"/>
 		</node>
 	</group>
 
@@ -97,25 +62,25 @@
 			<param name="print_debug_information" value="true" />
 
             <param name="drive_kp" value="0.6"/>
-            <param name="drive_ki" value="0.3"/>
-            <param name="drive_kd" value="0.2"/>
-            <param name="drive_integral_max" value="0.6"/>
+            <param name="drive_ki" value="0.1"/>
+            <param name="drive_kd" value="0.1"/>
+            <param name="drive_integral_max" value="0.7"/>
 
-            <param name="turn_kp" value="0.2"/>
-            <param name="turn_ki" value="0.2"/>
+            <param name="turn_kp" value="1.5"/>
+            <param name="turn_ki" value="0.0"/>
             <param name="turn_kd" value="0.0"/>
             <param name="turn_integral_max" value="1.0"/>
 
-            <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="0.25"/>
+            <param name="max_linear_velocity" value="0.5"/>
+            <param name="max_angular_velocity" value="0.3"/>
 
-			<param name="wpt_tolerance" value="0.25" />
-			<param name="wpt_target_distance" value="1.2" />
-			<param name="wpt_turn_start_at_heading_err" value="45.0" />
-			<param name="wpt_turn_stop_at_heading_err" value="2.0" />
-			<param name="wpt_linear_velocity" value="0.7" />
-			<param name="wpt_ramp_down_velocity_at_distance" value="0.5" />
-			<param name="wpt_ramp_down_minimum_velocity" value="0.10" />
+			<param name="wpt_tolerance" value="0.05" />
+			<param name="wpt_target_distance" value="0.2" />
+			<param name="wpt_turn_start_at_heading_err" value="20.0" />
+			<param name="wpt_turn_stop_at_heading_err" value="1.0" />
+			<param name="wpt_linear_velocity" value="0.25" />
+			<param name="wpt_ramp_down_velocity_at_distance" value="0.05" />
+			<param name="wpt_ramp_down_minimum_velocity" value="0.05" />
 		</node>		
 	</group>
 
@@ -148,11 +113,9 @@
 			<param name="wheel_right_kd" value="2.0" /> 
 		</node>
 
-		<!-- Wiimote interface -->
-		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" output="screen" respawn="true">
-			<param name="fixed_wiimote_address" value="00:1E:35:03:B8:81"/> <!-- Kjeld SDU -->
-			<!--param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/--> <!-- Kjeld -->
-		</node >		
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
 
 		<!-- nmea protocol handler for the FroboScout left wheel module -->
 		<node pkg="serial_nmea" name="left_wheel_nmea" type="nmea_node" output="screen" respawn="true">
@@ -189,19 +152,10 @@
 		</node> 
 
 		<!-- serial communication with the IMU -->
-		<node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen" respawn="true">
+		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">
 			<param name="publisher_topic" value="/fmData/imu_rx" />	 
 			<param name="subscriber_topic" value="/fmData/imu_tx" />
 			<param name="device" value="/dev/imu" />	
-			<param name="baudrate" value="115200" />
-			<param name="termination_character" value="10"/>
-		</node> 	
-
-		<!-- serial communication with the RTK-GNSS -->
-		<node pkg="serial_string" name="gnss_serial" type="serial_string_node" output="screen" respawn="true">
-			<param name="publisher_topic" value="/fmData/gnss_rx" />	 
-			<param name="subscriber_topic" value="/fmData/gnss_tx" />
-			<param name="device" value="/dev/ttyUSB0" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
 		</node> 	
