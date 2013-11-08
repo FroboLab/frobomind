@@ -52,9 +52,12 @@ class FroboScoutInterfaceNode():
 		self.wheel_dist = rospy.get_param("/diff_steer_wheel_distance",'1.0') # [m]
 		self.ticks_per_meter_left = rospy.get_param("/ticks_per_meter_left",'1000')
 		self.ticks_per_meter_right = rospy.get_param("/ticks_per_meter_right",'1000')
-		self.wheel_kp = rospy.get_param("~wheel_kp",'1.0')
-		self.wheel_ki = rospy.get_param("~wheel_ki",'0.0')
-		self.wheel_kd = rospy.get_param("~wheel_kd",'0.0')
+		self.wheel_left_kp = rospy.get_param("~wheel_left_kp",'1.0')
+		self.wheel_left_ki = rospy.get_param("~wheel_left_ki",'0.0')
+		self.wheel_left_kd = rospy.get_param("~wheel_left_kd",'0.0')
+		self.wheel_right_kp = rospy.get_param("~wheel_right_kp",'1.0')
+		self.wheel_right_ki = rospy.get_param("~wheel_right_ki",'0.0')
+		self.wheel_right_kd = rospy.get_param("~wheel_right_kd",'0.0')
 		rospy.loginfo (rospy.get_name() + ': Differential wheel distance %.2f' % self.wheel_dist)
 		rospy.loginfo (rospy.get_name() + ': Ticks per meter left %d' % self.ticks_per_meter_left)
 		rospy.loginfo (rospy.get_name() + ': Ticks per meter right %d' % self.ticks_per_meter_right)
@@ -185,10 +188,15 @@ class FroboScoutInterfaceNode():
 		nmea_pid.length = 5
 		nmea_pid.data.append('1') # enable closed loop PID
 		nmea_pid.data.append('%d' % self.pid_update_interval) 
-		nmea_pid.data.append('%d' % self.wheel_kp) # Kp
-		nmea_pid.data.append('%d' % self.wheel_ki) # Ki
-		nmea_pid.data.append('%d' % self.wheel_kd) # Kd
+		nmea_pid.data.append('%d' % self.wheel_left_kp) # Kp
+		nmea_pid.data.append('%d' % self.wheel_left_ki) # Ki
+		nmea_pid.data.append('%d' % self.wheel_left_kd) # Kd
 		self.wheel_left_pub.publish (nmea_pid)
+		nmea_pid.length = 5
+		nmea_pid.data.append('1') # enable closed loop PID
+		nmea_pid.data.append('%d' % self.wheel_right_kp) # Kp
+		nmea_pid.data.append('%d' % self.wheel_right_ki) # Ki
+		nmea_pid.data.append('%d' % self.wheel_right_kd) # Kd
 		self.wheel_right_pub.publish (nmea_pid)
 
 	def publish_wheel_parameter_open_loop_message(self):
