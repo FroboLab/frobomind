@@ -1,6 +1,8 @@
 Header header
-# 0=idle, 1=drive, 2=turn
-int32 mode
+# 0=idle, 1=navigate, 2=wait
+int8 state
+# 0=stop/standby, 1=drive, 2=turn
+int8 mode
 # ab line
 float64 b_easting
 float64 b_northing
