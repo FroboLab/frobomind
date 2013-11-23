@@ -30,6 +30,8 @@
 2013-06-06 KJ First version
 2013-10-01 KJ Fixed a bug causing the velocity to always be the maximum velocity.
               Added launch file paremeters for the waypoint navigation.
+2013-11-13 KJ Added new launch file parameters for waypoint defaults
+              Added support for implement command and wait after wpt arriva.
 """
 
 # imports
@@ -39,7 +41,7 @@ from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
-from msgs.msg import waypoint_navigation_status
+from msgs.msg import FloatStamped, waypoint_navigation_status
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -48,8 +50,15 @@ class WptNavNode():
 	def __init__(self):
 		# defines
 		self.update_rate = 20 # set update frequency [Hz]
-		self.automode = False
-		self.automode_prev = False
+		self.IMPLEMENT_INVALID = -10000000.0
+		self.STATE_IDLE = 0
+		self.STATE_NAVIGATE = 1
+		self.STATE_WAIT = 2
+		self.state = self.STATE_IDLE
+		self.state_prev = self.state
+		self.automode_warn = False
+		self.wait_after_arrival = 0.0
+		self.wait_timeout = 0.0
 		self.status = 0
 		self.wpt = False
 		self.prev_wpt = False
@@ -84,15 +93,18 @@ class WptNavNode():
 		self.status_publish_interval = rospy.get_param("~status_publish_interval", 0) 
 
 		# get topic names
-		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecisionMakers/automode')
+		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecision/automode')
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		self.joy_topic = rospy.get_param("~joy_sub",'/fmLib/joy')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
+		self.implement_topic = rospy.get_param("~implement_pub",'/fmCommand/implement')
 		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmData/wptnav_status')
 
 		# setup publish topics
 		self.cmd_vel_pub = rospy.Publisher(self.cmdvel_topic, TwistStamped)
 		self.twist = TwistStamped()
+		self.implement_pub = rospy.Publisher(self.implement_topic, FloatStamped)
+		self.implement = FloatStamped()
 		self.wptnav_status_pub = rospy.Publisher(self.wptnav_status_topic, waypoint_navigation_status)
 		self.wptnav_status = waypoint_navigation_status()
 		self.status_publish_count = 0
@@ -110,15 +122,19 @@ class WptNavNode():
 		max_linear_velocity = rospy.get_param("~max_linear_velocity", 0.4)
 		max_angular_velocity = rospy.get_param("~max_angular_velocity", 0.4)
 
-		self.wpt_tolerance = rospy.get_param("~wpt_tolerance", 0.5)
+		self.wpt_def_tolerance = rospy.get_param("~wpt_default_tolerance", 0.5)
+		self.wpt_def_linear_velocity = rospy.get_param("~wpt_default_linear_velocity", 0.5)
+		self.wpt_def_angular_velocity = rospy.get_param("~wpt_default_angular_velocity", 0.3)
+		self.wpt_def_wait_after_arrival = rospy.get_param("~wpt_default_wait_after_arrival", 0.0)
+		self.wpt_def_implement = rospy.get_param("~wpt_default_implement_command", 0.0)
+
 		wpt_target_distance = rospy.get_param("~wpt_target_distance", 1.0)
 		wpt_turn_start_at_heading_err = rospy.get_param("~wpt_turn_start_at_heading_err", 20.0)
 		wpt_turn_stop_at_heading_err = rospy.get_param("~wpt_turn_stop_at_heading_err", 1.0)
-		self.wpt_linear_velocity = rospy.get_param("~wpt_linear_velocity", 0.5)
 		wpt_ramp_down_velocity_at_distance = rospy.get_param("~wpt_ramp_down_velocity_at_distance", 1.0)
 		wpt_ramp_down_minimum_velocity = rospy.get_param("~wpt_ramp_down_minimum_velocity", 0.3)
 
-		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_integral_max, turn_kp, turn_ki, turn_kd, turn_integral_max, max_linear_velocity, max_angular_velocity, self.wpt_tolerance, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, self.wpt_linear_velocity, wpt_ramp_down_velocity_at_distance, wpt_ramp_down_minimum_velocity, self.debug)
+		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_integral_max, turn_kp, turn_ki, turn_kd, turn_integral_max, max_linear_velocity, max_angular_velocity, self.wpt_def_tolerance, self.wpt_def_linear_velocity, self.wpt_def_angular_velocity, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, wpt_ramp_down_velocity_at_distance, wpt_ramp_down_minimum_velocity, self.debug)
 
 		self.wptlist = waypoint_list()
 		self.wptlist_loaded = False
@@ -139,11 +155,18 @@ class WptNavNode():
 		self.wpt = False 
 		rospy.loginfo(rospy.get_name() + ": %d waypoints loaded" % numwpt)
 
+	def update_implement_value (self):
+		if self.wpt[self.wptnav.W_IMPLEMENT] != self.IMPLEMENT_INVALID:
+			self.implement.data = self.wpt[self.wptnav.W_IMPLEMENT]
+		else:
+			self.implement.data = self.wpt_def_implement
+
 	def goto_next_wpt (self):
 		self.prev_wpt = self.wpt
 		self.wpt = self.wptlist.get_next()
 		if self.wpt != False:
-			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[2])
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[self.wptnav.W_ID])
+			self.update_implement_value()
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
 		else:
 			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
@@ -154,29 +177,37 @@ class WptNavNode():
 		if wpt != False:
 			self.wpt = wpt
 			self.prev_wpt = prev_wpt
-			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[2])
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s" % self.wpt[self.wptnav.W_ID])
+			self.update_implement_value()
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
 		else:
 			rospy.loginfo(rospy.get_name() + ": This is the first waypoint")
 
 	def on_automode_message(self, msg):
-		self.automode = msg.data
-		if self.automode != self.automode_prev:
-			self.automode_prev = self.automode
-			if self.automode:
-				rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
-				if self.wptlist_loaded == False:
-					rospy.loginfo(rospy.get_name() + ": Loading waypoint list")
-					self.load_wpt_list()				
-					self.goto_next_wpt()
-					self.wptlist_loaded = True
-				elif self.wptnav.state == self.wptnav.STATE_STANDBY:
-					self.wptnav.resume()
-					rospy.loginfo(rospy.get_name() + ": Resuming waypoint navigation")
-			else:
+		if msg.data == True: # if autonomous mode requested
+			if self.state == self.STATE_IDLE:
+				if self.wptnav.pose != False: # if we have a valid pose				
+					self.state = self.STATE_NAVIGATE
+					rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
+					if self.wptlist_loaded == False:
+						rospy.loginfo(rospy.get_name() + ": Loading waypoint list")
+						self.load_wpt_list()				
+						self.goto_next_wpt()
+						self.wptlist_loaded = True
+					elif self.wptnav.state == self.wptnav.STATE_STANDBY:
+						self.wptnav.resume()
+						rospy.loginfo(rospy.get_name() + ": Resuming waypoint navigation")
+
+				else: # no valid pose yet
+					if self.automode_warn == False:
+						self.automode_warn = True
+						rospy.logwarn(rospy.get_name() + ": Absolute pose is required for autonomous navigation")
+		else: # if manual mode requested
+			if self.state != self.STATE_IDLE:
+				self.state = self.STATE_IDLE					
 				self.wptnav.standby() 
 				rospy.loginfo(rospy.get_name() + ": Switching to manual control")			
-
+			
 	def on_pose_message(self, msg):
 		qx = msg.pose.pose.orientation.x
 		qy = msg.pose.pose.orientation.y
@@ -205,22 +236,28 @@ class WptNavNode():
 		self.twist.twist.angular.z = self.angular_speed		
 		self.cmd_vel_pub.publish (self.twist)
 
+	def publish_implement_message(self):
+		self.implement.header.stamp = rospy.Time.now()
+		self.implement_pub.publish (self.implement)
+
 	def publish_status_message(self):
 		self.wptnav_status.header.stamp = rospy.Time.now()
+		self.wptnav_status.state = self.state
 		if self.wptnav.pose != False:
 			self.wptnav_status.easting = self.wptnav.pose[0]
 			self.wptnav_status.northing = self.wptnav.pose[1]
-		if self.automode != False and self.wptnav.b != False:
+
+		if self.state == self.STATE_NAVIGATE and self.wptnav.b != False:
 			if  self.wptnav.state == self.wptnav.STATE_STOP or self.wptnav.state == self.wptnav.STATE_STANDBY:
 				self.wptnav_status.mode = 0
 			elif self.wptnav.state == self.wptnav.STATE_DRIVE_INIT or self.wptnav.state == self.wptnav.STATE_DRIVE:
 				self.wptnav_status.mode = 1
 			elif self.wptnav.state == self.wptnav.STATE_TURN_INIT or self.wptnav.state == self.wptnav.STATE_TURN:
 				self.wptnav_status.mode = 2
-			self.wptnav_status.b_easting = self.wptnav.b[0]
-			self.wptnav_status.b_northing = self.wptnav.b[1]
-			self.wptnav_status.a_easting = self.wptnav.a[0]
-			self.wptnav_status.a_northing = self.wptnav.a[1]
+			self.wptnav_status.b_easting = self.wptnav.b[self.wptnav.W_E]
+			self.wptnav_status.b_northing = self.wptnav.b[self.wptnav.W_N]
+			self.wptnav_status.a_easting = self.wptnav.a[self.wptnav.W_E]
+			self.wptnav_status.a_northing = self.wptnav.a[self.wptnav.W_N]
 			self.wptnav_status.distance_to_b = self.wptnav.dist
 			self.wptnav_status.bearing_to_b = self.wptnav.bearing
 			self.wptnav_status.heading_err = self.wptnav.heading_err
@@ -262,14 +299,40 @@ class WptNavNode():
 				rospy.loginfo(rospy.get_name() + ": User selected previous waypoint")
 				self.goto_previous_wpt()
 
-			if self.automode:
-				ros_time = rospy.Time.now()
-				time = ros_time.secs + ros_time.nsecs*1e-9
-				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(time)
+			if self.state == self.STATE_NAVIGATE:
+				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(rospy.get_time())
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
-					self.goto_next_wpt()
+					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint: %s" % (self.wpt[self.wptnav.W_ID]))
+
+					# activate wait mode
+					if self.wpt[self.wptnav.W_WAIT] >= 0.0:
+						self.wait_after_arrival = self.wpt[self.wptnav.W_WAIT]
+					else:
+						self.wait_after_arrival = self.wpt_def_wait_after_arrival
+
+					if self.wait_after_arrival > 0.01:
+						rospy.loginfo(rospy.get_name() + ": Waiting %.1f seconds" % (self.wait_after_arrival))
+						self.state = self.STATE_WAIT
+						self.wait_timeout = rospy.get_time() + self.wait_after_arrival
+					else:
+						self.state = self.STATE_NAVIGATE 		
+						self.goto_next_wpt()
+
 				else:
 					self.publish_cmd_vel_message()
+					self.publish_implement_message()
+
+			elif self.state == self.STATE_WAIT:
+				if rospy.get_time() > self.wait_timeout:
+					self.state = self.STATE_NAVIGATE 		
+					self.goto_next_wpt()
+				else:				
+					self.linear_speed = 0.0
+					self.angular_speed = 0.0
+					self.publish_cmd_vel_message()
+					self.publish_implement_message()
+
+			# publish status
 			if self.status_publish_interval != 0:
 				self.status_publish_count += 1
 				if self.status_publish_count % self.status_publish_interval == 0:
@@ -279,7 +342,7 @@ class WptNavNode():
 # Main function.	
 if __name__ == '__main__':
 	# Initialize the node and name it.
-	rospy.init_node('wptnav_implement_node')
+	rospy.init_node('wptnav_node')
 
 	# Go to class functions that do all the heavy lifting. Do error checking.
 	try:

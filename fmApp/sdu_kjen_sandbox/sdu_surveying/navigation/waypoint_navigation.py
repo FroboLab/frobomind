@@ -4,7 +4,7 @@
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
+# Redistribution and use in source and binary forms, with or withoutn
 # modification, are permitted provided that the following conditions are met:
 #    * Redistributions of source code must retain the above copyright
 #      notice, this list of conditions and the following disclaimer.
@@ -43,16 +43,8 @@ Navigation modes:
 from math import pi, atan2, sqrt, fabs
 from pid_controller import pid_controller
 
-# list index for destination (b) and origin (a) waypoints
-WPT_E = 0
-WPT_N = 1
-WPT_ID = 2
-WPT_MODE = 3
-WPT_TOLERANCE = 4
-WPT_SPEED = 5
-
 class waypoint_navigation():
-	def __init__(self, update_rate, drive_kp, drive_ki, drive_kd, drive_int_max, turn_kp, turn_ki, turn_kd, turn_int_max, lin_spd_max, ang_spd_max, wpt_tol_default, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, wpt_linear_velocity, wpt_ramp_down_velocity_at_distance, wpt_ramp_down_minimum_velocity, debug):
+	def __init__(self, update_rate, drive_kp, drive_ki, drive_kd, drive_int_max, turn_kp, turn_ki, turn_kd, turn_int_max, lin_spd_max, ang_spd_max, wpt_tol_default, wpt_def_linear_velocity, wpt_def_angular_velocity, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, wpt_ramp_down_velocity_at_distance, wpt_ramp_down_minimum_velocity, debug):
 
 		# constants
 		self.UPDATE_NONE = 0
@@ -60,6 +52,18 @@ class waypoint_navigation():
 		self.pi2 = 2.0*pi
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
+
+		# list index for destination (b) and origin (a) waypoints
+		self.W_E = 0 
+		self.W_N = 1
+		self.W_YAW = 2
+		self.W_ID = 3
+		self.W_MODE = 4
+		self.W_TOL = 5
+		self.W_LIN_VEL = 6
+		self.W_ANG_VEL = 7
+		self.W_WAIT = 8
+		self.W_IMPLEMENT = 9
 
 		# parameters
 		self.update_rate = update_rate # [Hz]
@@ -75,11 +79,15 @@ class waypoint_navigation():
 		self.turn_kd = turn_kd
 		self.turn_integral_max = turn_int_max
 		self.wpt_tolerance_default = wpt_tol_default # [m]
+		self.wpt_linear_speed_default = wpt_def_linear_velocity # [m/s]
+		self.wpt_angular_speed_default = wpt_def_angular_velocity # [m/s]
+		self.angular_speed_limit = self.angular_speed_max
+		if self.angular_speed_limit > self.wpt_angular_speed_default:
+			self.angular_speed_limit = self.wpt_angular_speed_default
 		self.target_ahead = wpt_target_distance # [m] the intermediate target is along the ab line 'self.target_ahead' meters ahead of the pose 
-		self.target_percent = 0.5 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
+		self.target_percent = 1.0 # [0;1] when distance to b is less than self.target_ahead, the target is self.target_percent times the distance to b ahead of the pose
 		self.turn_start_at_heading_err = wpt_turn_start_at_heading_err*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot9
 		self.turn_acceptable_heading_err = wpt_turn_stop_at_heading_err*self.deg_to_rad # [radians]
-		self.wpt_linear_speed_default = wpt_linear_velocity # [m/s]
 		self.wpt_linear_ramp_down_at_dist_default = wpt_ramp_down_velocity_at_distance # [m]
 		self.wpt_linear_ramp_down_speed_default = wpt_ramp_down_minimum_velocity # [m/s]
 		self.print_interval = self.update_rate/2
@@ -102,6 +110,7 @@ class waypoint_navigation():
 		self.target = False
 		self.wpt_tolerance = 0.0
 		self.wpt_linear_speed = 0.0
+		self.wpt_angular_speed = 0.0
 		self.wpt_linear_ramp_down_at_dist = 0.0
 		self.wpt_linear_ramp_down_speed = 0.0
 
@@ -143,25 +152,37 @@ class waypoint_navigation():
 	# call to set a new navigation destination waypoint
 	def navigate (self, destination, origin):
 		self.b = destination
+
 		if origin != False:
 			self.a = origin
 		else:
 			self.a = self.pose	
 
 		# set speed and waypoint reached tolerance
-		self.wpt_tolerance = float(self.b[WPT_TOLERANCE])
-		if self.wpt_tolerance < 0.01:
+		self.wpt_tolerance = float(self.b[self.W_TOL])
+		if self.wpt_tolerance < 0.001:
 			self.wpt_tolerance = self.wpt_tolerance_default
-		self.wpt_linear_speed = float(self.b[WPT_SPEED])
-		if self.wpt_linear_speed < 0.01:
+
+		# set linear speed
+		self.wpt_linear_speed = float(self.b[self.W_LIN_VEL])
+		if self.wpt_linear_speed < 0.001:
 			self.wpt_linear_speed = self.wpt_linear_speed_default
 
 		self.wpt_linear_ramp_down_speed = self.wpt_linear_ramp_down_speed_default
 		self.wpt_linear_ramp_down_at_dist = self.wpt_linear_ramp_down_at_dist_default
 
+		# set angular speed limit
+		if self.b[self.W_ANG_VEL] > 0.001:
+			self.angular_speed_limit = self.b[self.W_ANG_VEL]
+		else:
+			self.angular_speed_limit = self.wpt_angular_speed_default
+
+		if self.angular_speed_limit > self.angular_speed_max:
+				self.angular_speed_limit = self.angular_speed_max	
+
 		# calculate ab-line properties (used by the drive function)
-		self.ab_len = sqrt((self.b[WPT_E]-self.a[WPT_E])**2 + (self.b[WPT_N]-self.a[WPT_N])**2) # length of ab line
-		self.ab_norm = [(self.b[WPT_E]-self.a[WPT_E])/self.ab_len,(self.b[WPT_N]-self.a[WPT_N])/self.ab_len] # normalized ab vector
+		self.ab_len = sqrt((self.b[self.W_E]-self.a[self.W_E])**2 + (self.b[self.W_N]-self.a[self.W_N])**2) # length of ab line
+		self.ab_norm = [(self.b[self.W_E]-self.a[self.W_E])/self.ab_len,(self.b[self.W_N]-self.a[self.W_N])/self.ab_len] # normalized ab vector
 		self.a_dot_ab_norm = self.a[0]*self.ab_norm[0] + self.a[1]*self.ab_norm[1] # (vector defined by point a) dot (normalized ab vector) 
 
 		# reset state variables
@@ -219,7 +240,7 @@ class waypoint_navigation():
 		self.pid_turn.reset ()
 		self.heading_err_minimum = self.pi2
 		self.state = self.STATE_TURN
-
+		
 	# turn about own center (not applicable to all robots)
 	def turn(self):
 		# check if we have turned enough
@@ -239,11 +260,11 @@ class waypoint_navigation():
 
 	# calculate distance, bearing, heading error
 	def update_navigation_state(self):
-		self.dist = sqrt((self.b[0]-self.pose[0])**2 + (self.b[1]-self.pose[1])**2) # dist to destination
+		self.dist = sqrt((self.b[self.W_E]-self.pose[0])**2 + (self.b[self.W_N]-self.pose[1])**2) # dist to destination
 		if self.dist < self.dist_minimum: # used for arrival detection
 			self.dist_minimum = self.dist
-		easting_component = self.b[0] - self.pose[0]  # destination bearing (angle with easting axis)
-		northing_component = self.b[1] - self.pose[1]
+		easting_component = self.b[self.W_E] - self.pose[0]  # destination bearing (angle with easting axis)
+		northing_component = self.b[self.W_N] - self.pose[1]
 		self.bearing = self.angle_limit(atan2 (northing_component, easting_component)) 
 		self.heading_err = self.angle_diff(self.bearing, self.pose[2]) # signed diff. heading to destination bearing
 		if fabs(self.heading_err) < self.heading_err_minimum:
@@ -254,15 +275,15 @@ class waypoint_navigation():
 		d = pose_dot_ab_norm - self.a_dot_ab_norm  # distance along the ab line 
 
 		pt = [self.a[0] + d*self.ab_norm[0], self.a[1] + d*self.ab_norm[1]] # define closest point along the ab line
-		self.ab_dist_to_pose = sqrt((self.pose[WPT_E]-pt[WPT_E])**2 + (self.pose[WPT_N]-pt[WPT_N])**2)
+		self.ab_dist_to_pose = sqrt((self.pose[self.W_E]-pt[self.W_E])**2 + (self.pose[self.W_N]-pt[self.W_N])**2)
 		if d > self.ab_len: # the pose lies beyond the end of the ab line and the closest point is therefore in fact b
 			# set b as target point	
-			self.target = [self.b[0], self.b[1]]	
+			self.target = [self.b[self.W_E], self.b[self.W_N]]	
 		elif d < 0: # the pose lies before the beginning of the ab line so the closest point is in fact a
 		#	self.target = [self.a[0], self.a[1]]			
-			self.target = [self.b[0], self.b[1]]	
+			self.target = [self.b[self.W_E], self.b[self.W_N]]	
 		else: # the closest point is defined by A + d(B-A)
-			dist_pt_to_b = sqrt((self.b[WPT_E]-pt[WPT_E])**2 + (self.b[WPT_N]-pt[WPT_N])**2)  # calc distance from closest point to b
+			dist_pt_to_b = sqrt((self.b[self.W_E]-pt[self.W_E])**2 + (self.b[self.W_N]-pt[self.W_N])**2)  # calc distance from closest point to b
 			dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
 			if dist_pt_to_target > self.target_ahead:
 				dist_pt_to_target = self.target_ahead
@@ -273,7 +294,7 @@ class waypoint_navigation():
 		self.target_bearing = self.angle_limit(atan2 (self.target[1]-self.pose[1], self.target[0]-self.pose[0])) #  target bearing (angle with easting axis)
 		self.target_heading_err = self.angle_diff(self.target_bearing, self.pose[2]) # signed diff. heading to target bearing
 
-		#print self.target_dist, self.target_heading_err, self.a[0], self.a[1], self.b[0], self.b[1], self.pose[0], self.pose[1], self.target[0], self.target[1] 
+		#print self.target_dist, self.target_heading_err, self.a[0], self.a[1], self.b[self.W_E], self.b[self.W_N], self.pose[0], self.pose[1], self.target[0], self.target[1] 
 
 
 	# make sure we don't exceed maximum linear and angular speed
@@ -283,10 +304,11 @@ class waypoint_navigation():
 		elif self.linear_speed < -self.linear_speed_max:
 			self.linear_speed = -self.linear_speed_max
 
-		if self.angular_speed > self.angular_speed_max:
-			self.angular_speed = self.angular_speed_max
-		elif self.angular_speed < -self.angular_speed_max:
-			self.angular_speed = -self.angular_speed_max
+		# perform angular speed limit
+		if self.angular_speed > self.angular_speed_limit:
+			self.angular_speed = self.angular_speed_limit
+		elif self.angular_speed < -self.angular_speed_limit:
+			self.angular_speed = -self.angular_speed_limit
 
 	# waypoint navigation updater, returns status, and linear and angular speed to the controller
 	def update(self, time_stamp):
@@ -298,8 +320,6 @@ class waypoint_navigation():
 
 			# are we there yet?
 			if self.arrived_at_waypoint():
-				if self.debug:
-					print 'Arrived at waypoint %s: ' % self.b[2]
 				status = self.UPDATE_ARRIVAL
 			
 			else:

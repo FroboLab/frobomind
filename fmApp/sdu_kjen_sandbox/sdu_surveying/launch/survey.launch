@@ -46,7 +46,8 @@
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />
 			<param name="enc_right_sub" value="/fmInformation/enc_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
-			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
+			<!--param name="odom_pub" value="/fmKnowledge/encoder_odom" /-->
+			<param name="odom_pub" value="/fmKnowledge/pose" />
 			<param name="odom_estimate_frame" value="/odom_combined" />
 			<param name="vehicle_frame" value="base_footprint" />
 			<param name="encoder_output" value="absolute" />
@@ -61,7 +62,7 @@
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
-			<param name="update_rate" value="20" />
+			<param name="update_rate" value="50" />
 			<param name="publish_relative_pose" type="boolean" value="false" />
 			<param name="ekf_initial_guess_easting" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
 			<param name="ekf_initial_guess_northing" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
@@ -72,50 +73,56 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_surveying" name="mission_control" type="simple_mission.py">
-    		<param name="deadman_topic" value="/fmCommand/deadman" />
-			<param name="cmd_vel_topic" value="/fmCommand/cmd_vel" />
-            <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="0.23"/>
-			<param name="deadband" value="3"/>
-			<param name="reduced_range" value="45"/>
-			<param name="feedback_topic" value="/fmLib/joy/set_feedback" />
-			<param name="joy_topic" value="/fmLib/joy" />
-			<param name="status_topic" value="/fmData/state"/>
-			<param name="publish_frequency" value="20"/>
+		<node pkg="sdu_surveying" name="mission" type="wiimote_mission.py" output="screen">
+			<param name="wiimote_sub" value="/fmLib/joy" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="1.1"/>
+            <param name="max_angular_velocity" value="0.4"/>
+            <param name="max_linear_acceleration" value="0.2"/>
+            <param name="max_angular_acceleration" value="0.3"/>
+            <param name="max_linear_deceleration" value="0.8"/>
+            <param name="max_angular_deceleration" value="2.0"/>
 		</node>
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="sdu_surveying" type="waypoint_navigation_node.py" name="waypoint_navigation" output="screen">
-			<param name="automode_sub" value="/fmDecisionMakers/automode" />
+		<node pkg="sdu_surveying" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+			<param name="automode_sub" value="/fmDecision/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
-			<param name="status_publish_interval" value="5" />
+			<param name="status_publish_interval" value="20" />
 			<param name="print_debug_information" value="true" />
 
-            <param name="drive_kp" value="0.6"/>
-            <param name="drive_ki" value="0.3"/>
-            <param name="drive_kd" value="0.2"/>
-            <param name="drive_integral_max" value="0.6"/>
+            <param name="drive_kp" value="2.0"/>
+            <param name="drive_ki" value="0.8"/>
+            <param name="drive_kd" value="1.0"/>
+            <param name="drive_integral_max" value="2.5"/>
 
-            <param name="turn_kp" value="0.2"/>
-            <param name="turn_ki" value="0.2"/>
+            <param name="turn_kp" value="0.7"/>
+            <param name="turn_ki" value="0.5"/>
             <param name="turn_kd" value="0.0"/>
-            <param name="turn_integral_max" value="1.0"/>
+            <param name="turn_integral_max" value="0.5"/>
 
             <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="0.25"/>
+            <param name="max_angular_velocity" value="0.30"/>
 
-			<param name="wpt_tolerance" value="0.25" />
-			<param name="wpt_target_distance" value="1.2" />
+			<param name="wpt_default_mode" value="MCTE" />
+			<param name="wpt_default_tolerance" value="0.30" />
+			<param name="wpt_default_linear_velocity" value="0.7" />
+			<param name="wpt_default_angular_velocity" value="0.3" />
+			<param name="wpt_default_wait_after_arrival" value="3.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="wpt_target_distance" value="1.0" />
 			<param name="wpt_turn_start_at_heading_err" value="45.0" />
 			<param name="wpt_turn_stop_at_heading_err" value="2.0" />
-			<param name="wpt_linear_velocity" value="0.7" />
-			<param name="wpt_ramp_down_velocity_at_distance" value="0.5" />
-			<param name="wpt_ramp_down_minimum_velocity" value="0.10" />
+			<param name="wpt_ramp_down_velocity_at_distance" value="0.75" />
+			<param name="wpt_ramp_down_minimum_velocity" value="0.05" />
 		</node>		
 	</group>
 
@@ -123,6 +130,14 @@
 	</group>
 
 	<group ns="fmLib">
+		<!--node pkg="sdu_surveying" name="plot_feedback" type="plot_propulsion_feedback_node.py" output="screen" >
+ 			<param name="propulsion_feedback_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="50" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="maximum_velocity" value="1.2" />
+			<param name="maximum_thrust" value="511" />
+		</node-->
+
 		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py">
 			<param name="left_sub" value="/fmInformation/encoder_left" />
 			<param name="right_sub" value="/fmInformation/encoder_right" />
@@ -136,16 +151,23 @@
 			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
 			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
 			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
 			<param name="wheel_left_sub" value="/fmData/wheel_left_nmea_in" />	 
 			<param name="wheel_left_pub" value="/fmSignal/wheel_left_nmea_out" /> 
 			<param name="wheel_right_sub" value="/fmData/wheel_right_nmea_in" />	 
 			<param name="wheel_right_pub" value="/fmSignal/wheel_right_nmea_out" /> 
-			<param name="wheel_left_kp" value="5.0" /> 
-			<param name="wheel_left_ki" value="2.0" /> 
-			<param name="wheel_left_kd" value="2.0" /> 
-			<param name="wheel_right_kp" value="5.0" /> 
-			<param name="wheel_right_ki" value="2.0" /> 
-			<param name="wheel_right_kd" value="2.0" /> 
+            <param name="max_linear_acceleration" value="1.8"/>
+            <param name="max_angular_acceleration" value="2.0"/>
+			<param name="wheel_left_kp" value="9" /> 
+			<param name="wheel_left_ki" value="15" /> 
+			<param name="wheel_left_kd" value="2" /> 
+			<param name="wheel_left_max_integral_output" value="50.0" /> 
+			<param name="wheel_right_kp" value="9" /> 
+			<param name="wheel_right_ki" value="15" /> 
+			<param name="wheel_right_kd" value="2" /> 
+			<param name="wheel_right_max_integral_output" value="50.0" /> 
+			<param name="publish_wheel_feedback" value="true" />
 		</node>
 
 		<!-- Wiimote interface -->

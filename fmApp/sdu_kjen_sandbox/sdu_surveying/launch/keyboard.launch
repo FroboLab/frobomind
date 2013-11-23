@@ -6,7 +6,7 @@
 	<param name="ticks_per_meter_left" value="2627" />
 	<param name="ticks_per_meter_right" value="2627" />
 
-	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/ -->
 
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
@@ -44,9 +44,9 @@
     		<param name="deadman_pub" value="/fmCommand/deadman" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
             <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="0.4"/>
-            <param name="linear_velocity_step" value="0.1"/>
-            <param name="angular_velocity_step" value="0.1"/>
+            <param name="max_angular_velocity" value="1.0"/>
+            <param name="linear_velocity_step" value="0.2"/>
+            <param name="angular_velocity_step" value="0.2"/>
 			<param name="status_topic" value="/fmData/state"/>
 		</node>
 	</group>
@@ -61,26 +61,31 @@
 			<param name="status_publish_interval" value="5" />
 			<param name="print_debug_information" value="true" />
 
-            <param name="drive_kp" value="0.6"/>
-            <param name="drive_ki" value="0.1"/>
-            <param name="drive_kd" value="0.1"/>
-            <param name="drive_integral_max" value="0.7"/>
+            <param name="drive_kp" value="0.7"/>
+            <param name="drive_ki" value="0.3"/>
+            <param name="drive_kd" value="0.2"/>
+            <param name="drive_integral_max" value="0.6"/>
 
-            <param name="turn_kp" value="1.5"/>
-            <param name="turn_ki" value="0.0"/>
+            <param name="turn_kp" value="0.3"/>
+            <param name="turn_ki" value="0.2"/>
             <param name="turn_kd" value="0.0"/>
             <param name="turn_integral_max" value="1.0"/>
 
-            <param name="max_linear_velocity" value="0.5"/>
-            <param name="max_angular_velocity" value="0.3"/>
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="0.25"/>
 
-			<param name="wpt_tolerance" value="0.05" />
-			<param name="wpt_target_distance" value="0.2" />
-			<param name="wpt_turn_start_at_heading_err" value="20.0" />
-			<param name="wpt_turn_stop_at_heading_err" value="1.0" />
-			<param name="wpt_linear_velocity" value="0.25" />
-			<param name="wpt_ramp_down_velocity_at_distance" value="0.05" />
-			<param name="wpt_ramp_down_minimum_velocity" value="0.05" />
+			<param name="wpt_default_mode" value="MCTE" />
+			<param name="wpt_default_tolerance" value="0.25" />
+			<param name="wpt_default_linear_velocity" value="0.6" />
+			<param name="wpt_default_angular_velocity" value="0.3" />
+			<param name="wpt_default_wait_after_arrival" value="5.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="wpt_target_distance" value="1.2" />
+			<param name="wpt_turn_start_at_heading_err" value="45.0" />
+			<param name="wpt_turn_stop_at_heading_err" value="2.0" />
+			<param name="wpt_ramp_down_velocity_at_distance" value="0.5" />
+			<param name="wpt_ramp_down_minimum_velocity" value="0.10" />
 		</node>		
 	</group>
 
@@ -88,33 +93,19 @@
 	</group>
 
 	<group ns="fmLib">
+		<node pkg="sdu_surveying" name="plot_feedback" type="plot_propulsion_feedback_node.py" output="screen" >
+ 			<param name="propulsion_feedback_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="50" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="maximum_velocity" value="1.2" />
+			<param name="maximum_thrust" value="511" />
+		</node>
+
 		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py">
 			<param name="left_sub" value="/fmInformation/encoder_left" />
 			<param name="right_sub" value="/fmInformation/encoder_right" />
 			<param name="left_pub" value="/fmInformation/enc_left" />
 			<param name="right_pub" value="/fmInformation/enc_right" />
-		</node>
-
-		<!-- FroboScout interface node -->
-		<node pkg="cetus_froboscout" name="froboscout" type="froboscout_interface_node.py" output="screen" >
-    		<param name="deadman_sub" value="/fmCommand/deadman" />
-			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
-			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
-			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
-			<param name="wheel_left_sub" value="/fmData/wheel_left_nmea_in" />	 
-			<param name="wheel_left_pub" value="/fmSignal/wheel_left_nmea_out" /> 
-			<param name="wheel_right_sub" value="/fmData/wheel_right_nmea_in" />	 
-			<param name="wheel_right_pub" value="/fmSignal/wheel_right_nmea_out" /> 
-			<param name="wheel_left_kp" value="5.0" /> 
-			<param name="wheel_left_ki" value="2.0" /> 
-			<param name="wheel_left_kd" value="2.0" /> 
-			<param name="wheel_right_kp" value="5.0" /> 
-			<param name="wheel_right_ki" value="2.0" /> 
-			<param name="wheel_right_kd" value="2.0" /> 
-		</node>
-
-	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
-			<param name="keyboard_pub" value="/fmHMI/keyboard" />
 		</node>
 
 		<!-- nmea protocol handler for the FroboScout left wheel module -->
@@ -150,6 +141,35 @@
 			<param name="baudrate" value="57600" />
 			<param name="termination_character" value="10"/>
 		</node> 
+
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
+		<!-- FroboScout interface node -->
+		<node pkg="cetus_froboscout" name="froboscout" type="froboscout_interface_node.py" output="screen" >
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
+			<param name="wheel_left_sub" value="/fmData/wheel_left_nmea_in" />	 
+			<param name="wheel_left_pub" value="/fmSignal/wheel_left_nmea_out" /> 
+			<param name="wheel_right_sub" value="/fmData/wheel_right_nmea_in" />	 
+			<param name="wheel_right_pub" value="/fmSignal/wheel_right_nmea_out" /> 
+            <param name="max_linear_acceleration" value="3.0"/>
+            <param name="max_angular_acceleration" value="6.0"/>
+			<param name="wheel_left_kp" value="9" /> 
+			<param name="wheel_left_ki" value="15" /> 
+			<param name="wheel_left_kd" value="2" /> 
+			<param name="wheel_left_max_integral_output" value="50.0" /> 
+			<param name="wheel_right_kp" value="9" /> 
+			<param name="wheel_right_ki" value="15" /> 
+			<param name="wheel_right_kd" value="2" /> 
+			<param name="wheel_right_max_integral_output" value="50.0" /> 
+			<param name="publish_wheel_feedback" value="true" />
+		</node>
 
 		<!-- serial communication with the IMU -->
 		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">

@@ -13,10 +13,12 @@
 			<param name="plot_gnss_track" value="false" />
 			<param name="plot_odometry_track" value="false" />
 			<param name="plot_pose_yaw" value="false" />
-			<param name="easting_offset" value="-588787.7447" />
-			<param name="northing_offset" value="-6137275.3330" />
+			<!-- param name="easting_offset" value="-588787.7447" />
+			<param name="northing_offset" value="-6137275.3330" /-->
+			<param name="easting_offset" value="0.0" />
+			<param name="northing_offset" value="0.0" />
 			<param name="trackpoint_threshold" value="0.02" />
-			<param name="map_update_frequency" value="10.0" />
+			<param name="map_update_frequency" value="20.0" />
 			<param name="map_title" value="Robot track" />
 			<param name="map_window_size" value="6.0" />
 		</node>

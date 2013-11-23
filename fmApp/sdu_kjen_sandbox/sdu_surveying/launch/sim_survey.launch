@@ -24,7 +24,7 @@ This launch file simulates a SMR navigating a waypoint list.
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_surveying" name="mission" type="keyboard_mission.py" output="screen">
+		<!--node pkg="sdu_surveying" name="mission" type="keyboard_mission.py" output="screen">
 			<param name="keyboard_sub" value="/fmHMI/keyboard" />
 			<param name="automode_pub" value="/fmDecision/automode" />
     		<param name="deadman_pub" value="/fmCommand/deadman" />
@@ -33,18 +33,29 @@ This launch file simulates a SMR navigating a waypoint list.
             <param name="max_angular_velocity" value="0.4"/>
             <param name="linear_velocity_step" value="0.1"/>
             <param name="angular_velocity_step" value="0.1"/>
-			<param name="status_topic" value="/fmData/state"/>
+		</node-->
+
+		<node pkg="sdu_surveying" name="mission" type="wiimote_mission.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="1.1"/>
+            <param name="max_angular_velocity" value="0.6"/>
+            <param name="max_linear_acceleration" value="1.0"/>
+            <param name="max_angular_acceleration" value="0.6"/>
 		</node>
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="sdu_surveying" type="waypoint_navigation_node.py" name="waypoint_navigation" output="screen">
+		<node pkg="sdu_surveying" type="waypoint_navigation_node.py" name="wptnav" output="screen">
 			<param name="automode_sub" value="/fmDecision/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
-			<param name="status_publish_interval" value="2" />
+			<param name="status_publish_interval" value="10" />
 			<param name="print_debug_information" value="true" />
 
             <param name="drive_kp" value="2.0"/>
@@ -57,14 +68,19 @@ This launch file simulates a SMR navigating a waypoint list.
             <param name="turn_kd" value="0.0"/>
             <param name="turn_integral_max" value="1.0"/>
 
-            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_linear_velocity" value="3.0"/>
             <param name="max_angular_velocity" value="0.4"/>
 
-			<param name="wpt_tolerance" value="0.5" />
+			<param name="wpt_default_mode" value="MCTE" />
+			<param name="wpt_default_tolerance" value="0.5" />
+			<param name="wpt_default_linear_velocity" value="0.5" />
+			<param name="wpt_default_angular_velocity" value="0.3" />
+			<param name="wpt_default_wait_after_arrival" value="0.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
 			<param name="wpt_target_distance" value="0.5" />
 			<param name="wpt_turn_start_at_heading_err" value="20.0" />
 			<param name="wpt_turn_stop_at_heading_err" value="1.0" />
-			<param name="wpt_linear_velocity" value="0.5" />
 			<param name="wpt_ramp_down_velocity_at_distance" value="0.3" />
 			<param name="wpt_ramp_down_minimum_velocity" value="0.05" />
 		</node>		

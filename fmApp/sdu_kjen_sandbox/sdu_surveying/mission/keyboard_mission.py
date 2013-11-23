@@ -110,7 +110,9 @@ class mission_node():
 		if self.esc_key == False:
 			if msg.data == self.KEY_ESC: # the following key will be a secondary key
 				self.esc_key = True
-			elif msg.data == self.KEY_SPACE: # disable actuation 
+			elif msg.data == self.KEY_SPACE: # disable actuation
+				self.vel_lin = 0.0
+				self.vel_ang = 0.0	 
 				if self.deadman_state == True:
 					rospy.logwarn(rospy.get_name() + ": Disabling actuation")
 					self.deadman_state = False

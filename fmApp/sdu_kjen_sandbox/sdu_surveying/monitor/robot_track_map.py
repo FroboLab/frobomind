@@ -30,16 +30,18 @@
 Revision
 2013-08-14 KJ First version
 2013-09-23 KJ Corrected a bug wen only plotting the pose position
+2013-11-22 KJ Added support for drawing robot avatars
 """
 # imports
 import matplotlib.pyplot as plt
 from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw, clf
-from math import pi, sqrt
+from math import pi, sqrt, sin, cos
 import csv
 
 class track_map():
 	def __init__(self, plot_pose, plot_gnss, plot_odometry, plot_yaw, map_title, map_window_size, easting_offset, northing_offset):
 		self.rad_to_deg = 180.0/pi
+		self.deg_to_rad = pi/180.0
         # Get parameters
 		self.plot_pose = plot_pose
 		self.plot_gnss = plot_gnss
@@ -67,6 +69,9 @@ class track_map():
 		self.wpt_target = False
 		self.wpt_list = []
 		self.wpt_first = True
+		#self.robot_avatar = [[-0.4,-0.25],[-0.4,0.25],[0.4,0.0],[-0.4,-0.25]] # Arrow
+		self.robot_avatar = [[-0.505,-0.315],[-0.505,0.315],[0.195,0.315],[0.195,-0.315],[-0.505,-0.315],[-0.505,-0.19],[0.195,-0.19],[0.195,0.19],[-0.505,0.19]] # FroboScout
+
 
 		ion() # turn interaction mode on
 		if self.plot_gnss or self.plot_pose:
@@ -89,6 +94,11 @@ class track_map():
 			xlabel('time')
 			ylabel('[deg]')
 			grid (True)
+
+	def vec2d_rot (self, v, theta): # return the vector v rotated by theta
+		rot_x = v[0]*cos(theta) - v[1]*sin(theta)
+		rot_y = v[0]*sin(theta) + v[1]*cos(theta)
+		return ([rot_x, rot_y])
 
 	def append_pose_position (self, easting, northing):
 		x = easting + self.offset_e
@@ -156,6 +166,20 @@ class track_map():
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'r')
 		if self.plot_pose or self.plot_gnss:
+ 
+			if self.pose_yaw != [] and self.pose_pos != []:
+				yaw = self.pose_yaw[-1]*self.deg_to_rad
+				east = self.pose_pos[-1][0]
+				north = self.pose_pos[-1][1]
+
+				# define avatar plot
+				avatar_plot = []
+				for i in xrange(len(self.robot_avatar)):
+					c = self.vec2d_rot (self.robot_avatar[i],yaw)
+					avatar_plot.append([c[0]+east,c[1]+north])
+				avatar_plotT = zip(*avatar_plot)
+				ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'b')
+
 			if self.wpt_mode == 1 or self.wpt_mode == 2:
 				if self.wpt_mode > 0 and self.wpt_b != False:
 					a_plt = plot(self.wpt_a[0],self.wpt_a[1],'go',markersize=6)

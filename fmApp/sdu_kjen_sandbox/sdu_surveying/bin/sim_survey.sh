@@ -1,8 +1,7 @@
 #!/bin/sh
 
 # parameters
-WPTLIST='waypoints_sdu_s.txt'
-#WPTLIST='square_2m.txt'
+WPTLIST='square_2m.txt'
 
 # change dir to the location of the shell script
 APPDIR=`dirname $(readlink -f $0)`
@@ -12,4 +11,4 @@ cd $APPDIR
 cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
 
 # launch the ROS node
-roslaunch ../launch/wptnav.launch
+roslaunch ../launch/sim_survey.launch
