@@ -33,10 +33,11 @@
 
 # imports
 import rospy
-from msgs.msg import nmea, IntStamped, PropulsionModuleFeedback
+from msgs.msg import nmea, IntStamped, PropulsionModuleStatus, PropulsionModuleFeedback
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist, TwistStamped
 from differential_kinematics import differential_kinematics
+from time import sleep
 
 class FroboScoutInterfaceNode():
 	def __init__(self):
@@ -44,43 +45,61 @@ class FroboScoutInterfaceNode():
 		# defines
 		self.update_rate = 50 # set update frequency [Hz]
 		self.pid_update_interval = 20 # [ms]
-		self.WHEEL_STATE_ERR_NO_CONFIG = 3
+		self.w_STATE_ERR_NO_CONFIG = 3
+		self.count = 0
 
 		# locally defined parameters
 		self.deadman_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
+		self.w_tout_duration = 0.2 # [s]
 
 		# get parameters
-		self.wheel_dist = rospy.get_param("/diff_steer_wheel_distance",'1.0') # [m]
-		self.ticks_per_meter_left = rospy.get_param("/ticks_per_meter_left",'1000')
-		self.ticks_per_meter_right = rospy.get_param("/ticks_per_meter_right",'1000')
+		self.w_dist = rospy.get_param("/diff_steer_wheel_distance", 1.0) # [m]
+		self.ticks_per_meter_left = rospy.get_param("/ticks_per_meter_left", 1000)
+		self.ticks_per_meter_right = rospy.get_param("/ticks_per_meter_right", 1000)
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 0.1) # [rad/s^2]
 		self.acc_lin_max_step = acc_lin_max/(self.update_rate * 1.0)		
 		self.acc_ang_max_step = acc_ang_max/(self.update_rate * 1.0)		
-		self.wl_kp = rospy.get_param("~wheel_left_kp",'1.0')
-		self.wl_ki = rospy.get_param("~wheel_left_ki",'0.0')
-		self.wl_kd = rospy.get_param("~wheel_left_kd",'0.0')
-		self.wl_max_integral_output = rospy.get_param("~wheel_left_max_integral_output",'0.0')
-		self.wr_kp = rospy.get_param("~wheel_right_kp",'1.0')
-		self.wr_ki = rospy.get_param("~wheel_right_ki",'0.0')
-		self.wr_kd = rospy.get_param("~wheel_right_kd",'0.0')
-		self.wr_max_integral_output = rospy.get_param("~wheel_right_max_integral_output",'0.0')
-		self.publish_wheel_fb = rospy.get_param("~publish_wheel_feedback",'False')
-		#rospy.loginfo (rospy.get_name() + ': Differential wheel distance %.2f' % self.wheel_dist)
+		self.wl_kp = rospy.get_param("~wheel_left_kp", 1.0)
+		self.wl_ki = rospy.get_param("~wheel_left_ki", 0.0)
+		self.wl_kd = rospy.get_param("~wheel_left_kd", 0.0)
+		self.wl_max_integral_output = rospy.get_param("~wheel_left_max_integral_output",0.0)
+		self.wr_kp = rospy.get_param("~wheel_right_kp", 1.0)
+		self.wr_ki = rospy.get_param("~wheel_right_ki", 0.0)
+		self.wr_kd = rospy.get_param("~wheel_right_kd", 0.0)
+		self.wr_max_integral_output = rospy.get_param("~wheel_right_max_integral_output", 0.0)
+		self.min_supply_voltage = rospy.get_param("~min_supply_voltage", 12.0)
+
+		pub_status_rate = rospy.get_param("~publish_wheel_status_rate", 5)
+		if pub_status_rate != 0:
+			self.pub_status_interval = int(self.update_rate/pub_status_rate)
+		else:
+			self.pub_status_interval = 0
+
+		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
+		if pub_fb_rate != 0:
+			self.pub_fb_interval = int(self.update_rate/pub_fb_rate)
+		else:
+			self.pub_fb_interval = 0
+
+		#rospy.loginfo (rospy.get_name() + ': Differential wheel distance %.2f' % self.w_dist)
 		#rospy.loginfo (rospy.get_name() + ': Ticks per meter left %d' % self.ticks_per_meter_left)
 		#rospy.loginfo (rospy.get_name() + ': Ticks per meter right %d' % self.ticks_per_meter_right)
 
 		# instantiate differntial kinemaics class
-		self.dk = differential_kinematics(self.wheel_dist)
+		self.dk = differential_kinematics(self.w_dist)
 
 		# get topic names
 		self.deadman_topic = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
 		self.cmd_vel_topic = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
 		self.enc_left_topic = rospy.get_param("~enc_left_pub",'/fmInformation/enc_left')
 		self.enc_right_topic = rospy.get_param("~enc_right_pub",'/fmInformation/enc_right')
-		self.wheel_fb_left_pub_topic = rospy.get_param("~wheel_feedback_left_pub",'/fmInformation/wheel_feedback_left')
-		self.wheel_fb_right_pub_topic = rospy.get_param("~wheel_feedback_right_pub",'/fmInformation/wheel_feedback_right')
+		self.w_fb_left_pub_topic = rospy.get_param("~wheel_feedback_left_pub",'/fmInformation/wheel_feedback_left')
+		self.w_fb_right_pub_topic = rospy.get_param("~wheel_feedback_right_pub",'/fmInformation/wheel_feedback_right')
+
+		self.w_stat_left_pub_topic = rospy.get_param("~wheel_status_left_pub",'/fmInformation/wheel_status_left')
+		self.w_stat_right_pub_topic = rospy.get_param("~wheel_status_right_pub",'/fmInformation/wheel_status_right')
 		self.wl_sub_topic = rospy.get_param("~wheel_left_sub",'/fmData/wheel_left_nmea_in')
 		self.wl_pub_topic = rospy.get_param("~wheel_left_pub",'/fmSignal/wheel_left_nmea_out')
 		self.wr_sub_topic = rospy.get_param("~wheel_right_sub",'/fmData/wheel_right_nmea_in')
@@ -107,32 +126,50 @@ class FroboScoutInterfaceNode():
 		self.intstamp = IntStamped()
 
 		# setup wheel status topic publisher
-		if self.publish_wheel_fb:
-			self.wl_fb_current = 0.0
-			self.wl_fb_volt = 0.0
+		if self.pub_status_interval > 0:
+			self.w_current_conv = 5.0/(1023.0*0.075) # according to simple-h controller datasheet
+			self.w_voltage_conv = 5.0*(1800.0 + 700.0)/(700.0*1023.0) #(voltage divider 1800/700)
+			#self.w_volt_poly_a = 8.516 # a,b,c are exp. determined (voltage divider 1800/700 with 4.7V zener)
+			#self.w_volt_poly_b = -1.935
+			#self.w_volt_poly_c = 0.8920
+			self.wl_stat_curr_adc = 0.0
+			self.wl_stat_volt_adc = 0.0
+			self.wl_stat_power = 0.0
+			self.wr_stat_curr_adc = 0.0
+			self.wr_stat_volt_adc = 0.0
+			self.wr_stat_power = 0.0
+			self.w_stat_left_pub = rospy.Publisher(self.w_stat_left_pub_topic, PropulsionModuleStatus)
+			self.w_stat_right_pub = rospy.Publisher(self.w_stat_right_pub_topic, PropulsionModuleStatus)
+			self.w_stat = PropulsionModuleStatus()
+
+		# setup wheel feedback topic publisher
+		if self.pub_fb_interval > 0:
 			self.wl_fb_vel = 0.0
 			self.wl_fb_vel_set = 0.0
 			self.wl_fb_thrust = 0.0
-			self.wr_fb_current = 0.0
-			self.wr_fb_volt = 0.0
 			self.wr_fb_vel = 0.0
 			self.wr_fb_vel_set = 0.0
 			self.wr_fb_thrust = 0.0
-			self.wheel_fb_left_pub = rospy.Publisher(self.wheel_fb_left_pub_topic, PropulsionModuleFeedback)
-			self.wheel_fb_right_pub = rospy.Publisher(self.wheel_fb_right_pub_topic, PropulsionModuleFeedback)
-			self.wheel_fb = PropulsionModuleFeedback()
+			self.w_fb_left_pub = rospy.Publisher(self.w_fb_left_pub_topic, PropulsionModuleFeedback)
+			self.w_fb_right_pub = rospy.Publisher(self.w_fb_right_pub_topic, PropulsionModuleFeedback)
+			self.w_fb = PropulsionModuleFeedback()
 
 		# setup subscription topic callbacks
 		self.deadman_tout = 0
 		rospy.Subscriber(self.deadman_topic, Bool, self.on_deadman_message)
 		self.cmd_vel_tout = 0
 		self.cmd_vel_tout_active = True
+		self.wl_tout = 0
+		self.wl_tout_active = True
+		self.wr_tout = 0
+		self.wr_tout_active = True
 		rospy.Subscriber(self.cmd_vel_topic, TwistStamped, self.on_cmd_vel_message)
 		rospy.Subscriber(self.wl_sub_topic, nmea, self.on_wheel_left_message)
 		rospy.Subscriber(self.wr_sub_topic, nmea, self.on_wheel_right_message)
 
 		# send parameters to wheel modules		
-		self.publish_wheel_parameter_message() #
+		self.publish_wheel_parameter_message()  SKAL SENDES SENERE?
+		self.publish_wheel_parameter_message() 
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -187,34 +224,48 @@ class FroboScoutInterfaceNode():
 	def on_wheel_left_message(self, msg):
 		if msg.valid == True:
 			if msg.type == 'PFSST': # state, ticks, current, voltage, velocity_set, velocity, thrust, p, i, d 
+				self.wl_tout = rospy.get_time() + self.w_tout_duration
+
 				self.wl_fb_state = int(msg.data[0])
 				self.enc_left += int(msg.data[1])
-				if self.publish_wheel_fb:
-					self.wl_fb_current = int(msg.data[2])
-					self.wl_fb_volt = int(msg.data[3])
+				if self.pub_fb_interval != 0:
 					self.wl_fb_vel_set = int(msg.data[4]) / (1.0*self.ticks_per_meter_left)
 					self.wl_fb_vel = int(msg.data[5]) / (1.0*self.ticks_per_meter_left)
 					self.wl_fb_thrust = int(msg.data[6])
-				if self.wl_fb_state == self.WHEEL_STATE_ERR_NO_CONFIG:
+				if self.pub_status_interval != 0:
+					self.wl_stat_curr_adc = int(msg.data[2])
+					self.wl_stat_volt_adc = int(msg.data[3])
+				if self.wl_fb_state == self.w_STATE_ERR_NO_CONFIG: # wheel module not configured since reset?
 					self.publish_wheel_parameter_message()
 			elif msg.type == 'PFSHI':
 				rospy.logwarn (rospy.get_name() + ': Left wheel module reset')
 
+			if self.wl_tout_active:
+				self.wl_tout_active = False
+				rospy.loginfo (rospy.get_name() + ': Receiving data from left wheel')
+
+
 	def on_wheel_right_message(self, msg):
 		if msg.valid == True:
 			if msg.type == 'PFSST':
+				self.wr_tout = rospy.get_time() + self.w_tout_duration
 				self.wr_fb_state = int(msg.data[0])
 				self.enc_right += int(msg.data[1])
-				if self.publish_wheel_fb:
-					self.wr_fb_current = int(msg.data[2])
-					self.wr_fb_volt = int(msg.data[3])
+				if self.pub_fb_interval != 0:
 					self.wr_fb_vel_set = int(msg.data[4]) / (1.0*self.ticks_per_meter_left)
 					self.wr_fb_vel = int(msg.data[5]) / (1.0*self.ticks_per_meter_left)
 					self.wr_fb_thrust = int(msg.data[6])
-				if self.wr_fb_state == self.WHEEL_STATE_ERR_NO_CONFIG:
+				if self.pub_status_interval != 0:
+					self.wr_stat_curr_adc = int(msg.data[2])
+					self.wr_stat_volt_adc = int(msg.data[3])
+				if self.wr_fb_state == self.w_STATE_ERR_NO_CONFIG: # wheel module not configured since reset?
 					self.publish_wheel_parameter_message()
 			elif msg.type == 'PFSHI':
 				rospy.logwarn (rospy.get_name() + ': Right wheel module reset')
+
+			if self.wr_tout_active:
+				self.wr_tout_active = False
+				rospy.loginfo (rospy.get_name() + ': Receiving data from right wheel')
 
 	def publish_enc_messages(self):
 		self.intstamp.header.stamp = rospy.Time.now()
@@ -226,23 +277,42 @@ class FroboScoutInterfaceNode():
 		self.enc_right_pub.publish (self.intstamp)
 
 	def publish_wheel_fb_messages(self):
-		self.wheel_fb.header.stamp = rospy.Time.now()
+		self.w_fb.header.stamp = rospy.Time.now()
 		#left wheel
-		self.wheel_fb.velocity = self.wl_fb_vel 
-		self.wheel_fb.velocity_setpoint = self.wl_fb_vel_set
-		self.wheel_fb.thrust = self.wl_fb_thrust
-		self.wheel_fb_left_pub.publish (self.wheel_fb)
+		self.w_fb.velocity = self.wl_fb_vel 
+		self.w_fb.velocity_setpoint = self.wl_fb_vel_set
+		self.w_fb.thrust = self.wl_fb_thrust
+		self.w_fb_left_pub.publish (self.w_fb)
 		# right wheel
-		self.wheel_fb.velocity = self.wr_fb_vel 
-		self.wheel_fb.velocity_setpoint = self.wr_fb_vel_set
-		self.wheel_fb.thrust = self.wr_fb_thrust
-		self.wheel_fb_right_pub.publish (self.wheel_fb)
+		self.w_fb.velocity = self.wr_fb_vel 
+		self.w_fb.velocity_setpoint = self.wr_fb_vel_set
+		self.w_fb.thrust = self.wr_fb_thrust
+		self.w_fb_right_pub.publish (self.w_fb)
+
+#	def convert_adc_to_volt(self, adc):
+#		v = adc*5.0/1023.0
+#		return self.w_volt_poly_a + self.w_volt_poly_b*v + self.w_volt_poly_c*(v**2) 
+
+	def publish_wheel_status_messages(self):
+		self.w_stat.header.stamp = rospy.Time.now()
+		#left wheel
+		#self.w_stat.voltage = self.convert_adc_to_volt(self.wl_stat_volt_adc)
+		self.w_stat.voltage = self.wl_stat_volt_adc*self.w_voltage_conv		
+		self.w_stat.current = self.wl_stat_curr_adc*self.w_current_conv 
+		self.w_stat.power =  self.w_stat.voltage*self.w_stat.current
+		self.w_stat_left_pub.publish (self.w_stat)
+		# right wheel
+		#self.w_stat.voltage = self.convert_adc_to_volt(self.wr_stat_volt_adc)
+		self.w_stat.voltage = self.wr_stat_volt_adc*self.w_voltage_conv		
+		self.w_stat.current = self.wr_stat_curr_adc*self.w_current_conv 
+		self.w_stat.power =  self.w_stat.voltage*self.w_stat.current
+		self.w_stat_right_pub.publish (self.w_stat)
 
 	def publish_wheel_ctrl_messages(self):
 		self.nmea.header.stamp = rospy.Time.now()
 		self.nmea.type = 'PFSCT'
 		self.nmea.length = 1
-		if self.deadman_tout > rospy.get_time():
+		if self.deadman_tout > rospy.get_time() and self.wl_tout_active == False and self.wr_tout_active == False:
 			self.nmea.data[0] = ('%d' % (self.ref_ticks_left + 0.5))
 			self.wl_pub.publish (self.nmea)
 			self.nmea.data[0] = ('%d' % (self.ref_ticks_right + 0.5))
@@ -253,6 +323,17 @@ class FroboScoutInterfaceNode():
 			self.wr_pub.publish (self.nmea)
 
 	def publish_wheel_parameter_message(self):
+		# configure minimum supply voltage
+		nmea_sys_par = nmea()
+		nmea_sys_par.header.stamp = rospy.Time.now()
+		nmea_sys_par.type = 'PFSSP'
+		nmea_sys_par.length = 1
+		nmea_sys_par.data.append('%d' % (self.min_supply_voltage/self.w_voltage_conv + 0.5)) 
+		self.wl_pub.publish (nmea_sys_par)
+		self.wr_pub.publish (nmea_sys_par)
+		#print self.min_supply_voltage, self.min_supply_voltage/self.w_voltage_conv, nmea_sys_par.data[0]
+
+		# configure PID parameters
 		nmea_pid = nmea()
 		nmea_pid.header.stamp = rospy.Time.now()
 		nmea_pid.type = 'PFSWP'
@@ -273,6 +354,7 @@ class FroboScoutInterfaceNode():
 		nmea_pid.data.append('%d' % self.wr_max_integral_output) # Maximum output (integrator anti-windup)
 		self.wr_pub.publish (nmea_pid)
 
+
 	def publish_wheel_parameter_open_loop_message(self):
 		nmea_pid = nmea()
 		nmea_pid.header.stamp = rospy.Time.now()
@@ -284,19 +366,38 @@ class FroboScoutInterfaceNode():
 
 	def updater(self):
 		while not rospy.is_shutdown():
+			self.count += 1
 			self.update_vel()
 			self.publish_wheel_ctrl_messages()
 			self.publish_enc_messages()
-			if self.publish_wheel_fb:
-				self.publish_wheel_fb_messages()
+
+			# wheel status
+			if self.pub_status_interval != 0:
+				if self.count % self.pub_status_interval == 0:
+					self.publish_wheel_status_messages()
 			
-			# check for cmd_vel timeout
+			# wheel feedback
+			if self.pub_fb_interval != 0:
+   				if self.count % self.pub_fb_interval == 0:
+					self.publish_wheel_fb_messages()
+
+			# check for timeouts
 			if self.cmd_vel_tout_active == False:
 				if rospy.get_time() > self.cmd_vel_tout:
 					self.cmd_vel_tout_active = True
 					self.vel_lin_desired = 0.0
 					self.vel_ang_desired = 0.0
 		 			rospy.logwarn (rospy.get_name() + ': cmd_vel timeout')
+
+			if self.wl_tout_active == False:
+				if rospy.get_time() > self.wl_tout:
+					self.wl_tout_active = True
+		 			rospy.logwarn (rospy.get_name() + ': Left wheel data timeout')
+
+			if self.wr_tout_active == False:
+				if rospy.get_time() > self.wr_tout:
+					self.wr_tout_active = True
+		 			rospy.logwarn (rospy.get_name() + ': Right wheel data timeout')
 
 			# go back to sleep
 			self.r.sleep()
