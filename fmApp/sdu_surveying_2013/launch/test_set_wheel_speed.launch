@@ -57,13 +57,26 @@
 			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
 			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
 			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_status_left_pub" value="/fmInformation/wheel_status_left" />
+			<param name="wheel_status_right_pub" value="/fmInformation/wheel_status_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
 			<param name="wheel_left_sub" value="/fmData/wheel_left_nmea_in" />	 
 			<param name="wheel_left_pub" value="/fmSignal/wheel_left_nmea_out" /> 
 			<param name="wheel_right_sub" value="/fmData/wheel_right_nmea_in" />	 
 			<param name="wheel_right_pub" value="/fmSignal/wheel_right_nmea_out" /> 
-			<param name="wheel_kp" value="5.0" /> 
-			<param name="wheel_ki" value="1.0" /> 
-			<param name="wheel_kd" value="2.0" /> 
+			<param name="publish_wheel_status_rate" value="5" />
+			<param name="publish_wheel_feedback_rate" value="50" />
+            <param name="max_linear_acceleration" value="3.0"/>
+            <param name="max_angular_acceleration" value="6.0"/>
+			<param name="wheel_left_kp" value="9" /> 
+			<param name="wheel_left_ki" value="15" /> 
+			<param name="wheel_left_kd" value="2" /> 
+			<param name="wheel_left_max_integral_output" value="50.0" /> 
+			<param name="wheel_right_kp" value="9" /> 
+			<param name="wheel_right_ki" value="15" /> 
+			<param name="wheel_right_kd" value="2" /> 
+			<param name="wheel_right_max_integral_output" value="50.0" /> 
 		</node>
 
 		<!-- nmea protocol handler for the FroboScout left wheel module -->

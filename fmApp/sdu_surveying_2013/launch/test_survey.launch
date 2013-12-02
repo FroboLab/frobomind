@@ -1,0 +1,83 @@
+<!-- FroboScout launch file -->
+
+<launch>
+	<!-- FroboScout parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.5"/>
+	<param name="ticks_per_meter_left" value="2627" />
+	<param name="ticks_per_meter_right" value="2627" />
+
+
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- nmea protocol handler for the FroboScout left wheel module -->
+		<node pkg="serial_nmea" name="left_wheel_nmea" type="nmea_node" output="screen" respawn="true">
+			<param name="str_to_msg_sub" value="/fmData/wheel_left_rx" />	 
+			<param name="str_to_msg_pub" value="/fmData/wheel_left_nmea_in" />	 
+			<param name="msg_to_str_sub" value="/fmSignal/wheel_left_nmea_out" /> 
+			<param name="msg_to_str_pub" value="/fmData/wheel_left_tx" />	 
+		</node> 
+
+		<!-- nmea protocol handler for the FroboScout right wheel module -->
+		<node pkg="serial_nmea" name="right_wheel_nmea" type="nmea_node" output="screen" respawn="true">
+			<param name="str_to_msg_sub" value="/fmData/wheel_right_rx" />	 
+			<param name="str_to_msg_pub" value="/fmData/wheel_right_nmea_in" />	 
+			<param name="msg_to_str_sub" value="/fmSignal/wheel_right_nmea_out" /> 
+			<param name="msg_to_str_pub" value="/fmData/wheel_right_tx" />	 
+		</node> 
+
+		<!-- serial communication with the FroboScout left wheel module -->
+		<node pkg="serial_string" name="left_wheel_ser" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/wheel_left_rx" />	 
+			<param name="subscriber_topic" value="/fmData/wheel_left_tx" />
+			<param name="device" value="/dev/ttyUSB0" />	
+			<param name="baudrate" value="57600" />
+			<param name="termination_character" value="10"/>
+		</node> 
+
+		<!-- FroboScout interface node -->
+		<node pkg="cetus_froboscout" name="froboscout" type="froboscout_interface_node.py" output="screen" >
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_status_left_pub" value="/fmInformation/wheel_status_left" />
+			<param name="wheel_status_right_pub" value="/fmInformation/wheel_status_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
+			<param name="wheel_left_sub" value="/fmData/wheel_left_nmea_in" />	 
+			<param name="wheel_left_pub" value="/fmSignal/wheel_left_nmea_out" /> 
+			<param name="wheel_right_sub" value="/fmData/wheel_right_nmea_in" />	 
+			<param name="wheel_right_pub" value="/fmSignal/wheel_right_nmea_out" /> 
+			<param name="publish_wheel_status_rate" value="10" />
+			<param name="publish_wheel_feedback_rate" value="50" />
+            <param name="max_linear_acceleration" value="1.8"/>
+            <param name="max_angular_acceleration" value="2.0"/>
+			<param name="wheel_left_kp" value="9" /> 
+			<param name="wheel_left_ki" value="15" /> 
+			<param name="wheel_left_kd" value="2" /> 
+			<param name="wheel_left_max_integral_output" value="50.0" /> 
+			<param name="wheel_right_kp" value="9" /> 
+			<param name="wheel_right_ki" value="15" /> 
+			<param name="wheel_right_kd" value="2" /> 
+			<param name="wheel_right_max_integral_output" value="50.0" /> 
+			<param name="min_supply_voltage" value="13.0" /> 
+		</node>
+
+
+	</group>
+</launch>
+
