@@ -167,10 +167,6 @@ class FroboScoutInterfaceNode():
 		rospy.Subscriber(self.wl_sub_topic, nmea, self.on_wheel_left_message)
 		rospy.Subscriber(self.wr_sub_topic, nmea, self.on_wheel_right_message)
 
-		# send parameters to wheel modules		
-		self.publish_wheel_parameter_message()  SKAL SENDES SENERE?
-		self.publish_wheel_parameter_message() 
-
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
 		self.updater()
@@ -243,7 +239,7 @@ class FroboScoutInterfaceNode():
 			if self.wl_tout_active:
 				self.wl_tout_active = False
 				rospy.loginfo (rospy.get_name() + ': Receiving data from left wheel')
-
+				self.publish_wheel_parameter_message()
 
 	def on_wheel_right_message(self, msg):
 		if msg.valid == True:
@@ -266,6 +262,7 @@ class FroboScoutInterfaceNode():
 			if self.wr_tout_active:
 				self.wr_tout_active = False
 				rospy.loginfo (rospy.get_name() + ': Receiving data from right wheel')
+				self.publish_wheel_parameter_message()
 
 	def publish_enc_messages(self):
 		self.intstamp.header.stamp = rospy.Time.now()
