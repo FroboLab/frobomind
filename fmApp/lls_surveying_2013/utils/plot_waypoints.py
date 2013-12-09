@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# KP2000 to UTM projection conversion
+# Plot a list of waypoints
 # Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,38 +27,19 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 """
-This file contains a Python script to convert coordinates in a file between
-KP2000, UTM32 and latitude/longitude.
+This file contains a Python script to plot a list of waypoints represented by
+transverse mercator coordinates.
 
 Revision
-2013-12-04 KJ First version
+2013-12-09 KJ First version
 """
-# import kp2000conv class
-from transverse_mercator import tranmerc
-from kp2000 import kp2000conv
-from math import pi, cos
+# imports
 from sys import argv
+#import matplotlib.pyplot as plt
+from pylab import plot, subplot, axis, grid, title, xlabel, ylabel, xlim, ylim, draw, show, ion
 
 # general defines
-deg_to_rad = pi/180.0
-# WGS-84 defines
-wgs84_a = 6378137.0 # WGS84 semi-major axis of ellipsoid [m]
-wgs84_f = 1/298.257223563 # WGS84 flattening of ellipsoid
-# UTM defines
-utm_false_easting = 500000.0
-utm_scale_factor = 0.9996
-utm_origin_latitude = 0.0 * deg_to_rad
-# UTM32 defines
-utm32_central_meridian = 9.0 * deg_to_rad
-utm32_false_northing = 0.0 * deg_to_rad
-
-
-# instantiate kp2000conv class
-kp = kp2000conv()
-
-# setup utm32 conversion
-tm = tranmerc()
-
+plot_canvas = 2.0
 
 def load_from_csv (filename):
 	print 'Loading waypoints from: %s' % filename
@@ -79,60 +60,53 @@ def load_from_csv (filename):
 	print '  Total %d waypoints loaded.' % wpt_num
 	return wpts
 
-def save_to_csv(filename):
-	f = open(filename, 'w')
-		for i in xrange(len(
 
 argc = len(argv)
-if argc != 4:
-	print 'Usage: tranmerc_convert.py conversion infile outfile'
-	print 'Conversion: ll_utm32
+if argc != 2:
+	print 'Usage: plot_waypoints.py infile'
 else:
-	conv =  argv[1:][0]
-	inf =  argv[1:][1]
-	outf =  argv[1:][2]
+	inf =  argv[1:][0]
 
-	in_wpts = load_from_csv(inf)
-	out_wpts = []
+	w = load_from_csv(inf)
+	
+	if len(w) > 0:
+		offset_e = w[0][0]
+		offset_n = w[0][1]
 
-	if conv == 'll_utm32':
-		print 'Convertion from geographical coordinates to UTM32...'
-		tm.set_params (wgs84_a, wgs84_f, utm_origin_latitude, \
-    		utm32_central_meridian, utm_false_easting, utm32_false_northing, utm_scale_factor)
-		for i in xrange(len(in_wpts)):
-			(e, n) = tm.geodetic_to_tranmerc (in_wpts[i][1]*deg_to_rad, in_wpts[i][2]*deg_to_rad)
-			out_wpts.append ([e,n])
+	min_e = 10000000000000000
+	min_n = 10000000000000000
+	max_e = -10000000000000000
+	max_n = -10000000000000000
 
+	relw = []
+	for i in xrange(len(w)):
+		rel_e = w[i][0]-offset_e
+		if rel_e < min_e:
+			min_e = rel_e
+		elif rel_e > max_e:
+			max_e = rel_e
+		rel_n = w[i][1]-offset_n
+		if rel_n < min_n:
+			min_n = rel_n
+		elif rel_n > max_n:
+			max_n = rel_n		
+		relw.append([rel_e, rel_n])
 
-
-	save_to_csv(out_wpts)
-	print 'Quit'
-
-
-
-
-
-
-
-# convert from geodetic to KP2000
-(easting, northing) = kp.geodetic_to_kp2000 (test_lat, test_lon, kp.kp2000j)
-print '\nConverted from geodetic to KP2000 [m]'
-print '  %.5fe %.5fn' % (easting, northing)
-
-# convert back from KP2000 to geodetic
-(lat, lon) = kp.kp2000_to_geodetic (easting, northing, kp.kp2000j)
-print '\nConverted back to geodetic [deg]:'
-print '  latitude:  %.10f'  % (lat)
-print '  longitude: %.10f'  % (lon)
-
-# detrmine conversion position error [m]
-lat_err = abs(lat-test_lat)
-lon_err = abs(lon-test_lon)
-earth_radius = 6378137.0 # [m]
-lat_pos_err = lat_err/360.0 * 2*pi*earth_radius
-lon_pos_err = lon_err/360.0 * 2*pi*(cos(lat)*earth_radius)
-print '\nPositional error from the two conversions [m]:'
-print '  latitude:  %.9f'  % (lat_pos_err)
-print '  longitude: %.9f'  % (lon_pos_err)
-
+	wT = zip(*relw)
+	print max_n  + plot_canvas
+	print 'Generating plot'	
+	ion()
+	wp, = plot(wT[0], wT[1], "ro")
+	wp, = plot(wT[0], wT[1], "r")
+	xlim([min_e - plot_canvas, max_e + plot_canvas])
+	ylim([min_n - plot_canvas, max_n + plot_canvas])
+	axis ('equal')					
+	xlabel('Easting')
+	ylabel('Northing')
+	grid (True)
+	title ('Waypoints')
+	show()	
+	print 'Offset: E%.0f, N%.0f' % (offset_e, offset_n) 
+	print 'Press Enter to quit'
+	raw_input() # wait for enter keypress 
 

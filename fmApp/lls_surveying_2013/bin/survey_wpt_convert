@@ -1,0 +1,7 @@
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+
+
+$APPDIR/../utils/convert_waypoints.py $1 $2 $3 $4
+

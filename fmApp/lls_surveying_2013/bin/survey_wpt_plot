@@ -1,0 +1,5 @@
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+
+$APPDIR/../utils/plot_waypoints.py $1
