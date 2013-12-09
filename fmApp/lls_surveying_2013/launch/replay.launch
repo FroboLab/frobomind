@@ -1,0 +1,63 @@
+<!-- FroboScout launch file -->
+
+<launch>
+	<!-- FroboScout parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.5"/>
+	<param name="ticks_per_meter_left" value="2627" />
+	<param name="ticks_per_meter_right" value="2627" />
+
+	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/ -->
+
+	<group ns="fmSensors">
+		<!-- show the imu yaw, pitch and roll -->
+		<node pkg="lls_surveying_2013" name="show_imu"  type="show_imu_node.py" output="screen">
+			<param name="imu_sub" value="/fmInformation/imu"/>
+			<param name="update_interval" value="0.5"/>
+		</node>
+	</group>
+
+	<group ns="fmProcessors">
+		<!-- plot maps of pose, gnss and odometry data -->
+			<!-- param name="easting_offset" value="-588787.7447" />
+			<param name="northing_offset" value="-6137275.3330" /-->
+		<node pkg="lls_surveying_2013" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="plot_pose_track" value="true" />
+			<param name="plot_gnss_track" value="false" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="easting_offset" value="0.0" />
+			<param name="northing_offset" value="0.0" />
+			<param name="trackpoint_threshold" value="0.02" />
+			<param name="map_update_frequency" value="20.0" />
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="6.0" />
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<!--group ns="fmExecutors">
+		<node pkg="lls_surveying_2013" name="show_navigation_status" type="show_navigation_status_node.py" output="screen" >
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+		</node>
+	</group-->
+
+	<group ns="fmControllers">
+		<!--node pkg="lls_surveying_2013" name="plot_feedback" type="plot_propulsion_feedback_node.py" output="screen" >
+ 			<param name="propulsion_feedback_sub" value="/fmInformation/wheel_feedback_right" />
+			<param name="update_frequency" value="20" />
+			<param name="plot_title" value="20" />
+			<param name="maximum_velocity" value="1.0" />
+			<param name="maximum_thrust" value="511" />
+		</node-->
+	</group>
+
+	<group ns="fmLib">
+	</group>
+</launch>
+

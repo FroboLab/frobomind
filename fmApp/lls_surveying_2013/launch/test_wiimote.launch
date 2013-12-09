@@ -1,0 +1,37 @@
+<!-- Wiimote mission test launch file -->
+
+<launch>
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="lls_surveying_2013" name="mission" type="wiimote_mission.py" output="screen">
+			<param name="wiimote_sub" value="/fmLib/joy" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="0.4"/>
+            <param name="max_linear_acceleration" value="1.0"/>
+            <param name="max_angular_acceleration" value="0.6"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- Wiimote interface -->
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" output="screen" respawn="true">
+			<param name="fixed_wiimote_address" value="00:1E:35:03:B8:81"/> <!-- Kjeld SDU -->
+			<!--param name="fixed_wiimote_address" value="00:1F:32:B3:A2:F3"/--> <!-- Kjeld -->
+		</node >		
+	</group>
+</launch>
+
