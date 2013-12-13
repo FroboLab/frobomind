@@ -39,6 +39,9 @@ from kp2000 import kp2000conv
 from math import pi, cos
 from sys import argv
 
+# parameters
+seperator = ','
+
 # general defines
 deg_to_rad = pi/180.0
 rad_to_deg = 180.0/pi
@@ -60,7 +63,7 @@ def load_from_csv (filename):
 	wpt_num = 0
 	for i in xrange(len(lines)): # for all lines
 		if len(lines[i]) > 0 and lines[i][0] != '#': # if not a comment or empty line
-			data = lines[i].split (',') # split into comma separated list
+			data = lines[i].split (seperator) # split into comma separated list
 			if len(data) >= 2 and data[0] != '' and data[1] != '':
 				wpt_num += 1
 				e = float (data[0])

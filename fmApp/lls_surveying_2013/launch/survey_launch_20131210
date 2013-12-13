@@ -81,26 +81,6 @@
 			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
 			<param name="odometry_angular_variance" value="0.00035" /> <!-- [rad/update] -->
 		</node>
-
-		<!-- plot maps of pose, gnss and odometry data -->
-			<!-- param name="easting_offset" value="-588787.7447" />
-			<param name="northing_offset" value="-6137275.3330" /-->
-		<node pkg="lls_surveying_2013" name="robot_track_map" type="robot_track_map_node.py" output="screen" >
-			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
-			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
-			<param name="plot_pose_track" value="true" />
-			<param name="plot_gnss_track" value="false" />
-			<param name="plot_odometry_track" value="false" />
-			<param name="plot_pose_yaw" value="false" />
-			<param name="easting_offset" value="0.0" />
-			<param name="northing_offset" value="0.0" />
-			<param name="trackpoint_threshold" value="0.02" />
-			<param name="map_update_frequency" value="20.0" />
-			<param name="map_title" value="Robot track" />
-			<param name="map_window_size" value="5.0" />
-		</node>
 	</group>
 
 	<group ns="fmDecisionMakers">
@@ -127,36 +107,77 @@
 			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
 			<param name="status_publish_interval" value="5" />
-			<param name="print_debug_information" value="true" />
+			<param name="print_debug_information" value="false" />
 
-            <param name="max_linear_velocity" value="1.2"/>
-            <param name="max_angular_velocity" value="0.70"/>
-
-            <param name="drive_kp" value="1.6"/>
+            <param name="drive_kp" value="1.35"/>
             <param name="drive_ki" value="0.1"/>
-            <param name="drive_kd" value="2.0"/>
-            <param name="drive_max_output" value="0.25"/>
+            <param name="drive_kd" value="0.5"/>
+            <param name="drive_integral_max" value="0.2"/>
 
             <param name="turn_kp" value="1.3"/>
             <param name="turn_ki" value="0.0"/>
             <param name="turn_kd" value="0.0"/>
-            <param name="turn_max_output" value="1.0"/>
+            <param name="turn_integral_max" value="0.5"/>
+
+            <param name="max_linear_velocity" value="1.2"/>
+            <param name="max_angular_velocity" value="0.70"/>
 
 			<param name="wpt_default_mode" value="MCTE" />
 			<param name="wpt_default_tolerance" value="0.30" />
-			<param name="wpt_default_drive_velocity" value="1.0" />
-			<param name="wpt_default_turn_velocity" value="0.7" />
-			<param name="wpt_default_wait_after_arrival" value="2.0" />
+			<param name="wpt_default_linear_velocity" value="1.0" />
+			<param name="wpt_default_angular_velocity" value="0.5" />
+			<param name="wpt_default_wait_after_arrival" value="1.0" />
 			<param name="wpt_default_implement_command" value="0.0" />
 
-			<param name="target_distance" value="1.0" />
-			<param name="turn_start_at_heading_err" value="45.0" />
-			<param name="turn_stop_at_heading_err" value="2.0" />
-			<param name="ramp_drive_velocity_at_distance" value="0.9" />
-			<param name="ramp_min_drive_velocity" value="0.15" />
-			<param name="ramp_turn_velocity_at_angle" value="30.0" />
-			<param name="ramp_min_turn_velocity" value="0.20" />
+			<param name="wpt_target_distance" value="0.6" />
+			<param name="wpt_turn_start_at_heading_err" value="45.0" />
+			<param name="wpt_turn_stop_at_heading_err" value="2.0" />
+			<param name="wpt_ramp_linear_velocity_at_distance" value="1.0" />
+			<param name="wpt_ramp_min_linear_velocity" value="0.15" />
+			<param name="wpt_ramp_angular_velocity_at_angle" value="20.0" />
+			<param name="wpt_ramp_min_angular_velocity" value="0.20" />
 		</node>		
+
+		<!-- setup der virker -->
+		<!--node pkg="lls_surveying_2013" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
+			<param name="status_pub" value="/fmData/wptnav_status" />
+			<param name="status_publish_interval" value="5" />
+			<param name="print_debug_information" value="false" />
+
+            <param name="drive_kp" value="1.35"/>
+            <param name="drive_ki" value="0.1"/>
+            <param name="drive_kd" value="0.5"/>
+            <param name="drive_integral_max" value="0.2"/>
+
+            <param name="turn_kp" value="1.3"/>
+            <param name="turn_ki" value="0.0"/>
+            <param name="turn_kd" value="0.0"/>
+            <param name="turn_integral_max" value="0.5"/>
+
+            <param name="max_linear_velocity" value="1.2"/>
+            <param name="max_angular_velocity" value="0.70"/>
+
+			<param name="wpt_default_mode" value="MCTE" />
+			<param name="wpt_default_tolerance" value="0.30" />
+			<param name="wpt_default_linear_velocity" value="1.0" />
+			<param name="wpt_default_angular_velocity" value="0.5" />
+			<param name="wpt_default_wait_after_arrival" value="1.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="wpt_target_distance" value="0.6" />
+			<param name="wpt_turn_start_at_heading_err" value="45.0" />
+			<param name="wpt_turn_stop_at_heading_err" value="2.0" />
+			<param name="wpt_ramp_linear_velocity_at_distance" value="1.0" />
+			<param name="wpt_ramp_min_linear_velocity" value="0.15" />
+			<param name="wpt_ramp_angular_velocity_at_angle" value="20.0" />
+			<param name="wpt_ramp_min_angular_velocity" value="0.20" />
+		</node-->		
+
 	</group>
 
 	<group ns="fmControllers">
@@ -204,7 +225,7 @@
 			<param name="wheel_right_ki" value="15" /> 
 			<param name="wheel_right_kd" value="2" /> 
 			<param name="wheel_right_max_integral_output" value="50.0" /> 
-			<param name="min_supply_voltage" value="12.0" /> 
+			<param name="min_supply_voltage" value="12.5" /> 
 		</node>
 
 		<!-- Wiimote interface -->

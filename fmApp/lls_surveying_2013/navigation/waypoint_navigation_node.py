@@ -63,8 +63,8 @@ class WptNavNode():
 		self.status = 0
 		self.wpt = False
 		self.prev_wpt = False
-		self.linear_speed = 0.0
-		self.angular_speed = 0.0
+		self.linear_vel = 0.0
+		self.angular_vel = 0.0
 		self.pos = False
 		self.bearing = False
 
@@ -114,30 +114,30 @@ class WptNavNode():
 		drive_kp = rospy.get_param("~drive_kp", 1.0)
 		drive_ki = rospy.get_param("~drive_ki", 0.0)
 		drive_kd = rospy.get_param("~drive_kd", 0.0)
-		drive_integral_max = rospy.get_param("~drive_integral_max", 1.0)
+		drive_max_output = rospy.get_param("~drive_max_output", 0.3)
 		turn_kp = rospy.get_param("~turn_kp", 1.0)
 		turn_ki = rospy.get_param("~turn_ki", 0.0)
 		turn_kd = rospy.get_param("~turn_kd", 0.0)
-		turn_integral_max = rospy.get_param("~turn_integral_max", 1.0)
+		turn_max_output = rospy.get_param("~turn_max_output", 0.5)
 
-		max_linear_velocity = rospy.get_param("~max_linear_velocity", 0.4)
-		max_angular_velocity = rospy.get_param("~max_angular_velocity", 0.4)
+		max_linear_vel = rospy.get_param("~max_linear_velocity", 0.4)
+		max_angular_vel = rospy.get_param("~max_angular_velocity", 0.4)
 
 		self.wpt_def_tolerance = rospy.get_param("~wpt_default_tolerance", 0.5)
-		self.wpt_def_linear_velocity = rospy.get_param("~wpt_default_linear_velocity", 0.5)
-		self.wpt_def_angular_velocity = rospy.get_param("~wpt_default_angular_velocity", 0.3)
+		self.wpt_def_drive_vel = rospy.get_param("~wpt_default_drive_velocity", 0.5)
+		self.wpt_def_turn_vel = rospy.get_param("~wpt_default_turn_velocity", 0.3)
 		self.wpt_def_wait_after_arrival = rospy.get_param("~wpt_default_wait_after_arrival", 0.0)
 		self.wpt_def_implement = rospy.get_param("~wpt_default_implement_command", 0.0)
 
-		wpt_target_distance = rospy.get_param("~wpt_target_distance", 1.0)
-		wpt_turn_start_at_heading_err = rospy.get_param("~wpt_turn_start_at_heading_err", 20.0)
-		wpt_turn_stop_at_heading_err = rospy.get_param("~wpt_turn_stop_at_heading_err", 1.0)
-		wpt_ramp_linear_vel_at_dist = rospy.get_param("~wpt_ramp_linear_velocity_at_distance", 1.0)
-		wpt_ramp_min_linear_vel = rospy.get_param("~wpt_ramp_min_linear_velocity", 0.1)
-		wpt_ramp_angular_vel_at_angle = rospy.get_param("~wpt_ramp_angular_velocity_at_angle", 25.0)
-		wpt_ramp_min_angular_vel = rospy.get_param("~wpt_ramp_min_angular_velocity", 0.05)
+		target_distance = rospy.get_param("~target_distance", 1.0)
+		turn_start_at_heading_err = rospy.get_param("~turn_start_at_heading_err", 20.0)
+		turn_stop_at_heading_err = rospy.get_param("~turn_stop_at_heading_err", 1.0)
+		ramp_drive_vel_at_dist = rospy.get_param("~ramp_drive_velocity_at_distance", 1.0)
+		ramp_min_drive_vel = rospy.get_param("~ramp_min_drive_velocity", 0.1)
+		ramp_turn_vel_at_angle = rospy.get_param("~ramp_turn_velocity_at_angle", 25.0)
+		ramp_min_turn_vel = rospy.get_param("~ramp_min_turn_velocity", 0.05)
 
-		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_integral_max, turn_kp, turn_ki, turn_kd, turn_integral_max, max_linear_velocity, max_angular_velocity, self.wpt_def_tolerance, self.wpt_def_linear_velocity, self.wpt_def_angular_velocity, wpt_target_distance, wpt_turn_start_at_heading_err, wpt_turn_stop_at_heading_err, wpt_ramp_linear_vel_at_dist, wpt_ramp_min_linear_vel, wpt_ramp_angular_vel_at_angle, wpt_ramp_min_angular_vel, self.debug)
+		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_max_output, turn_kp, turn_ki, turn_kd, turn_max_output, max_linear_vel, max_angular_vel, self.wpt_def_tolerance, self.wpt_def_drive_vel, self.wpt_def_turn_vel, target_distance, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, self.debug)
 
 		self.wptlist = waypoint_list()
 		self.wptlist_loaded = False
@@ -235,8 +235,8 @@ class WptNavNode():
 	
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
-		self.twist.twist.linear.x = self.linear_speed
-		self.twist.twist.angular.z = self.angular_speed		
+		self.twist.twist.linear.x = self.linear_vel
+		self.twist.twist.angular.z = self.angular_vel		
 		self.cmd_vel_pub.publish (self.twist)
 
 	def publish_implement_message(self):
@@ -277,8 +277,8 @@ class WptNavNode():
 				self.wptnav_status.target_distance = 0.0
 				self.wptnav_status.target_bearing = 0.0
 				self.wptnav_status.target_heading_err = 0.0
-			self.wptnav_status.linear_speed = self.wptnav.linear_speed
-			self.wptnav_status.angular_speed = self.wptnav.angular_speed
+			self.wptnav_status.linear_speed = self.wptnav.linear_vel
+			self.wptnav_status.angular_speed = self.wptnav.angular_vel
 		else:
 			self.wptnav_status.mode = -1			
 		self.wptnav_status_pub.publish (self.wptnav_status)
@@ -303,7 +303,7 @@ class WptNavNode():
 				self.goto_previous_wpt()
 
 			if self.state == self.STATE_NAVIGATE:
-				(self.status, self.linear_speed, self.angular_speed) = self.wptnav.update(rospy.get_time())
+				(self.status, self.linear_vel, self.angular_vel) = self.wptnav.update(rospy.get_time())
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
 					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint: %s" % (self.wpt[self.wptnav.W_ID]))
 
@@ -330,8 +330,8 @@ class WptNavNode():
 					self.state = self.STATE_NAVIGATE 		
 					self.goto_next_wpt()
 				else:				
-					self.linear_speed = 0.0
-					self.angular_speed = 0.0
+					self.linear_vel = 0.0
+					self.angular_vel = 0.0
 					self.publish_cmd_vel_message()
 					self.publish_implement_message()
 

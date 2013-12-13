@@ -28,6 +28,7 @@
 #****************************************************************************/
 """
 2013-06-08 KJ First version
+2013-12-12 KJ Changed integral_max to max_output
 """
 
 class pid_controller():
@@ -40,13 +41,13 @@ class pid_controller():
 		self.Kp = 0.0
 		self.Ki = 0.0
 		self.Kd = 0.0
-		self.integral_max = 0.0
+		self.max_output = 0.0
 
-	def set_parameters (self, Kp, Ki, Kd, integral_max):
+	def set_parameters (self, Kp, Ki, Kd, max_output):
 		self.Kp = Kp
 		self.Ki = Ki
 		self.Kd = Kd
-		self.integral_max = integral_max
+		self.max_output = max_output
 
 	def reset(self):
 		self.error_prev = 0.0
@@ -55,13 +56,17 @@ class pid_controller():
 	def update(self, error):
 		# integration
 		self.integral += error * self.dT # integrate error over time
-		if self.integral > self.integral_max: # keep integral element within max
-			self.integral = self.integral_max
 
 		# derivation
 		self.derivative = (error - self.error_prev)/self.dT # error change
 
 		self.output = self.Kp*error + self.Ki*self.integral + self.Kd*self.derivative
+
+		if self.output > self.max_output: # keep output element within +/- max
+			self.output = self.max_output
+		elif self.output < -self.max_output:
+			self.output = -self.max_output
+
 		self.error_prev  = error # save err for next iteration
 		return self.output
 

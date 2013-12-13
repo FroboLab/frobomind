@@ -42,7 +42,10 @@ from math import pi
 
 class mission_node():
 	def __init__(self):
+		# fixed parameters
 		self.update_rate = 20 # [Hz]
+		self.vel_lin_user_max = 0.5
+		self.vel_ang_user_max = 0.3
 
 		# robot state
 		self.STATE_AUTO = 0
@@ -80,8 +83,6 @@ class mission_node():
 		# read parameters
 		self.vel_lin_max = rospy.get_param("~max_linear_velocity", 1.0) # [m/s]
 		self.vel_ang_max = rospy.get_param("~max_angular_velocity", 0.5) # [rad/s]
-		self.vel_lin_user_max = self.vel_lin_max/2.0 # startup velocity is 50% of max velocity
-		self.vel_ang_user_max = self.vel_ang_max/2.0
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 2.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", pi) # [rad/s^2]
 		self.acc_lin_max_step = acc_lin_max/(self.update_rate * 1.0)		
