@@ -126,7 +126,7 @@
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
 			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
-			<param name="status_publish_interval" value="5" />
+			<param name="status_publish_interval" value="1" />
 			<param name="print_debug_information" value="true" />
 
             <param name="max_linear_velocity" value="1.2"/>

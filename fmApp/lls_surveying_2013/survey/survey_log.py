@@ -37,7 +37,8 @@ Revision
 import rospy
 from msgs.msg import waypoint_navigation_status, gpgga_tranmerc
 from sensor_msgs.msg import Imu, LaserScan
-from math import pi, asin, atan2
+from geometry_msgs.msg import TwistStamped
+from math import pi, asin, atan2, sqrt
 
 import numpy as np
 
@@ -58,13 +59,16 @@ class log_node():
 		self.rad_to_deg = 180.0/pi
 
 		# static parameters
+		self.debug = True
 		self.update_rate = 20 # [Hz]
 		self.wait_before_log = 1.0 # [s]
 		self.wait_timeout = 0.0
+		self.log_file = 'survey.txt'
 
 		# robot state
 		self.STATE_IDLE = 0
-		self.STATE_LOG = 1
+		self.STATE_WAIT = 1 # wait until standing still
+		self.STATE_LOG = 2
 		self.state = self.STATE_IDLE
 
 		# read parameters
@@ -79,6 +83,8 @@ class log_node():
 		# init variables
 		self.vel_lin = 1.0
 		self.vel_ang = 1.0
+		self.b = [0.0, 0.0]
+		self.init_log ('#seconds,easting,northing,altitude,dist_to_wpt,pitch,roll,yaw\n')
 
 		# lidar
 		self.laser = []
@@ -91,38 +97,50 @@ class log_node():
 		rospy.Subscriber(gnss_topic, gpgga_tranmerc, self.on_gnss_topic)
 		rospy.Subscriber(laser_topic, LaserScan, self.on_laser_topic)
 
-		# sall updater function
+		# call updater function
 		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
-	def on_cmd_vel_status_topic(self, msg):
-		self.vel_lin = msg.twist.linear.x
-		self.vel_ang = msg.twist.angular.z
+	def on_cmd_vel_topic(self, msg):
+		if self.state == self.STATE_LOG:
+			self.vel_lin = msg.twist.linear.x
+			self.vel_ang = msg.twist.angular.z
+
+			if self.vel_lin != 0 or self.vel_ang != 0:
+				self.end_log()
+				if self.debug:
+					print '%.3f Survey stop due to velocity command: lin %.2f angular %.2f' % (rospy.get_time(), self.vel_lin, self.vel_ang)
 
 	def on_wptnav_status_topic(self, msg):
+		msg_b = [msg.b_easting, msg.b_northing]
+		if msg_b != self.b:
+			self.b = msg_b
+
 		wptnav_wait = (msg.state == 2)
 		if wptnav_wait == True and self.state == self.STATE_IDLE:
-			self.begin_log()
+			self.begin_wait()
 		elif wptnav_wait == False and self.state == self.STATE_LOG:
 			self.end_log()				
 
 	def on_imu_topic(self, msg):
-		# extract yaw, pitch and roll from the quaternion
-		qx = msg.orientation.x
-		qy = msg.orientation.y
-		qz = msg.orientation.z
-		qw = msg.orientation.w
-		sqx = qx**2
-		sqy = qy**2
-		sqz = qz**2
-		sqw = qw**2
-		yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
-		pitch = asin((2*qy*qw) - (2*qx*qz))
-		roll = atan2((2*qy*qz) + (2*qx*qw), sqw + sqz - sqy - sqx)
-		#print pitch*self.rad_to_deg, roll*self.rad_to_deg
+		if self.state == self.STATE_LOG:
+			# extract yaw, pitch and roll from the quaternion
+			qx = msg.orientation.x
+			qy = msg.orientation.y
+			qz = msg.orientation.z
+			qw = msg.orientation.w
+			sqx = qx**2
+			sqy = qy**2
+			sqz = qz**2
+			sqw = qw**2
+			yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
+			pitch = asin((2*qy*qw) - (2*qx*qz))
+			roll = atan2((2*qy*qz) + (2*qx*qw), sqw + sqz - sqy - sqx)
+			self.imu.append([pitch, roll])
 
 	def on_gnss_topic(self, msg):
-		pass
+		if self.state == self.STATE_LOG:
+			self.gnss.append([msg.easting, msg.northing, msg.alt])
 
 	def on_laser_topic(self, msg):
 		self.laser = []
@@ -133,29 +151,84 @@ class log_node():
 			theta += msg.angle_increment
 		coeff = self.lsq.fit(self.laser) # determine coefficients for approximated line
 		distance = coeff[1] # x=0 is supposed to be right under the antenna
+
+	def begin_wait (self):
+		self.wait_timeout = rospy.get_time() + self.wait_before_log
+		if self.debug:
+			print '%.3f Survey wait until %.3f' % (rospy.get_time(),  self.wait_timeout)
+		self.state = self.STATE_WAIT
 	
 	def begin_log (self):
-		print 'begin log'
 		self.gnss = []
 		self.imu =[]
 		self.laser = [] 
-		self.wait_timeout = rospy.get_time() + self.wait_before_log
-		print rospy.get_time()
-		print self.wait_timeout
+		if self.debug:
+			print '%.3f Survey begin' % rospy.get_time()
 		self.state = self.STATE_LOG
 
+	def init_log (self, header):
+		f = open(self.log_file, 'w')
+		f.write (header)
+		f.close()
+
+	def save_log (self, line):
+		f = open (self.log_file, 'a')
+		f.write (line)
+		f.close()
+
+	def average_gnss_pose(self):
+		n = len(self.gnss)
+		easting = 0.0
+		northing = 0.0
+		alt = 0.0
+		for i in xrange(n):
+			easting += self.gnss[i][0]
+			northing += self.gnss [i][1]
+			alt += self.gnss [i][2]
+		easting /= n
+		northing /= n
+		alt /= n
+		if self.debug:
+			print 'GNSS Easting: %.3f Northing: %.3f Altitude: %.3f' % (easting, northing, alt)
+		return (easting, northing, alt)
+
+	def average_imu(self):
+		n = len(self.imu)
+		pitch = 0.0
+		roll = 0.0
+		for i in xrange(n):
+			pitch += self.imu[i][0]
+			roll += self.imu[i][1]
+		pitch /= n
+		roll /= n
+		if self.debug:
+			print 'IMU Pitch: %.3f Roll: %.3f' % (pitch*self.rad_to_deg, roll*self.rad_to_deg)
+		return (pitch, roll)
+
 	def end_log (self):
-		print rospy.get_time()
-		print 'end log'
+		(gnss_e, gnss_n, gnss_alt) = self.average_gnss_pose()
+		dist_from_wpt =  self.calc_2d_dist ([gnss_e, gnss_n], self.b)
+		(imu_pitch, imu_roll) = self.average_imu()
+		if self.debug:
+			print 'Distance from waypoint: %.3f' % dist_from_wpt
+
+		s = '%.3f,%.3f,%.3f,%.3f,%.3f,%.2f,%.2f\n' %(rospy.get_time(), gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
+		self.save_log(s)
+
 		self.state = self.STATE_IDLE
+		if self.debug:
+			print '%.3f Survey end' %  rospy.get_time()
 
 	def updater(self):
 		while not rospy.is_shutdown():
-			if self.state == self.STATE_LOG:
-				if rospy.get_time() > self.wait_timeout:
-					pass
+			if self.state == self.STATE_WAIT:
+				if rospy.get_time() >= self.wait_timeout:
+					self.begin_log()
 
 			self.r.sleep() # go back to sleep
+
+	def calc_2d_dist (self, a, b):
+		return sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
 # main function.    
 if __name__ == '__main__':

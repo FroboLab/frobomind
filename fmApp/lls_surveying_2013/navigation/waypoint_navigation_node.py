@@ -131,7 +131,7 @@ class WptNavNode():
 
 		target_distance = rospy.get_param("~target_distance", 1.0)
 		turn_start_at_heading_err = rospy.get_param("~turn_start_at_heading_err", 20.0)
-		turn_stop_at_heading_err = rospy.get_param("~turn_stop_at_heading_err", 1.0)
+		turn_stop_at_heading_err = rospy.get_param("~turn_stop_at_heading_err", 2.0)
 		ramp_drive_vel_at_dist = rospy.get_param("~ramp_drive_velocity_at_distance", 1.0)
 		ramp_min_drive_vel = rospy.get_param("~ramp_min_drive_velocity", 0.1)
 		ramp_turn_vel_at_angle = rospy.get_param("~ramp_turn_velocity_at_angle", 25.0)

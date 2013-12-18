@@ -44,16 +44,16 @@ This launch file simulates a SMR navigating a waypoint list.
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
 			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmData/wptnav_status" />
-			<param name="status_publish_interval" value="5" />
+			<param name="status_publish_interval" value="1" />
 			<param name="print_debug_information" value="true" />
 
             <param name="max_linear_velocity" value="1.2"/>
             <param name="max_angular_velocity" value="0.70"/>
 
-            <param name="drive_kp" value="113.5"/>
-            <param name="drive_ki" value="0.0"/>
-            <param name="drive_kd" value="0.0"/>
-            <param name="drive_max_output" value="0.15"/>
+            <param name="drive_kp" value="1.6"/>
+            <param name="drive_ki" value="0.1"/>
+            <param name="drive_kd" value="2.0"/>
+            <param name="drive_max_output" value="0.25"/>
 
             <param name="turn_kp" value="1.3"/>
             <param name="turn_ki" value="0.0"/>
@@ -63,8 +63,8 @@ This launch file simulates a SMR navigating a waypoint list.
 			<param name="wpt_default_mode" value="MCTE" />
 			<param name="wpt_default_tolerance" value="0.30" />
 			<param name="wpt_default_drive_velocity" value="1.0" />
-			<param name="wpt_default_turn_velocity" value="0.5" />
-			<param name="wpt_default_wait_after_arrival" value="1.0" />
+			<param name="wpt_default_turn_velocity" value="0.7" />
+			<param name="wpt_default_wait_after_arrival" value="5.0" />
 			<param name="wpt_default_implement_command" value="0.0" />
 
 			<param name="target_distance" value="1.0" />
@@ -72,7 +72,7 @@ This launch file simulates a SMR navigating a waypoint list.
 			<param name="turn_stop_at_heading_err" value="2.0" />
 			<param name="ramp_drive_velocity_at_distance" value="0.9" />
 			<param name="ramp_min_drive_velocity" value="0.15" />
-			<param name="ramp_turn_velocity_at_angle" value="20.0" />
+			<param name="ramp_turn_velocity_at_angle" value="30.0" />
 			<param name="ramp_min_turn_velocity" value="0.20" />
 		</node>		
 	</group>

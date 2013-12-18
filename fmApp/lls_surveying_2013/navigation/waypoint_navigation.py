@@ -155,12 +155,13 @@ class waypoint_navigation():
 	# call to set a new navigation destination waypoint
 	def navigate (self, destination, origin):
 		self.b = destination # where we are going
-		self.start = self.pose # where we started from
 
 		if origin != False:
 			self.a = origin
 		else:
 			self.a = self.pose	
+
+		self.start = self.pose # where we started driving from (updated in drive_init())
 
 		# set velocity and waypoint reached tolerance
 		self.wpt_tolerance = float(self.b[self.W_TOL])
@@ -224,6 +225,7 @@ class waypoint_navigation():
 	def drive_init(self):
 		if self.debug:
 			print "Driving towards wpt"
+		self.start = self.pose # where we started driving from
 		self.pid_drive.reset ()
 		self.heading_err_minimum = self.pi2
 		self.state = self.STATE_DRIVE
@@ -271,7 +273,6 @@ class waypoint_navigation():
 	
 			elif angular_dist_from_origin < self.ramp_turn_vel_at_angle_default:
 				actual_limit = self.turn_vel_limit - (1 - angular_dist_from_origin/self.ramp_turn_vel_at_angle_default)*(self.turn_vel_limit - self.ramp_min_turn_vel_default)
-			
 			if self.angular_vel > actual_limit:
 				self.angular_vel = actual_limit
 			elif self.angular_vel < -actual_limit:
@@ -362,9 +363,7 @@ class waypoint_navigation():
 				if self.debug:					
 					self.print_count += 1
 					if self.print_count % self.print_interval == 0:
-						print "state %d dist %6.2f bearing %5.1f t.dist %6.3f t.heading_err %5.1f ab %.2f  linvel %.3f angvel %.3f" \
-							% (self.state, self.dist, self.bearing*self.rad_to_deg, \
-							 self.target_dist, self.target_heading_err*self.rad_to_deg, self.ab_dist_to_pose, self.linear_vel, self.angular_vel)
+						print "%.3f  state %d dist %6.2f bearing %5.1f  t_dist %5.2f t_head_err %5.1f ab_dist %.2f  lin_v %5.2f ang_v %5.2f" % (time_stamp, self.state, self.dist, self.bearing*self.rad_to_deg, self.target_dist, self.target_heading_err*self.rad_to_deg, self.ab_dist_to_pose, self.linear_vel, self.angular_vel)
 						self.debug_time_stamp = time_stamp
 
 				# run navigation state machine	

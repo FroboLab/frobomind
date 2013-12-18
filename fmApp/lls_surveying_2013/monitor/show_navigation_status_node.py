@@ -60,28 +60,37 @@ class ros_node():
 		self.r = rospy.Rate(update_frequency) # set updater frequency
 		self.updater()
 
+	def time_stamp (self, stamp):
+		secs = stamp.secs
+		msecs = int(stamp.nsecs/1000000.0+0.5)
+		if msecs == 1000:
+			secs += 1 
+			msecs = 0		
+		return '%d.%03d' % (secs, msecs)
+
 	# handle incoming waypoint navigation status messages
 	def on_wptnav_status_topic(self, msg):
+		if msg.state == 1 and msg.mode != 0:
+			print "%s  dist %6.2f bearing %5.1f   t_dist %5.2f t_head_err %5.1f ab_dist %.2f   lin_v %5.2f ang_v %5.2f" % (self.time_stamp(msg.header.stamp), msg.distance_to_b, msg.bearing_to_b*self.rad_to_deg, msg.target_distance, msg.target_heading_err*self.rad_to_deg, msg.distance_to_ab_line, msg.linear_speed, msg.angular_speed)
+
 		if msg.state != self.state_prev:
 			self.state_prev = msg.state
 			if msg.state == 0:
-				print 'Idle state'
+				print '%s  Idle state' % self.time_stamp(msg.header.stamp)
 			elif msg.state == 1:
-				print 'Navigation state'
+				print '%s  Navigation state' % self.time_stamp(msg.header.stamp)
 			elif msg.state == 2:
-				print 'Wait state'
+				print '%s  Wait state' % self.time_stamp(msg.header.stamp)
 
 		if msg.mode != self.mode_prev:
 			self.mode_prev = msg.mode
 			if msg.mode == 0:
-				print 'Standby mode'
+				print '%s  Standby mode' % self.time_stamp(msg.header.stamp)
 			elif msg.mode == 1:
-				print 'Drive mode'
+				print '%s  Drive mode' % self.time_stamp(msg.header.stamp)
 			elif msg.mode == 2:
-				print 'Turn mode'
+				print '%s  Turn mode' % self.time_stamp(msg.header.stamp)
 		
-		if msg.state == 1 and msg.mode != 0:
-			print "dist %6.2f ab %.2f bearing %5.1f t.dist %6.3f t.heading_err %5.1f  linspd %.3f angspd %.3f" % (msg.distance_to_b, msg.distance_to_ab_line, msg.bearing_to_b*self.rad_to_deg, msg.target_distance, msg.target_heading_err*self.rad_to_deg, msg.linear_speed, msg.angular_speed)
 
 	# update loop
 	def updater(self):
