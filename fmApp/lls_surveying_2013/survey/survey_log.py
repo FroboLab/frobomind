@@ -70,6 +70,7 @@ class log_node():
 		self.STATE_WAIT = 1 # wait until standing still
 		self.STATE_LOG = 2
 		self.state = self.STATE_IDLE
+		self.wptnav_wait = False
 
 		# read parameters
 
@@ -102,24 +103,24 @@ class log_node():
 		self.updater()
 
 	def on_cmd_vel_topic(self, msg):
-		if self.state == self.STATE_LOG:
-			self.vel_lin = msg.twist.linear.x
-			self.vel_ang = msg.twist.angular.z
-
+		self.vel_lin = msg.twist.linear.x
+		self.vel_ang = msg.twist.angular.z
+		if self.state == self.STATE_WAIT or self.state == self.STATE_LOG:
 			if self.vel_lin != 0 or self.vel_ang != 0:
 				self.end_log()
 				if self.debug:
 					print '%.3f Survey stop due to velocity command: lin %.2f angular %.2f' % (rospy.get_time(), self.vel_lin, self.vel_ang)
 
 	def on_wptnav_status_topic(self, msg):
+		self.wptnav_wait = (msg.state == 2)
 		msg_b = [msg.b_easting, msg.b_northing]
-		if msg_b != self.b:
+
+		if msg_b != self.b and self.wptnav_wait == True:
 			self.b = msg_b
 
-		wptnav_wait = (msg.state == 2)
-		if wptnav_wait == True and self.state == self.STATE_IDLE:
+		if self.wptnav_wait == True and self.state == self.STATE_IDLE and self.vel_lin == 0 and self.vel_ang == 0:
 			self.begin_wait()
-		elif wptnav_wait == False and self.state == self.STATE_LOG:
+		elif (self.wptnav_wait == False or self.vel_lin != 0 or self.vel_ang != 0) and self.state == self.STATE_LOG:
 			self.end_log()				
 
 	def on_imu_topic(self, msg):

@@ -236,11 +236,17 @@ class waypoint_navigation():
 		if fabs(self.target_heading_err) > self.turn_start_at_heading_err and self.dist > self.wpt_tolerance_default:
 			self.turn_init()
 		else:
-			ramp = 1.0
+			# determine ramp
+			ramp_start = 1.0
+			ramp_dest = 1.0
+			if self.dist_start < self.wpt_ramp_drive_vel_at_dist: # close to starting point
+				ramp_start = self.dist_start/self.wpt_ramp_drive_vel_at_dist
 			if self.dist < self.wpt_ramp_drive_vel_at_dist: # close to destination
-				ramp = self.dist/self.wpt_ramp_drive_vel_at_dist
-			elif self.dist_start < self.wpt_ramp_drive_vel_at_dist: # close to starting point
-				ramp = self.dist_start/self.wpt_ramp_drive_vel_at_dist
+				ramp_dest = self.dist/self.wpt_ramp_drive_vel_at_dist
+			if ramp_start < ramp_dest: #check which one is smallest
+				ramp = ramp_start
+			else
+				ramp = ramp_dest
 
 			self.linear_vel = self.wpt_drive_vel - (1-ramp)*(self.wpt_drive_vel - self.wpt_ramp_min_drive_vel)
 

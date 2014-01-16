@@ -2,8 +2,8 @@
 
 # parameters
 WPTLIST='waypoints.txt'
-WPTLIST='waypoints_sdu_s.txt'
-WPTLIST='waypoints_sdu_zigzag.txt'
+#WPTLIST='waypoints_sdu_zigzag.txt'
+#WPTLIST='waypoints_sdu_s.txt'
 #WPTLIST='rel_8_2x6m.txt'
 #WPTLIST='rel_rect_2x4m.txt'
 #WPTLIST='rel_ahead_steps_30cm.txt' 
