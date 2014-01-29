@@ -75,6 +75,7 @@ public:
 	void onDeadman(const std_msgs::Bool::ConstPtr& msg){ch1.onDeadman(msg);}
 	void onTimer(const ros::TimerEvent& event){updateStatus(); ch1.onTimer(event,status);}
 	void onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
+	void onStatusTimer(const ros::TimerEvent& event);
 
 	// Mutator methods for setting up publishers
 	void setSerialPub(ros::Publisher pub){serial_publisher = pub;}

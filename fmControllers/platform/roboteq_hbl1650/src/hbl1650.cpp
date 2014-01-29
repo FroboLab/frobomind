@@ -97,8 +97,27 @@ void hbl1650::spin(void)
 
 	// Initialize timer
 	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.05),&hbl1650::onTimer,this);
+	ros::Timer status_timer = global_node_handler.createTimer(ros::Duration(0.5),&hbl1650::onStatusTimer,this);
 
 	ros::spin();
+}
+
+void hbl1650::onStatusTimer(const ros::TimerEvent& event)
+{
+	propulsion_module_status_message.header.stamp = ros::Time::now();
+	propulsion_module_status_message.voltage = v2/10.0;
+	propulsion_module_status_message.current = ba1/10.0;
+	propulsion_module_status_message.power = (v2*ba1)/100.0;
+	propulsion_module_status_publisher.publish(propulsion_module_status_message);
+
+	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
+	transmit(1,	"?BA"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
+	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
+	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
+	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
+	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
+	transmit(1,	"# 20" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
 }
 
 void hbl1650::updateStatus(void)

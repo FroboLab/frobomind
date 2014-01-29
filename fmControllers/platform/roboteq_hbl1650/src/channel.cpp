@@ -78,7 +78,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						if(status.emergency_stop)
 						{
 							/* release emergency stop */
-							transmit("!MG\r");
+							transmit("!MG");
 							status.emergency_stop = false;
 							current_setpoint = 0;
 						}
@@ -104,7 +104,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						if(current_thrust < -max_output) current_thrust = -max_output;
 
 						/* Send motor output command  */
-						out << "!G " << ch << " " << current_thrust << "\r";
+						out << "!G " << ch << " " << current_thrust;
 						transmit(out.str());
 
 						// Upkeep
@@ -113,10 +113,10 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 					else /* deadman not pressed */
 					{
 						/* Set speeds to 0 and activate emergency stop */
-						transmit("!EX\r");
+						transmit("!EX");
 						status.emergency_stop = true;
-						transmit("!G 1 0\r");
-						transmit("!G 2 0\r");
+						transmit("!G 1 0");
+						transmit("!G 2 0");
 						current_setpoint = current_thrust = 0;
 						velocity = 0;
 						regulator.reset_integrator();
@@ -125,10 +125,10 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 				else /* Cmd_vel is not publishing */
 				{
 					/* Set speeds to 0 and activate emergency stop */
-					transmit("!EX\r");
+					transmit("!EX");
 					status.emergency_stop = true;
-					transmit("!G 1 0\r");
-					transmit("!G 2 0\r");
+					transmit("!G 1 0");
+					transmit("!G 2 0");
 					current_setpoint = current_thrust = 0;
 					velocity = 0;
 					regulator.reset_integrator();
@@ -142,7 +142,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 				if(down_time > 10)
 				{
 					/* Try to re-connect and re-initialise */
-					transmit("?FID\r");
+					transmit("?FID");
 					down_time = 0;
 				}
 			}
@@ -152,14 +152,14 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
 			//initController("standard");
 			//status.initialised = true;'
-			transmit("?FID\r");
+			transmit("?FID");
 		}
 	}
 	else /* controller is not online */
 	{
 		ROS_INFO_THROTTLE(5,"%s: Controller is not yet online",ros::this_node::getName().c_str());
 		/* Try to re-connect and re-initialise */
-		transmit("?FID\r");
+		transmit("?FID");
 	}
 	/* Publish feedback */
 	message.feedback.header.stamp = now;

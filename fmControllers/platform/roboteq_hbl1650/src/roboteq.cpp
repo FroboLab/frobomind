@@ -24,7 +24,7 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 		args--;
 	}
 
-	ss << "\r";
+	ss << "\r\n";
 
 	serial_out.data = ss.str();
 	serial_out.header.stamp = ros::Time::now();
@@ -35,7 +35,10 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 
 void RoboTeQ::transmit(std::string cmd)
 {
-	serial_out.data = cmd;
+	std::stringstream ss;
+	ss << cmd << "\r\n";
+
+	serial_out.data = ss.str();
 	serial_out.header.stamp = ros::Time::now();
 	serial_publisher.publish(serial_out);
 }

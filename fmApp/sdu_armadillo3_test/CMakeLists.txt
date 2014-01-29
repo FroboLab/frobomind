@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sdu_armadillo3)
+project(sdu_armadillo3_test)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp msgs geometry_msgs sensor_msgs roboteq_hbl1650)
+find_package(catkin REQUIRED COMPONENTS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system thread)
+# find_package(Boost REQUIRED COMPONENTS system)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
-# catkin_python_setup()
+ catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -45,9 +45,9 @@ find_package(catkin REQUIRED COMPONENTS roscpp msgs geometry_msgs sensor_msgs ro
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#   INCLUDE_DIRS include
-#  LIBRARIES sdu_armadillo
-#  CATKIN_DEPENDS msgs roscpp
+#  INCLUDE_DIRS include
+#  LIBRARIES sdu_armadillo_3
+  CATKIN_DEPENDS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives
 #  DEPENDS system_lib
 )
 
@@ -56,36 +56,23 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-)
+# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(sdu_armadillo
-#   src/${PROJECT_NAME}/sdu_armadillo.cpp
+# add_library(sdu_armadillo_3
+#   src/${PROJECT_NAME}/sdu_armadillo_3.cpp
 # )
 
 ## Declare a cpp executable
-#add_executable(roboteq_node src/roboteq.cpp)
+# add_executable(sdu_armadillo_3_node src/sdu_armadillo_3_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(roboteq_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp)
+# add_dependencies(sdu_armadillo_3_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(roboteq_node
+# target_link_libraries(sdu_armadillo_3_node
 #   ${catkin_LIBRARIES}
 # )
- 
- ## Declare a cpp executable
-add_executable(sdu_armadillo3_node src/sdu_armadillo3_node.cpp)
-
-## Add dependencies to the executable
- add_dependencies(sdu_armadillo3_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp)
-
-## Specify libraries to link a library or executable target against
- target_link_libraries(sdu_armadillo3_node
-   ${catkin_LIBRARIES}
- )
 
 #############
 ## Install ##
@@ -94,12 +81,12 @@ add_executable(sdu_armadillo3_node src/sdu_armadillo3_node.cpp)
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
 # install(PROGRAMS
-#   scripts/my_python_script
+#   mission_planners/wii_remote
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS sdu_armadillo sdu_armadillo_node
+# install(TARGETS sdu_armadillo_3 sdu_armadillo_3_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -124,7 +111,7 @@ add_executable(sdu_armadillo3_node src/sdu_armadillo3_node.cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_armadillo.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_armadillo_3.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
