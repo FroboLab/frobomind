@@ -1,0 +1,10 @@
+Header header
+bool reset
+string id
+float64 lat
+float64 lon
+float64 easting
+float64 northing
+float64 heading
+float64 speed
+int32 task

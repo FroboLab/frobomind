@@ -37,6 +37,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 	nmea.msg
 	PropulsionModuleFeedback.msg
 	PropulsionModuleStatus.msg
+	RoutePt.msg
 	row.msg
 	rtq.msg
 	rtq_command.msg
