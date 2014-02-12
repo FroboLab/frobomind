@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# parameters
+WPTLIST='rel_square_2m.txt'
+WPTLIST='rel_s.txt'
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+# copy waypoint list to the ROS working directory
+cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
+
+# launch the ROS node
+roslaunch ../launch/sim_survey.launch

@@ -1,0 +1,1 @@
+scp robot@frobobox:~/.ros/*.bag ~/Desktop

@@ -1,0 +1,14 @@
+# Kjelds FroboScout
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTG8QR40", GROUP="dialout",MODE="0666", NAME:="wheel_left"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTG8QQQ0", GROUP="dialout",MODE="0666", NAME:="wheel_right"
+#
+# VectorNav VN-100 IMU
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTUTUNWH", GROUP="dialout",MODE="0666", NAME:="imu"
+#
+# Kjelds ublox LEA-6T GPS
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTFU8AMZ", GROUP="dialout",MODE="0666", NAME:="gps"
+#
+# Copy this file to: /etc/udev/rules.d/
+#
+# Example on how to retrieve FTDI serial:
+#   udevadm info -a -n /dev/ttyUSB1 | grep 'serial'

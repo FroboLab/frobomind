@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+# launch the ROS node
+roslaunch ../launch/replay.launch
