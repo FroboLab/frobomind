@@ -37,8 +37,8 @@ from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist, TwistStamped
 from geometry_msgs.msg import Vector3
 
-topic_deadman = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
-topic_cmd_vel = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
+topic_deadman = rospy.get_param("~deadman_pub",'/fmCommand/deadman')
+topic_cmd_vel = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
 update_interval = rospy.get_param("~update_interval", 0.1) # [s]
 vel_lin = rospy.get_param("~linear_velocity", 0.5) # [m/s]
 vel_ang = rospy.get_param("~angular_velocity", 0.0) # [rad/s]
