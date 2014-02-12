@@ -1,0 +1,42 @@
+<!--
+-->
+
+<launch>
+	<!-- FroboMind -->	    	
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- plot maps of pose, gnss and odometry data -->
+		<node pkg="sdu_grassbots_trial_2014" name="track_map" type="robot_track_map_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="plot_pose_track" value="true" />
+			<param name="plot_gnss_track" value="false" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="easting_offset" value="0.0" />
+			<param name="northing_offset" value="0.0" />
+			<param name="trackpoint_threshold" value="0.05" />
+			<param name="map_update_frequency" value="10.0" />
+			<param name="map_title" value="Robot track" />
+			<param name="map_window_size" value="8.0" />
+		</node>
+	</group>
+</launch>
+
+

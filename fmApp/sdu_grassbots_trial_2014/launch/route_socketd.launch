@@ -1,0 +1,32 @@
+<!--
+-->
+
+<launch>
+	<!-- FroboMind -->	    	
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="sdu_grassbots_trial_2014" name="routed" type="route_socketd.py" output="screen" respawn="true" >
+			<param name="routept_pub" value="/fmPlan/routept" />
+			<param name="socket_address" value="10.10.0.100" />
+			<param name="socket_port" value="8080" />
+			<param name="socket_timeout" value="10" />
+			<param name="debug" value="true" />
+		</node>
+	</group>
+</launch>
+
+
