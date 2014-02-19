@@ -1,0 +1,11 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmLib">
+		<node pkg="real_time_analyze" name="rt_node" type="real_time_analyze_node.py" output="screen" >
+			<param name="timing_pub" value="/fmInformation/rt_timing"/>
+			<param name="device" value="/dev/rt_analyze" />	
+        </node>
+	</group>
+</launch>
+

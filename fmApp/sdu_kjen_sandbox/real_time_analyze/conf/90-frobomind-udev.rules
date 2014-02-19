@@ -1,0 +1,7 @@
+# Kjelds real-time analyze unit
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTGQXL3N", GROUP="dialout",MODE="0666", NAME:="rt_analyze"
+##
+# Copy this file to: /etc/udev/rules.d/
+#
+# Example on how to retrieve FTDI serial:
+#   udevadm info -a -n /dev/ttyUSB1 | grep 'serial'
