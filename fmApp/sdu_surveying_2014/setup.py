@@ -2,12 +2,10 @@ from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
-  scripts=['sim/frobit_sim_node.py',
-  'mission/keyboard_mission_node.py',
+  scripts=['mission/keyboard_mission_node.py',
   'mission/wiimote_mission_node.py',
   'navigation/waypoint_navigation_node.py',
   'survey/survey_log.py',
-  'monitor/frobit_plot_node.py',
   'monitor/plot_propulsion_feedback_node.py',
   'monitor/plot_lidar_node.py',
   'monitor/plot_lidar_line_node.py',
