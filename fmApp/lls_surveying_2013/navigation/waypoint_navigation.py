@@ -245,7 +245,7 @@ class waypoint_navigation():
 				ramp_dest = self.dist/self.wpt_ramp_drive_vel_at_dist
 			if ramp_start < ramp_dest: #check which one is smallest
 				ramp = ramp_start
-			else
+			else:
 				ramp = ramp_dest
 
 			self.linear_vel = self.wpt_drive_vel - (1-ramp)*(self.wpt_drive_vel - self.wpt_ramp_min_drive_vel)
