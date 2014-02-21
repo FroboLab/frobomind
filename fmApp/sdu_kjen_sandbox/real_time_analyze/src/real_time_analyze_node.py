@@ -27,10 +27,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-This node utilizes an external microcontroller unit to determine the real-time
+This n.coode utilizes an external microcontroller unit to determine the real-time
 performance.
 
-2014-02-17 KJ First version
+2014-02-21 KJ First version
 """
 
 import rospy
@@ -41,7 +41,6 @@ class ROSnode():
 	def __init__(self):
 		rospy.loginfo(rospy.get_name() + ": Start")
 		# defines
-		self.count = 0
 		self.c = '$'
 
 		# static parameters
@@ -57,13 +56,10 @@ class ROSnode():
 		self.timing_pub = rospy.Publisher(self.topic_timing, IntStamped)
 		self.timing_msg = IntStamped()
 
-		# setup subscription topic callbacks
-
 		# configure and open serial device
 		ser_error = False
 		try :
 			self.ser = serial.Serial(self.device, 57600, timeout=0)
-
 		except Exception as e:
 			rospy.logerr(rospy.get_name() + ": Unable to open serial device: %s" % self.device)
 			self.ser.close()
@@ -77,11 +73,11 @@ class ROSnode():
 	def updater(self):
 		while not rospy.is_shutdown():
 			self.c = self.ser.read()		
+			self.ser.write ('$') # don't put this before ser.read()
 			if len(self.c) == 1:
 				self.timing_msg.header.stamp = rospy.Time.now()
 				self.timing_msg.data = ord(self.c) 
 				self.timing_pub.publish(self.timing_msg)
-			self.ser.write ('$')
 
 			# go back to sleep
 			self.r.sleep()

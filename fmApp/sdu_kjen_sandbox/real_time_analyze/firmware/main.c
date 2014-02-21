@@ -30,7 +30,7 @@
 # Platform: RoboCard v1.11 http://www.robocard.org
 # Microcontroller: ATmega48
 # Author: Kjeld Jensen <kjeld@frobomind.org>
-# Created:  2014-02-17
+# Created:  2014-02-21
 ****************************************************************************/
 /* includes */
 #include <avr/interrupt.h>
@@ -41,45 +41,30 @@
 /***************************************************************************/
 /* defines */
 
-#define false				0
-#define true				1
-
 /* defines for the timer1 interrupt */
-#define INT1_CNT			200 /* 100ns */
-#define FLIPBIT				PC3
-#define FLIPBIT_PORT		PORTC
-#define FLIPBIT_DDR			DDRC
+#define INT1_CNT			199 /* 100ns at 16 MHz with clock/8 divider */
 
-/* signal led defines */
-#define LED_STATE_OFF			0
-#define LED_STATE_ON			1
-#define LED_DELAY			4 /* times the cycle */
+/* LED defines */
+#define FLIPBIT				PB1
+#define FLIPBIT_PORT		PORTB
+#define FLIPBIT_DDR			DDRB
 
 /***************************************************************************/
 /* global and static variables */
 
 /* timer1 and scheduler variables */
-volatile unsigned char sched;
+volatile unsigned char sched_int;
 unsigned short sched_cnt;
-
-/* system variables */
-char state;
-
-/* user interface variables */
-char led_state;
-char led_signal;
-char led_count;
 
 /* serial interface variables */
 unsigned char c;
-unsigned short ms_since_last, ms_since_last_tmp;
+unsigned short cnt_since_last, cnt_since_last_tmp;
 
 /***************************************************************************/
 void sched_init(void)
 {
 	/* timer 1 interrupt init */
-	sched = 0;
-	sched_cnt = 0;
+	sched_int = 0;
     TIMSK1 = BV(OCIE1A); 
     TCCR1B = BV(CS11) | BV(WGM12); /* clk/8, Clear Timer on Compare Match (OCR1A) */  
     OCR1A = INT1_CNT;
@@ -89,21 +74,8 @@ void sched_init(void)
 /*ISR(SIG_OUTPUT_COMPARE1A) */
 ISR (TIMER1_COMPA_vect)
 {
-	sched++;
+	sched_int++;
 	PB_FLIP (FLIPBIT_PORT, FLIPBIT); /* time to flip the flip bit */
-}
-/***************************************************************************/
-void sched_update (void)
-{
-	sched_cnt++;
-	if (sched_cnt == 10000)
-		sched_cnt = 0;
-	ms_since_last++;
-
-	if (sched_cnt % 5000 == 0) /* each 100 ms */
-	{
-		RC_LED_FLIP;
-	}
 }
 /***************************************************************************/
 int main(void)
@@ -111,34 +83,38 @@ int main(void)
 	sched_init(); /* initialize the scheduler */
 	RC_LED_INIT; /* initialize RoboCard LED */
 	serial_init(); /* initialize serial communication */
-	ms_since_last = 0;	
-
+	sched_cnt = 0;
+	cnt_since_last = 0;	
 	sei(); /* enable interrupts */
+
 	for (;;) /* go into an endless loop */
 	{
-		/* motor_update(); */
+		if (sched_int != 0) /* if the scheduler interrupt has timed out */
+		{
+			sched_int--;
+			cnt_since_last++;
+			sched_cnt++;
+			if (sched_cnt == 10000)
+				sched_cnt = 0;
 
-		if (sched != 0) /* if the interrupt has timed out after 1 ms */
-		{
-			sched --;
-			sched_update(); /* run the scheduler */
-		}
-		else
-		{
-			if (serial_rx_avail())
+			if (sched_cnt % 5000 == 0) /* each 500 ms */
 			{
-				c = serial_rx();
-				if ( c == '$')
-				{	
-					ms_since_last_tmp = ms_since_last;
-					ms_since_last = 0;
-					
-					if (ms_since_last_tmp <= 250)
-						c = ms_since_last_tmp;
-					else
-						c = 251;
-					serial_tx (c);
-				}
+				RC_LED_FLIP;
+			}
+		}
+		if (serial_rx_avail())
+		{
+			c = serial_rx();
+			if (c == '$')
+			{	
+				cnt_since_last_tmp = cnt_since_last;
+				cnt_since_last = 0;
+				
+				if (cnt_since_last_tmp <= 250)
+					c = cnt_since_last_tmp;
+				else
+					c = 251;
+				serial_tx_direct (c);
 			}
 		}
 	}

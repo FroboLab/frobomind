@@ -41,6 +41,7 @@
 #                                    added tx interrupt routine
 # Modified  2014-02-05 Kjeld Jensen, added configuration for port 1
 # Modified  2014-02-17 Kjeld Jensen, added configuration for avr's with one port only
+# Modified  2014-02-21 Kjeld Jensen, added serial_tx_direct()
 ****************************************************************************/
 /* includes */
 
@@ -74,6 +75,7 @@
 	#define U2X_BIT		U2X0
 	#define UCSZ0_BIT	UCSZ00
 	#define UCSZ1_BIT	UCSZ01
+	#define UDRE_BIT	UDRE0
 #endif
 
 #ifdef USART_0
@@ -92,6 +94,7 @@
 	#define U2X_BIT		U2X0
 	#define UCSZ0_BIT	UCSZ00
 	#define UCSZ1_BIT	UCSZ01
+	#define UDRE_BIT	UDRE0
 #endif
 
 #ifdef USART_1
@@ -110,6 +113,7 @@
 	#define U2X_BIT		U2X1
 	#define UCSZ0_BIT	UCSZ10
 	#define UCSZ1_BIT	UCSZ11
+	#define UDRE_BIT	UDRE1
 #endif
 
 #ifdef DOUBLE_SPEED_MODE
@@ -194,7 +198,7 @@ void serial_init(void)
 	}
 	else
 	{
-		UCSRB_REG &= ~(1<<TXCIE_BIT);
+		UCSRB_REG &= ~(1<<TXCIE_BIT); /* disable tx interrupt */
 		tx_busy = FALSE;
 	}
 }
@@ -223,6 +227,14 @@ void serial_tx (unsigned char c)
 
 	if (tx_busy == FALSE)
 		serial_tx_init();
+}
+/***************************************************************************/
+void serial_tx_direct (unsigned char c)
+{
+	/* wait for an empty transmit buffer */
+	while ( !(UCSRA_REG & (1<<UDRE_BIT))) /* check Data Register Empty bit */
+		;
+	UDR_REG = c; /* fill Data Register */
 }
 /***************************************************************************/
 void serial_tx_string (char *s)

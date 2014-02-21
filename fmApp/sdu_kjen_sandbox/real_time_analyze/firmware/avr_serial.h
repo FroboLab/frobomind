@@ -36,6 +36,7 @@
 # Modified  2011-12-18 Kjeld Jensen, added serial_tx_idle
 # Modified  2013-01-15 Kjeld Jensen, added support for double speed baud rates
 # Modified  2013-02-04 Kjeld Jensen, migrated to the BSD license
+# Modified  2014-02-21 Kjeld Jensen, added serial_tx_direct()
 #****************************************************************************/
 
 #ifndef _SERIAL_H
@@ -47,6 +48,7 @@
 void serial_init(void);
 void serial_tx (unsigned char c);
 void serial_tx_string (char *s);
+void serial_tx_direct (unsigned char c);
 unsigned char serial_tx_idle (void);
 unsigned char serial_rx_avail (void);
 unsigned char serial_rx (void);
