@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(usage_monitor)
+project(computer_load_monitor)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -49,7 +49,7 @@ find_package(catkin REQUIRED COMPONENTS std_msgs msgs roscpp)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES usage_monitor
+#  LIBRARIES load_monitor
   CATKIN_DEPENDS std_msgs msgs roscpp
 #  DEPENDS system_lib
 )
@@ -65,19 +65,19 @@ include_directories(include
 )
 
 ## Declare a cpp library
-# add_library(usage_monitor
-#   src/${PROJECT_NAME}/usage_monitor.cpp
+# add_library(load_monitor
+#   src/${PROJECT_NAME}/load_monitor.cpp
 # )
 
 ## Declare a cpp executable
-add_executable(usage_monitor_node src/usage_monitor.cpp)
+add_executable(computer_load_monitor_node src/computer_load_monitor.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(usage_monitor_node ${PROJECT_NAME} msgs_gencpp std_msgs_gencpp)
+add_dependencies(computer_load_monitor_node ${PROJECT_NAME} msgs_gencpp std_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(usage_monitor_node
+ target_link_libraries(computer_load_monitor_node
    ${catkin_LIBRARIES}
  )
 
@@ -96,7 +96,7 @@ add_dependencies(usage_monitor_node ${PROJECT_NAME} msgs_gencpp std_msgs_gencpp)
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS usage_monitor usage_monitor_node
+# install(TARGETS load_monitor load_monitor_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -121,7 +121,7 @@ add_dependencies(usage_monitor_node ${PROJECT_NAME} msgs_gencpp std_msgs_gencpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_usage_monitor.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_load_monitor.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
