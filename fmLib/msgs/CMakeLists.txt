@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 	claas_row_cam.msg
 	encoder.msg
 	engine_rpm.msg
+	FloatArrayStamped.msg
 	FloatStamped.msg
 	gpgga.msg
 	gpgga_tranmerc.msg
