@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 <package>
-  <name>lls_surveying_2014</name>
+  <name>sdu_surveying_2014</name>
   <version>0.0.0</version>
-  <description>The lls_surveying_2014 package</description>
+  <description>The sdu_surveying_2014 package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="kjeld@todo.todo">kjeld</maintainer>
+  <maintainer email="kjeld@frobomind.org">kjeld</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>BSDTODO</license>
 
 
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->

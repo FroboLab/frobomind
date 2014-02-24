@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # Survey application script
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

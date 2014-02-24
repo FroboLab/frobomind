@@ -1,0 +1,19 @@
+<!--
+-->
+
+<launch>
+	<group ns="fmSensors">
+		<node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
+ 			<param name="update_rate" value="10" />
+			<param name="plot_title" value="Navigation PID status" />
+			<param name="samples" value="100" />
+			<param name="max_error" value="0.5" />
+			<param name="max_output" value="0.5" />
+			<param name="max_pid" value="0.5" />
+			<param name="plot_feed_forward" value="true" />
+		</node>
+	</group>
+</launch>
+
+

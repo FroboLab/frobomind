@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(lls_surveying_2014)
+project(sdu_surveying_2014)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -50,7 +50,7 @@ catkin_python_setup()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES lls_surveying_2014
+#  LIBRARIES sdu_surveying_2014
 #  CATKIN_DEPENDS msgs roscpp rospy
 #  DEPENDS system_lib
 )
@@ -67,19 +67,19 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(lls_surveying_2014
-#   src/${PROJECT_NAME}/lls_surveying_2014.cpp
+# add_library(sdu_surveying_2014
+#   src/${PROJECT_NAME}/sdu_surveying_2014.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(lls_surveying_2014_node src/lls_surveying_2014_node.cpp)
+# add_executable(sdu_surveying_2014_node src/sdu_surveying_2014_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(lls_surveying_2014_node lls_surveying_2014_generate_messages_cpp)
+# add_dependencies(sdu_surveying_2014_node sdu_surveying_2014_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(lls_surveying_2014_node
+# target_link_libraries(sdu_surveying_2014_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -98,7 +98,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS lls_surveying_2014 lls_surveying_2014_node
+# install(TARGETS sdu_surveying_2014 sdu_surveying_2014_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -123,7 +123,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_lls_surveying_2014.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_surveying_2014.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

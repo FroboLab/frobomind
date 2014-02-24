@@ -45,7 +45,7 @@ from math import pi, atan2, sqrt, fabs
 from pid_controller import pid_controller
 
 class waypoint_navigation():
-	def __init__(self, update_rate, drive_kp, drive_ki, drive_kd, drive_max_output, turn_kp, turn_ki, turn_kd, turn_max_output, max_linear_vel, max_angular_vel, wpt_tol_default, wpt_def_drive_vel, wpt_def_turn_vel, target_distance, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, debug):
+	def __init__(self, update_rate, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tol_default, wpt_def_drive_vel, wpt_def_turn_vel, target_distance, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, debug):
 
 		# constants
 		self.UPDATE_NONE = 0
@@ -75,10 +75,12 @@ class waypoint_navigation():
 		self.drive_kp = drive_kp
 		self.drive_ki = drive_ki
 		self.drive_kd = drive_kd
+		self.drive_ff = drive_ff
 		self.drive_max_output = drive_max_output
 		self.turn_kp = turn_kp
 		self.turn_ki = turn_ki
 		self.turn_kd = turn_kd
+		self.turn_ff = turn_ff
 		self.turn_max_output = turn_max_output
 		self.wpt_tolerance_default = wpt_tol_default # [m]
 		self.wpt_def_drive_vel = wpt_def_drive_vel # [m/s]
@@ -132,11 +134,12 @@ class waypoint_navigation():
 
 		# PID drive controller
 		self.pid_drive = pid_controller(self.update_interval)
-		self.pid_drive.set_parameters(self.drive_kp, self.drive_ki, self.drive_kd, self.drive_max_output)
+		self.pid_drive.set_parameters(self.drive_kp, self.drive_ki, self.drive_kd, self.drive_ff, self.drive_max_output)
+		self.pid_status = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 		# PID turn controller
 		self.pid_turn = pid_controller(self.update_interval)
-		self.pid_turn.set_parameters(self.turn_kp, self.turn_ki, self.turn_kd, self.turn_max_output)
+		self.pid_turn.set_parameters(self.turn_kp, self.turn_ki, self.turn_kd, self.turn_ff, self.turn_max_output)
 
 		# initialize output
 		self.linear_vel = 0.0
@@ -246,6 +249,7 @@ class waypoint_navigation():
 
 			#if self.dist > self.wpt_tolerance_default:
 			self.angular_vel = ramp*self.pid_drive.update (self.target_heading_err) # get controller output
+			self.pid_status = self.pid_drive.latest_update_values()
 
 	# initialize turn about own center (not applicable to all robots)
 	def turn_init(self):
@@ -265,6 +269,7 @@ class waypoint_navigation():
 			self.drive_init()
 		else:
 			self.angular_vel = self.pid_turn.update (self.target_heading_err) # get controller output
+			self.pid_status = self.pid_turn.latest_update_values()
 
 			angular_dist_from_origin = fabs(self.angle_diff (self.pose[2], self.turn_bearing_origin))
 			actual_limit = self.turn_vel_limit

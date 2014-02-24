@@ -42,7 +42,7 @@ from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
-from msgs.msg import FloatStamped, waypoint_navigation_status
+from msgs.msg import FloatStamped, FloatArrayStamped, waypoint_navigation_status
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -92,6 +92,7 @@ class WptNavNode():
  		if self.debug:
 			rospy.loginfo(rospy.get_name() + ": Debug enabled")
 		self.status_publish_interval = rospy.get_param("~status_publish_interval", 0) 
+		self.pid_publish_interval = rospy.get_param("~pid_publish_interval", 0) 
 
 		# get topic names
 		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecision/automode')
@@ -99,7 +100,8 @@ class WptNavNode():
 		self.joy_topic = rospy.get_param("~joy_sub",'/fmLib/joy')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
 		self.implement_topic = rospy.get_param("~implement_pub",'/fmCommand/implement')
-		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmData/wptnav_status')
+		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmInformation/wptnav_status')
+		self.pid_topic = rospy.get_param("~pid_pub",'/fmInformation/wptnav_pid')
 
 		# setup publish topics
 		self.cmd_vel_pub = rospy.Publisher(self.cmdvel_topic, TwistStamped)
@@ -109,15 +111,20 @@ class WptNavNode():
 		self.wptnav_status_pub = rospy.Publisher(self.wptnav_status_topic, waypoint_navigation_status)
 		self.wptnav_status = waypoint_navigation_status()
 		self.status_publish_count = 0
+		self.pid_pub = rospy.Publisher(self.pid_topic, FloatArrayStamped)
+		self.pid = FloatArrayStamped()
+		self.pid_publish_count = 0
 
 		# configure waypoint navigation
 		drive_kp = rospy.get_param("~drive_kp", 1.0)
 		drive_ki = rospy.get_param("~drive_ki", 0.0)
 		drive_kd = rospy.get_param("~drive_kd", 0.0)
+		drive_ff = rospy.get_param("~drive_feed_forward", 0.0)
 		drive_max_output = rospy.get_param("~drive_max_output", 0.3)
 		turn_kp = rospy.get_param("~turn_kp", 1.0)
 		turn_ki = rospy.get_param("~turn_ki", 0.0)
 		turn_kd = rospy.get_param("~turn_kd", 0.0)
+		turn_ff = rospy.get_param("~turn_feed_forward", 0.0)
 		turn_max_output = rospy.get_param("~turn_max_output", 0.5)
 
 		max_linear_vel = rospy.get_param("~max_linear_velocity", 0.4)
@@ -137,7 +144,7 @@ class WptNavNode():
 		ramp_turn_vel_at_angle = rospy.get_param("~ramp_turn_velocity_at_angle", 25.0)
 		ramp_min_turn_vel = rospy.get_param("~ramp_min_turn_velocity", 0.05)
 
-		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_max_output, turn_kp, turn_ki, turn_kd, turn_max_output, max_linear_vel, max_angular_vel, self.wpt_def_tolerance, self.wpt_def_drive_vel, self.wpt_def_turn_vel, target_distance, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, self.debug)
+		self.wptnav = waypoint_navigation(self.update_rate, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, self.wpt_def_tolerance, self.wpt_def_drive_vel, self.wpt_def_turn_vel, target_distance, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, self.debug)
 
 		self.wptlist = waypoint_list()
 		self.wptlist_loaded = False
@@ -283,6 +290,12 @@ class WptNavNode():
 			self.wptnav_status.mode = -1			
 		self.wptnav_status_pub.publish (self.wptnav_status)
 
+	def publish_pid_message(self):
+		if self.state == self.STATE_NAVIGATE:
+			self.pid.header.stamp = rospy.Time.now()
+			self.pid.data = self.wptnav.pid_status
+			self.pid_pub.publish (self.pid)
+
 	def updater(self):
 		while not rospy.is_shutdown():
 			if self.wii_a == True and self.wii_a_changed == True:
@@ -340,6 +353,12 @@ class WptNavNode():
 				self.status_publish_count += 1
 				if self.status_publish_count % self.status_publish_interval == 0:
 					self.publish_status_message()
+
+			# publish pid
+			if self.pid_publish_interval != 0:
+				self.pid_publish_count += 1
+				if self.pid_publish_count % self.pid_publish_interval == 0:
+					self.publish_pid_message()
 			self.r.sleep()
 
 # Main function.	

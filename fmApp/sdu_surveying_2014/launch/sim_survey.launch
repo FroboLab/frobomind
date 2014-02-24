@@ -22,6 +22,29 @@
 	</group>
 
 	<group ns="fmSensors">
+		<!--node pkg="computer_load_monitor" name="load_monitor" type="computer_load_monitor_node" output="screen" >
+			<param name="update_rate" value="5" />
+		</node-->
+
+		<!--node pkg="plot_propulsion_feedback" name="plot_feedback" type="plot_propulsion_feedback_node.py" output="screen" >
+ 			<param name="propulsion_feedback_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="50" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="maximum_velocity" value="1.2" />
+			<param name="maximum_thrust" value="511" />
+		</node-->
+
+
+		<node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
+ 			<param name="update_rate" value="10" />
+			<param name="plot_title" value="Navigation PID status" />
+			<param name="samples" value="100" />
+			<param name="max_error" value="0.5" />
+			<param name="max_output" value="0.5" />
+			<param name="max_pid" value="0.5" />
+			<param name="plot_feed_forward" value="true" />
+		</node>
 	</group>
 
 	<group ns="fmProcessors">
@@ -29,19 +52,19 @@
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
-			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
 			<param name="plot_pose_track" value="true" />
 			<param name="plot_gnss_track" value="false" />
 			<param name="plot_odometry_track" value="false" />
 			<param name="plot_pose_yaw" value="false" />
-			<param name="map_trackpoint_threshold" value="0.01" />
+			<param name="map_trackpoint_threshold" value="0.02" />
 			<param name="map_max_trackpoints" value="500" />
 			<param name="map_minimum_size" value="4.0" />
 			<param name="map_easting_offset" value="0.0" />
 			<param name="map_northing_offset" value="0.0" />
-			<param name="map_update_frequency" value="50.0" />
+			<param name="map_update_frequency" value="10.0" />
 			<param name="map_title" value="FroboScout track" />
-			<param name="map_window_size" value="6.0" />
+			<param name="map_window_size" value="5.0" />
 			<param name="avatar_extension_front" value="0.195" />
 			<param name="avatar_extension_rear" value="0.505" />
 			<param name="avatar_extension_lateral" value="0.3" />
@@ -49,7 +72,7 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="lls_surveying_2014" name="mission" type="keyboard_mission_node.py" output="screen">
+		<node pkg="sdu_surveying_2014" name="mission" type="keyboard_mission_node.py" output="screen">
 			<param name="keyboard_sub" value="/fmHMI/keyboard" />
 			<param name="automode_pub" value="/fmDecision/automode" />
     		<param name="deadman_pub" value="/fmCommand/deadman" />
@@ -62,27 +85,31 @@
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="lls_surveying_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+		<node pkg="sdu_surveying_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">
 			<param name="automode_sub" value="/fmDecision/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
 			<param name="implement_pub" value="/fmCommand/implement" />
-			<param name="status_pub" value="/fmData/wptnav_status" />
+			<param name="status_pub" value="/fmInformation/wptnav_status" />
+			<param name="pid_pub" value="/fmInformation/wptnav_pid" />
 			<param name="status_publish_interval" value="1" />
+			<param name="pid_publish_interval" value="1" />
 			<param name="print_debug_information" value="true" />
 
             <param name="max_linear_velocity" value="1.2"/>
             <param name="max_angular_velocity" value="0.70"/>
 
-            <param name="drive_kp" value="1.6"/>
-            <param name="drive_ki" value="0.1"/>
+            <param name="drive_kp" value="1.3"/>
+            <param name="drive_ki" value="0.0"/>
             <param name="drive_kd" value="0.0"/>
+            <param name="drive_feed_forward" value="0.05"/>
             <param name="drive_max_output" value="0.25"/>
 
             <param name="turn_kp" value="1.3"/>
             <param name="turn_ki" value="0.0"/>
             <param name="turn_kd" value="0.0"/>
+            <param name="turn_feed_forward" value="0.0"/>
             <param name="turn_max_output" value="1.0"/>
 
 			<param name="wpt_default_mode" value="MCTE" />
@@ -110,14 +137,10 @@
 			<param name="keyboard_pub" value="/fmHMI/keyboard" />
 		</node>
 
-		<node pkg="lls_surveying_2014" name="plot_feedback" type="plot_propulsion_feedback_node.py" output="screen" >
- 			<param name="propulsion_feedback_sub" value="/fmInformation/wheel_feedback_right" />
- 			<param name="update_frequency" value="50" />
-			<param name="plot_title" value="Wheel feedback" />
-			<param name="maximum_velocity" value="1.2" />
-			<param name="maximum_thrust" value="511" />
-		</node>
-
+		<!--node pkg="real_time_analyze" name="rt_node" type="real_time_analyze_node.py" output="screen" >
+			<param name="timing_pub" value="/fmInformation/rt_timing"/>
+			<param name="device" value="/dev/rt_analyze" />	
+        </node-->
 	</group>
 </launch>
 
