@@ -1,0 +1,18 @@
+<!-- FroboMind plot_pid example launch file -->
+
+<launch>
+	<group ns="fmSensors">
+		<node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/pid" />
+ 			<param name="update_rate" value="10" />
+			<param name="plot_title" value="PID state" />
+			<param name="samples" value="100" />
+			<param name="max_error" value="1.0" />
+			<param name="max_output" value="1.0" />
+			<param name="max_pid" value="1.0" />
+			<param name="plot_feed_forward" value="false" />
+		</node>
+	</group>
+</launch>
+
+
