@@ -1,0 +1,15 @@
+<!-- FroboMind plot_propulsion_feedback example launch file -->
+
+<launch>
+	<group ns="fmSensors">
+		<node pkg="plot_propulsion_feedback" name="plot_feedback" type="plot_propulsion_feedback_node.py" output="screen" >
+ 			<param name="propulsion_feedback_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="50" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="maximum_velocity" value="1.0" />
+			<param name="maximum_thrust" value="1023" />
+		</node>
+	</group>
+</launch>
+
+
