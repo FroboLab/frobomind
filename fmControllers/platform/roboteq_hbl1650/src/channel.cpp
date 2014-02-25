@@ -190,11 +190,11 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 	message.status.data = ss.str();
 	publisher.status.publish(message.status);
 
-	std::cout << "Period[s]:" << period <<
-			" Setpoint[m/s]:" << velocity <<
-			" Current position[m]:" << ((double)last_hall)*ticks_to_meter <<
-			" Desired position[m]:" << desired_position <<
-			" Thrust[]:" << current_thrust <<
-			" " << std::endl;
+//	std::cout << "Period[s]:" << period <<
+//			" Setpoint[m/s]:" << velocity <<
+//			" Current position[m]:" << ((double)last_hall)*ticks_to_meter <<
+//			" Desired position[m]:" << desired_position <<
+//			" Thrust[]:" << current_thrust <<
+//			" " << std::endl;
 }
 

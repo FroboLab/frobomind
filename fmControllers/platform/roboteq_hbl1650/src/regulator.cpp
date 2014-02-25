@@ -31,13 +31,23 @@ double Regulator::output_from_input( double setpoint , double input , double per
 	// Calculate output
 	double output = (error * p) + (integrator) - (differentiator * d);
 
-//	// Implement output max
-//	if(output > out_max)
-//		output = out_max;
-//	else if(output < -out_max)
-//		output = -out_max;
+	// Implement output max
+	if(output > out_max)
+		output = out_max;
+	else if(output < -out_max)
+		output = -out_max;
 
 	// Upkeep
 	previous = input;
+
+	// Debug
+	msgs::FloatArrayStamped msg;
+	msg.header.stamp = ros::Time::now();
+	msg.data.push_back(error);
+	msg.data.push_back(output);
+	msg.data.push_back(error*p);
+	msg.data.push_back(integrator);
+	msg.data.push_back(differentiator * d);
+	pid_publisher.publish(msg);
 	return output;
 }

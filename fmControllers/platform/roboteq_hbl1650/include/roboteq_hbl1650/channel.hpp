@@ -131,6 +131,7 @@ public:
 	void setStatusPub(ros::Publisher pub){publisher.status = pub;}
 	void setPropulsionFeedbackPub(ros::Publisher pub){publisher.feedback = pub;}
 	void setVelPub(ros::Publisher pub){publisher.feedback = pub;}
+	void setPidPub(ros::Publisher pub){regulator.setPidPub(pub);}
 
 };
 

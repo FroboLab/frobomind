@@ -32,6 +32,8 @@
 #ifndef REGULATOR_HPP_
 #define REGULATOR_HPP_
 
+#include <ros/ros.h>
+#include <msgs/FloatArrayStamped.h>
 #include <iostream>
 
 class Regulator
@@ -43,12 +45,14 @@ class Regulator
 
 private:
 	double previous,integrator;
+	ros::Publisher pid_publisher;
 
 public:
 	double p,i,d,i_max,out_max;
 
 	Regulator();
 
+	void setPidPub(ros::Publisher pub){pid_publisher = pub;}
 	double output_from_input( double , double , double);
 	void reset_integrator(){integrator = 0;}
 	void set_params( double p_gain , double i_gain , double d_gain , double imax , double outmax)

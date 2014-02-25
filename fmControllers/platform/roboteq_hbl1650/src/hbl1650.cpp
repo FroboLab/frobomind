@@ -24,10 +24,10 @@ hbl1650::hbl1650( )
 	double max_time_diff_input;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
 	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic,velocity_topic,
-	propulsion_module_status_topic, propulsion_module_feedback_topic;
+	propulsion_module_status_topic, propulsion_module_feedback_topic, pid_topic;
 
 	// Parse from parameter server
-
+	local_node_handler.param<std::string>("pid_topic", pid_topic, "/fmInformation/pid");
 	local_node_handler.param<std::string>("serial_rx_topic", serial_rx_topic, "/fmCSP/S0_rx");
 	local_node_handler.param<std::string>("serial_tx_topic", serial_tx_topic, "/fmCSP/S0_tx");
 	local_node_handler.param<std::string>("command_relay_topic", command_relay_topic, "/fmData/command");
@@ -90,6 +90,7 @@ hbl1650::hbl1650( )
 	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	ch1.setVelPub(local_node_handler.advertise<std_msgs::Float64>( velocity_topic, 10));
 	ch1.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_topic, 10));
+	ch1.setPidPub( local_node_handler.advertise<msgs::FloatArrayStamped>( pid_topic, 10));
 	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
 
 	// Set up subscribers
