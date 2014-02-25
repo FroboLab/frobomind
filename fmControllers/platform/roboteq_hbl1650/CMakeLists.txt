@@ -62,7 +62,7 @@ include_directories(include
 
 ## Declare a cpp library
  add_library(${PROJECT_NAME}
-   src/roboteq.cpp src/channel.cpp src/hbl1650.cpp src/regulator.cpp src/filter/IRR.cpp src/filter/sliding_window.cpp
+   src/roboteq.cpp src/channel.cpp src/hbl1650.cpp src/regulator.cpp src/positionGenerator.cpp src/filter/IRR.cpp src/filter/sliding_window.cpp
  )
 
 ## Declare a cpp executable

@@ -61,6 +61,20 @@ hbl1650::hbl1650( )
 	ch1.velocity = 0;
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
 
+	// Init position control
+	double max_acceleration, max_jerk, brake_zeroband, velocity_tolerance;
+	local_node_handler.param<bool>("position_control", ch1.position_control, true);
+	local_node_handler.param<double>("robot_max_acceleration", max_acceleration, 0.5);
+	local_node_handler.param<double>("robot_max_jerk", max_jerk, 0.5);
+	local_node_handler.param<double>("brake_zeroband",brake_zeroband,0.2);
+	local_node_handler.param<double>("velocity_tolerance",velocity_tolerance,0.05);
+
+	ch1.position_generator.setMaximumVelocity(ch1.max_velocity_mps);
+	ch1.position_generator.setMaximumAcceleration(0.5);
+	ch1.position_generator.setMaximumJerk(0.5);
+	ch1.position_generator.setBrakeZeroband(0.2);
+	ch1.position_generator.setVelocityTolerance(0.05);
+
 	// Init general parameters
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
 	max_time_diff = ros::Duration(max_time_diff_input);

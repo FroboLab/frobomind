@@ -4,7 +4,7 @@ Channel::Channel( ) : velocity_filter(8) // do not change!!
 {
 	down_time = 0;
 	current_setpoint = 0;
-	hall_value = 0;
+	hall_value = last_hall = 0;
 }
 
 void Channel::onHallFeedback(ros::Time time, int feedback)
@@ -12,10 +12,9 @@ void Channel::onHallFeedback(ros::Time time, int feedback)
 	message.hall.header.stamp = time;
 	message.hall.data = feedback;
 
-	// TODO: This is a temporary hack to make hall values relative
+	//make hall values relative
 	hall_value += feedback - last_hall;
 	last_hall = feedback;
-	// end hack..
 
 	publisher.hall.publish(message.hall);
 	feedback_filter.push(message.hall);
@@ -56,7 +55,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 	/* Register time */
 	ros::Time now = ros::Time::now();
 	std::stringstream ss, out; /* streams for holding status message and command output */
-
+	static double test = 0;
 	double period = 0, feedback = 0, feedback_filtered = 0, current_velocity = feedback_filter.get()*ticks_to_meter;
 
 	if(status.online) /* is set when controller answers to FID request */
@@ -83,6 +82,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 							current_setpoint = 0;
 						}
 
+
 						/* Calculate period */
 						period = (now - time_stamp.last_regulation).toSec();
 
@@ -93,15 +93,32 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						/* Filter feedback */
 						feedback_filtered = velocity_filter.update(feedback);
 
+						if(position_control)
+						{
+							/* Position control with s-ramps */
+							position_generator.setPeriod(period); //in seconds
+							position_generator.setCurrentPosition(((double)last_hall)*ticks_to_meter); //in meters
+							position_generator.setCurrentVelocityInput(velocity); //in meters per second
+							desired_position = position_generator.getNewPosition(); //in meters
 
-						/* Get new setpoint from regulator */
-						//current_setpoint += regulator.output_from_input(velocity, feedback_filtered , period);
-						current_setpoint = velocity + regulator.output_from_input(velocity, current_velocity , period);
-						current_thrust =  (int)(current_setpoint * mps_to_thrust);
+							/* Force 1m/s */
+							desired_position = (((double)last_hall)*ticks_to_meter) + 0.25*period;
+							current_setpoint = regulator.output_from_input(desired_position*mps_to_thrust, ((double)last_hall)*ticks_to_meter*mps_to_thrust, period);
+							//current_setpoint = regulator.output_from_input(desired_position, ((double)last_hall)*ticks_to_meter, period); //setpoint in meters per second from inputs in meters, meters and seconds
+
+						}
+						else
+						{
+							/* Velocity control with feed forward */
+							current_setpoint = velocity + regulator.output_from_input(velocity, current_velocity , period);
+						}
+
+						current_thrust =  (int)(current_setpoint * mps_to_thrust); //Thrust in RoboTeQ units
 
 						/* Implement maximum output*/
 						if(current_thrust >  max_output) current_thrust = max_output;
 						if(current_thrust < -max_output) current_thrust = -max_output;
+
 
 						/* Send motor output command  */
 						out << "!G " << ch << " " << current_thrust;
@@ -172,5 +189,12 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 	message.status.header.stamp = ros::Time::now();
 	message.status.data = ss.str();
 	publisher.status.publish(message.status);
+
+	std::cout << "Period[s]:" << period <<
+			" Setpoint[m/s]:" << velocity <<
+			" Current position[m]:" << ((double)last_hall)*ticks_to_meter <<
+			" Desired position[m]:" << desired_position <<
+			" Thrust[]:" << current_thrust <<
+			" " << std::endl;
 }
 

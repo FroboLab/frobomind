@@ -31,11 +31,11 @@ double Regulator::output_from_input( double setpoint , double input , double per
 	// Calculate output
 	double output = (error * p) + (integrator) - (differentiator * d);
 
-	// Implement output max
-	if(output > out_max)
-		output = out_max;
-	else if(output < -out_max)
-		output = -out_max;
+//	// Implement output max
+//	if(output > out_max)
+//		output = out_max;
+//	else if(output < -out_max)
+//		output = -out_max;
 
 	// Upkeep
 	previous = input;

@@ -41,6 +41,7 @@
 #include <msgs/PropulsionModuleFeedback.h>
 #include "roboteq_hbl1650/roboteq.hpp"
 #include "roboteq_hbl1650/regulator.hpp"
+#include "roboteq_hbl1650/positionGenerator.hpp"
 #include "filter/IRR.h"
 #include "filter/sliding_window.hpp"
 
@@ -58,7 +59,7 @@ template<class ClassT>
 class CallbackHandler : public BaseCB
 {
 /*
- * Templated placeholder class for handling callbacks to member functions
+ * Templated placeholder class for handling callback methods to member functions
  * */
 public:
 	typedef void(ClassT::* FuncT)(std::string);
@@ -75,7 +76,7 @@ public:
 class Channel
 {
 /*
- * Class implementing the concept of a motCircular_queue::or controller channel
+ * Class implementing the concept of a motor controller channel
  * */
 public:
 	// Convenience structs for holding related variables
@@ -98,12 +99,14 @@ public:
 
 	ros::Subscriber cmd_vel_sub;
 
+	bool position_control;
 	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm, current_thrust;
-	double i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
+	double desired_position,i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
 
 	IRR velocity_filter;
 	SlidingWindowFilter feedback_filter;
 	Regulator regulator;
+	PositionGenerator position_generator;
 	BaseCB* transmit_cb;
 	BaseCB* init_cb;
 

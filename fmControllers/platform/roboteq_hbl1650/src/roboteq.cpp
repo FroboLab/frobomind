@@ -57,10 +57,10 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 	{
 		ss << dummy << " ";
 	}
-	else if(sscanf(msg->data.c_str(),"CB=%d:%d", &cb1,&cb2))
-	{
-		hall_feedback(msg->header.stamp, cb1, cb2);
-	}
+//	else if(sscanf(msg->data.c_str(),"CB=%d:%d", &cb1,&cb2))
+//	{
+//		hall_feedback(msg->header.stamp, cb1, cb2);
+//	}
 	else if(sscanf(msg->data.c_str(),"CB=%d",&cb1))
 	{
 		hall_feedback(msg->header.stamp, cb1);
@@ -81,26 +81,26 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 	{
 		ss << "temp_ic:" << t1 << " temp_ch1:" << t2 << " ";
 	}
-	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",&t1,&t2,&t3))
-	{
-		ss << "temp_ic:" << t1 << " temp_ch1:" << t2 << " temp_ch2:" << t3 << " ";
-	}
+//	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",&t1,&t2,&t3))
+//	{
+//		ss << "temp_ic:" << t1 << " temp_ch1:" << t2 << " temp_ch2:" << t3 << " ";
+//	}
 	else if(sscanf(msg->data.c_str(),"A=%d",&a1))
 	{
 		ss << "motor_amps_ch1:" << a1/10.0 << " ";
 	}
-	else if(sscanf(msg->data.c_str(),"A=%d:%d",	&a1,&a2))
-	{
-		ss << "motor_amps_ch1:" << a1/10.0 << " motor_amps_ch1:" << a2/10.0 << " ";
-	}
+//	else if(sscanf(msg->data.c_str(),"A=%d:%d",	&a1,&a2))
+//	{
+//		ss << "motor_amps_ch1:" << a1/10.0 << " motor_amps_ch1:" << a2/10.0 << " ";
+//	}
 	else if(sscanf(msg->data.c_str(),"BA=%d",&ba1))
 	{
 		ss << "battery_amps:" << ba1/10.0 << " ";
 	}
-	else if(sscanf(msg->data.c_str(),"BA=%d:%d",&ba1,&ba2))
-	{
-		ss << "battery_amps_ch1:" << ba1/10.0 << " " << "battery_amps_ch2:" << ba2/10.0 << " " ;
-	}
+//	else if(sscanf(msg->data.c_str(),"BA=%d:%d",&ba1,&ba2))
+//	{
+//		ss << "battery_amps_ch1:" << ba1/10.0 << " " << "battery_amps_ch2:" << ba2/10.0 << " " ;
+//	}
 	else if(sscanf(msg->data.c_str(),"FID=%s",dummy))
 	{
 		status.online = true;
