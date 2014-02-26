@@ -1,12 +1,7 @@
 #!/bin/sh
 
 # parameters
-#WPTLIST='waypoints.txt'
-#WPTLIST='rel_8_2x6m.txt'
-#WPTLIST='waypoints_sdu_s.txt'
-#WPTLIST='waypoints_rel_ahead_back.txt' 
-#WPTLIST='waypoints_rel_rect_2x4m.txt'
-WPTLIST='waypoints_sdu_zigzag.txt'
+WPTLIST='waypoints_rel_frobit.txt'
 
 # change dir to the location of the shell script
 APPDIR=`dirname $(readlink -f $0)`
@@ -16,4 +11,4 @@ cd $APPDIR
 cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
 
 # launch the ROS node
-roslaunch ../launch/survey_run.launch
+roslaunch ../launch/survey_run_frobit.launch

@@ -148,6 +148,12 @@ class mission_node():
 		if int(msg.buttons[3]) != self.wii_b:
 			self.wii_b =  int(msg.buttons[3])
 			self.wii_b_changed = True
+		if int(msg.buttons[6]) != self.wii_left:
+			self.wii_left =  int(msg.buttons[6])
+			self.wii_left_changed = True
+		if int(msg.buttons[7]) != self.wii_right:
+			self.wii_right =  int(msg.buttons[7])
+			self.wii_right_changed = True
 		if int(msg.buttons[8]) != self.wii_up:
 			self.wii_up =  int(msg.buttons[8])
 			self.wii_up_changed = True
@@ -182,8 +188,8 @@ class mission_node():
 		if self.wii_right_changed == True:
 			self.wii_right_changed = False
 			self.vel_ang_user_max += 0.1
-			if self.vel_ang_user_max > self.ang_lin_max:
-				self.vel_ang_user_max = self.ang_lin_max
+			if self.vel_ang_user_max > self.vel_ang_max:
+				self.vel_ang_user_max = self.vel_ang_max
 
 		if pitch >= 0:
 			self.vel_lin_user = self.vel_lin_user_max*(pitch-self.wii_angle_min)/self.wii_angle_diff

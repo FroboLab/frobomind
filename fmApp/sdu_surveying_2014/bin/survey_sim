@@ -11,4 +11,4 @@ cd $APPDIR
 cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
 
 # launch the ROS node
-roslaunch ../launch/sim_survey.launch
+roslaunch ../launch/survey_sim.launch

@@ -1,0 +1,10 @@
+# FroboMower
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", GROUP="dialout", MODE="0666", NAME:="robot"
+#
+# VectorNav VN-100 IMU
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTUTUNZP", GROUP="dialout",MODE="0666", NAME:="imu"
+#
+# Copy this file to: /etc/udev/rules.d/
+#
+# Example on how to retrieve FTDI serial:
+#   udevadm info -a -n /dev/ttyUSB1 | grep 'serial'
