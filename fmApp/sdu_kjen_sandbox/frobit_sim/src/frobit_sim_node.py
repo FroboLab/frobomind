@@ -62,6 +62,9 @@ class ROSnode():
 
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 0.1) # [rad/s^2]
+		self.wheel_speed_variance = 0.05
+		self.wheel_speed_delay = 0.05 # [s]
+		self.wheel_speed_delay_variance = 0.05 
 
 		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
 		if pub_fb_rate != 0:
@@ -82,6 +85,7 @@ class ROSnode():
 		self.cmd_vel_tout_active = True
 		self.pose = [0.0, 0.0, 0.0]
 		self.deadman_tout = 0.0
+		self.cmd_vel_msgs = []
 		self.vel_lin_desired = 0.0
 		self.vel_ang_desired = 0.0
 		self.acc_lin_max_step = acc_lin_max*self.update_interval		
@@ -117,7 +121,6 @@ class ROSnode():
 
 	def accelerate_vel (self, vel_actual, vel_desired, max_step):
 		# update velocity while respecting max acceleration
-		# print '%.4f, %.4f, %.4f' % (vel_actual, vel_desired, max_step)
 		if vel_actual < vel_desired:
 			vel_actual += max_step
 			if vel_actual > vel_desired:
@@ -129,7 +132,16 @@ class ROSnode():
 		return vel_actual
 
 	def update_vel (self):
-		if self.deadman_tout < rospy.get_time():
+		now = rospy.get_time()
+
+		wheel_update = now - self.wheel_speed_delay + np.random.randn()*self.wheel_speed_delay_variance
+		while len(self.cmd_vel_msgs) > 0 and self.cmd_vel_msgs[0][0] < wheel_update:
+			self.vel_lin_desired = self.cmd_vel_msgs[0][1]
+			self.vel_ang_desired = self.cmd_vel_msgs[0][2]
+			(self.wl_fb_vel_set, self.wr_fb_vel_set) = self.dk.inverse(self.vel_lin_desired, self.vel_ang_desired)
+			del(self.cmd_vel_msgs[0])
+
+		if self.deadman_tout < now:
 			self.vel_lin_desired = 0.0
 			self.vel_ang_desired = 0.0
 	
@@ -145,8 +157,8 @@ class ROSnode():
 
 	def update_sim (self):
 		if self.ref_vel_left != 0 or self.ref_vel_right != 0:
-			self.sim_vel_left = self.ref_vel_left + np.random.randn()* 0.2
-			self.sim_vel_right = self.ref_vel_right + np.random.randn()* 0.2
+			self.sim_vel_left = self.ref_vel_left + np.random.randn()* self.wheel_speed_variance
+			self.sim_vel_right = self.ref_vel_right + np.random.randn()* self.wheel_speed_variance
 			(sim_vel_lin, sim_vel_ang) = self.dk.forward(self.sim_vel_left, self.sim_vel_right)
 		else:
 			self.sim_vel_left = 0.0
@@ -171,16 +183,12 @@ class ROSnode():
 	def on_cmd_vel_message(self, msg):
 		# update timeout
 		self.cmd_vel_tout = rospy.get_time() + self.cmd_vel_tout_duration
-
-		# retrieve linear and angular velocity from the message
-		self.vel_lin_desired = msg.twist.linear.x
-		self.vel_ang_desired = msg.twist.angular.z
-
-		(self.wl_fb_vel_set, self.wr_fb_vel_set) = self.dk.inverse(self.vel_lin_desired, self.vel_ang_desired)
-
 		if self.cmd_vel_tout_active:
 			self.cmd_vel_tout_active = False
 			rospy.loginfo (rospy.get_name() + ': Receiving cmd_vel')
+
+		# save cmd_vel message
+		self.cmd_vel_msgs.append([rospy.get_time(), msg.twist.linear.x, msg.twist.angular.z])
 
 	def publish_pose_message(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
