@@ -90,5 +90,5 @@ class pid_controller():
 		return self.output
 
 	def latest_update_values (self):
-		return ([self.error, self.output, self.p, self.i, self.d, self.feed_forward]) # feed forward not implemented yet
+		return ([self.error, self.output, self.p, self.i, self.d, self.ff])
 

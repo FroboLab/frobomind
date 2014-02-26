@@ -318,7 +318,7 @@ class WptNavNode():
 			if self.state == self.STATE_NAVIGATE:
 				(self.status, self.linear_vel, self.angular_vel) = self.wptnav.update(rospy.get_time())
 				if self.status == self.wptnav.UPDATE_ARRIVAL:
-					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint: %s" % (self.wpt[self.wptnav.W_ID]))
+					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint: %s (distance %.2fm)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist))
 
 					# activate wait mode
 					if self.wpt[self.wptnav.W_WAIT] >= 0.0:
