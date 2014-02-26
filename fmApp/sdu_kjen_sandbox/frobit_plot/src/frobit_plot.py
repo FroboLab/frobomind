@@ -214,23 +214,27 @@ class frobit_plot():
 
 			if self.wpt_mode == 1 or self.wpt_mode == 2:
 				if self.wpt_mode > 0 and self.wpt_b != False:
-					a_plt = plot(self.wpt_a[0],self.wpt_a[1],'go',markersize=6)
-					b_plt = plot(self.wpt_b[0],self.wpt_b[1],'ro',markersize=6)
+					a_plt = plot(self.wpt_a[0],self.wpt_a[1],'go',markersize=4)
+					b_plt = plot(self.wpt_b[0],self.wpt_b[1],'ro',markersize=4)
+					ab_plt  =  plot([self.wpt_a[0], self.wpt_b[0]], [self.wpt_a[1], self.wpt_b[1]],'black')
 				if self.wpt_mode == 1:
 					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 						#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=6)
 						pass
 					if self.wpt_target != False:
-						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
+						pass
+						#target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=3)
 				elif self.wpt_mode == 2:
 					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 						#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bo',markersize=6)
 						pass
 					if self.wpt_target != False:
-						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=5)
+						pass
+						#target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=3)
 			elif self.wpt_mode == -1:
 				if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
-					pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=6)
+					#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'b^',markersize=6)
+					pass
 
 		if self.save_time_lapse_images == True:
 			self.fig1.savefig ('img%05d.jpg' % self.map_image_cnt)
