@@ -1,0 +1,16 @@
+<!-- FroboMind plot_velocity example launch file -->
+
+<launch>
+	<group ns="fmExecutors">
+		<node pkg="plot_velocity" name="plot_vel" type="plot_velocity_node.py" output="screen" >
+ 			<param name="velocity_sub" value="/fmCommand/cmd_vel" />
+ 			<param name="update_frequency" value="10" />
+			<param name="plot_title" value="cmd_vel" />
+			<param name="max_linear_velocity" value="2.0" />
+			<param name="max_angular_velocity" value="3.14" />
+			<param name="samples" value="100" />
+		</node>
+	</group>
+</launch>
+
+
