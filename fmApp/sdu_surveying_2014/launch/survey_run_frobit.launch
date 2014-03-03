@@ -65,7 +65,8 @@
 			<param name="enc_left_sub" value="/fmInformation/enc_left" />
 			<param name="enc_right_sub" value="/fmInformation/enc_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
-			<!--param name="odom_pub" value="/fmKnowledge/encoder_odom" /-->
+			<param name="odom_reset_sub" value="/fmInformation/odom_reset" />
+			<!--param name="odom_pub" value="/fmKnowledge/odom" /-->
 			<param name="odom_pub" value="/fmKnowledge/pose" />
 			<param name="odom_estimate_frame" value="/odom_combined" />
 			<param name="vehicle_frame" value="base_footprint" />
@@ -77,7 +78,7 @@
 
 		<!-- estimate robot 2d pose -->
 		<!--node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
-			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="odom_sub" value="/fmKnowledge/odom" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />

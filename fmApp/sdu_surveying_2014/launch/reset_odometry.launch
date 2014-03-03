@@ -1,0 +1,20 @@
+<!--
+
+This launch file serves as an example on how to launch the differential_odometry_reset_node
+
+'easting' is the x-axis (easting) position [m]
+'northing' is the y-axis (northing) position [m]
+'heading' is the vehicle orientation (heading) [deg]
+
+-->
+
+<launch>
+	<group ns="fmProcessors">
+		<node pkg="differential_odometry" name="differential_odometry_reset" type="differential_odometry_reset_node.py" output="screen" >
+			<param name="odom_reset_pub" value="/fmInformation/odom_reset" />
+			<param name="easting" value="0.0" />
+			<param name="northing" value="0.0" />
+			<param name="heading" value="0.0" />
+		</node>
+	</group>
+</launch>

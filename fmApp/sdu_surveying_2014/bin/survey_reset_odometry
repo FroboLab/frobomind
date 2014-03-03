@@ -1,0 +1,9 @@
+#!/bin/sh
+
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+export ROS_MASTER_URI=http://frobobox:11311
+export ROS_HOSTNAME=kjmac
+
+roslaunch ../launch/reset_odometry.launch

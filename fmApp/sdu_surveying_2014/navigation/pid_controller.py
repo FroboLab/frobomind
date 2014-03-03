@@ -47,6 +47,7 @@ class pid_controller():
 		self.i = 0.0
 		self.d = 0.0
 		self.max_output = 0.0
+		self.first_time = True
 
 	def set_parameters (self, Kp, Ki, Kd, feed_forward, max_output):
 		self.Kp = Kp
@@ -58,6 +59,7 @@ class pid_controller():
 	def reset(self):
 		self.error_prev = 0.0
 		self.integral = 0.0
+		self.first_time = True
 
 	def update(self, error):
 		# proportional
@@ -69,8 +71,12 @@ class pid_controller():
 		self.i = self.Ki*self.integral
 
 		# derivation
-		self.derivative = (self.error - self.error_prev)/self.dT # error change
-		self.d = self.Kd*self.derivative
+		if self.first_time == False:
+			self.derivative = (self.error - self.error_prev)/self.dT # error change
+			self.d = self.Kd*self.derivative
+		else:
+			self.d = 0.0
+			self.first_time = False
 		self.error_prev  = self.error # save err for next iteration
 
 		# calculate feed_forward

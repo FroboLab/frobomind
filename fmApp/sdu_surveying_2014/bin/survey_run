@@ -2,10 +2,8 @@
 
 # parameters
 #WPTLIST='waypoints.txt'
-#WPTLIST='rel_8_2x6m.txt'
-#WPTLIST='waypoints_sdu_s.txt'
-#WPTLIST='waypoints_rel_ahead_back.txt' 
-#WPTLIST='waypoints_rel_rect_2x4m.txt'
+#WPTLIST='waypoints_rel_square.txt'
+#WPTLIST='waypoints_rel_ahead_back.txt'
 WPTLIST='waypoints_sdu_zigzag.txt'
 
 # change dir to the location of the shell script

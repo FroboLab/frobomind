@@ -1,6 +1,7 @@
 #!/bin/sh
 
-WPTLIST='waypoints_rel_rect_2x4m.txt'
+WPTLIST='waypoints_rel_square.txt'
+WPTLIST='waypoints_rel_ahead_back.txt'
 
 APPDIR=`dirname $(readlink -f $0)`
 cd $APPDIR

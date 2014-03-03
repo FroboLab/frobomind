@@ -130,12 +130,10 @@ class mission_node():
 					self.state = self.STATE_MANUAL
 					self.vel_lin = 0.0
 					self.vel_ang = 0.0
-					self.publish_cmd_vel_message()
 			elif msg.data == self.KEY_s:
 				if self.state == self.STATE_MANUAL:
 					self.vel_lin = 0.0
 					self.vel_ang = 0.0
-					self.publish_cmd_vel_message()
 		else: # this key is a secondary key
 			if msg.data == self.KEY_SECOND: # the following key will be a secondary key
 				self.second_key = True
