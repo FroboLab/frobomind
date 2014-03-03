@@ -38,9 +38,9 @@ from std_msgs.msg import Bool
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
-from msgs.msg import PropulsionModuleFeedback
+from msgs.msg import FloatArrayStamped, PropulsionModuleFeedback
 from tf.transformations import quaternion_from_euler
-from differential_kinematics import differential_kinematics
+from differential_ifk_py.differential_kinematics import differential_kinematics
 import numpy as np
 from numpy import random
 
@@ -61,10 +61,11 @@ class ROSnode():
 		self.ticks_per_meter_right = rospy.get_param("/ticks_per_meter_right", 500)
 
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
-		acc_ang_max = rospy.get_param("~max_angular_acceleration", 0.1) # [rad/s^2]
-		self.wheel_speed_variance = 0.05
+		acc_ang_max = rospy.get_param("~max_angular_acceleration", 1.8) # [rad/s^2]
+		self.wheel_speed_variance = 0.01
 		self.wheel_speed_delay = 0.05 # [s]
-		self.wheel_speed_delay_variance = 0.05 
+		self.wheel_speed_delay_variance = 0.05
+		self.wheel_speed_error = 0.2 # [m/s]
 
 		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
 		if pub_fb_rate != 0:
@@ -75,6 +76,7 @@ class ROSnode():
 		# get topic names
 		self.topic_deadman = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
 		self.topic_cmd_vel = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
+		self.topic_odom_reset = rospy.get_param("~odom_reset_sub",'/fmInformation/odom_reset')
 		self.topic_pose = rospy.get_param("~pose_pub",'/fmKnowledge/pose')
 		self.topic_w_fb_left_pub = rospy.get_param("~wheel_feedback_left_pub",'/fmInformation/wheel_feedback_left')
 		self.topic_w_fb_right_pub = rospy.get_param("~wheel_feedback_right_pub",'/fmInformation/wheel_feedback_right')
@@ -96,6 +98,8 @@ class ROSnode():
 		self.ref_vel_right = 0.0
 		self.sim_vel_left = 0.0
 		self.sim_vel_right = 0.0
+		self.wheel_speed_err_left = 0.0	
+		self.wheel_speed_err_right = 0.0
 
 		self.dk = differential_kinematics(self.w_dist)
 
@@ -114,6 +118,7 @@ class ROSnode():
 		# setup subscription topic callbacks
 		rospy.Subscriber(self.topic_deadman, Bool, self.on_deadman_message)
 		rospy.Subscriber(self.topic_cmd_vel, TwistStamped, self.on_cmd_vel_message)
+		rospy.Subscriber(self.topic_odom_reset, FloatArrayStamped, self.on_odom_reset_message)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -155,10 +160,26 @@ class ROSnode():
 		# self.ref_ticks_left = self.ref_vel_left*self.ticks_per_meter_left;
 		# self.ref_ticks_right = self.ref_vel_right*self.ticks_per_meter_right;
 
+	def keep_within (self, var, maximum):
+		if var > maximum:
+			var = maximum
+		elif var < -maximum:
+			var = -maximum
+		return var
+		
 	def update_sim (self):
 		if self.ref_vel_left != 0 or self.ref_vel_right != 0:
-			self.sim_vel_left = self.ref_vel_left + np.random.randn()* self.wheel_speed_variance
-			self.sim_vel_right = self.ref_vel_right + np.random.randn()* self.wheel_speed_variance
+			#self.sim_vel_left = self.ref_vel_left + np.random.randn()* self.wheel_speed_variance
+			#self.sim_vel_right = self.ref_vel_right + np.random.randn()* self.wheel_speed_variance
+
+			self.wheel_speed_err_left += np.random.randn()*0.008
+			self.wheel_speed_err_left = self.keep_within (self.wheel_speed_err_left, self.wheel_speed_error)
+
+			self.wheel_speed_err_right += np.random.randn()*0.008
+			self.wheel_speed_err_right = self.keep_within (self.wheel_speed_err_right, self.wheel_speed_error)
+
+			self.sim_vel_left = self.ref_vel_left + self.wheel_speed_err_left + np.random.randn()* self.wheel_speed_variance
+			self.sim_vel_right = self.ref_vel_right + self.wheel_speed_err_right + np.random.randn()* self.wheel_speed_variance
 			(sim_vel_lin, sim_vel_ang) = self.dk.forward(self.sim_vel_left, self.sim_vel_right)
 		else:
 			self.sim_vel_left = 0.0
@@ -189,6 +210,10 @@ class ROSnode():
 
 		# save cmd_vel message
 		self.cmd_vel_msgs.append([rospy.get_time(), msg.twist.linear.x, msg.twist.angular.z])
+
+	def on_odom_reset_message(self, msg):
+		self.pose = [msg.data[0], msg.data[1], msg.data[2]]
+		#rospy.loginfo (rospy.get_name() + ': Received odometry reset')
 
 	def publish_pose_message(self):
 		self.pose_msg.header.stamp = rospy.Time.now()
