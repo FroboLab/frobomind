@@ -32,15 +32,20 @@ imu_angular_velocity_yaw_axis options:
 -->
 
 <launch>
-	<param name="diff_steer_wheel_radius" value="0.051"/>
-	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
+	<!-- Frobit parameters --> 
 	<param name="diff_steer_wheel_distance" value="0.215"/>
+	<param name="ticks_per_meter_left" value="-562" />
+	<param name="ticks_per_meter_right" value="-562" />
+
+	<!--param name="diff_steer_wheel_radius" value="0.051"/-->
+	<!--param name="diff_steer_wheel_ticks_per_rev" value="180"/-->
 
 	<group ns="fmProcessors">
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
 			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
 			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_reset_sub" value="/fmInformation/odom_reset" />
 			<param name="odom_pub" value="/fmKnowledge/odom" />
 			<param name="encoder_output" value="relative"></param>  
 			<param name="ticks_per_meter_left" value="-620"></param>  

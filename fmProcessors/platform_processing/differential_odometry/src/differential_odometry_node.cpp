@@ -48,6 +48,7 @@
 #include <ros/console.h>
 
 #include <msgs/encoder.h>
+#include <msgs/FloatArrayStamped.h>
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/subscriber.h>
@@ -239,6 +240,13 @@ public:
 		}
 	}
 
+	void odomReset(const msgs::FloatArrayStamped::ConstPtr& msg)
+	{
+		x = msg->data[0];
+		y = msg->data[1];
+		theta = msg->data[2];
+	}
+
 	void publishOdometry(const ros::TimerEvent& e)
 	{
 
@@ -368,12 +376,13 @@ int main(int argc, char** argv) {
 	string subscribe_enc_l;
 	string subscribe_enc_r;
 	string subscribe_imu;
+	string subscribe_odom_reset;
 
 	double wheel_radius, wheel_ticks_rev, tick_to_meter_left, tick_to_meter_right, max_ticks_per_update;
 	double wheel_dist;
 	double ticks_per_meter_left, ticks_per_meter_right;
 	int encoder_output, yaw_source, yaw_axis;
-	ros::Subscriber s1,s2,s3;
+	ros::Subscriber s1,s2,s3, s4;
 
 	// publishers
 	nh.param<string>("odom_pub", publish_topic, "/fmKnowledge/odom");
@@ -382,6 +391,7 @@ int main(int argc, char** argv) {
 	nh.param<string>("enc_left_sub", subscribe_enc_l, "/fmInformation/encoder_left");
 	nh.param<string>("enc_right_sub", subscribe_enc_r, "/fmInformation/encoder_right");
 	nh.param<string>("imu_sub", subscribe_imu, "/fmInformation/imu");
+	nh.param<string>("odom_reset_sub", subscribe_odom_reset, "/fmInformation/odom_reset");
 
 	// robot parameters
 	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);
@@ -501,6 +511,7 @@ int main(int argc, char** argv) {
 	s1 = nh.subscribe(subscribe_enc_l,15,&SimpleOdom::processLeftEncoder,&p);
 	s2 = nh.subscribe(subscribe_enc_r,15,&SimpleOdom::processRightEncoder,&p);
 	s3 = nh.subscribe(subscribe_imu,15,&SimpleOdom::processImu,&p);
+	s4 = nh.subscribe(subscribe_odom_reset,15,&SimpleOdom::odomReset,&p);
 
 	// publish odometry at 0.02s = 50 Hz
 	p.odom_pub = n.advertise<nav_msgs::Odometry>(publish_topic.c_str(), 25);
