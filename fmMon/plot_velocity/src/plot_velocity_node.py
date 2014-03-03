@@ -67,7 +67,7 @@ class ROSnode():
 		self.p_vel_ang, = plot(self.plot_vel_ang, "red")
 		ylim([-self.max_ang_vel, self.max_ang_vel])
 		ylabel('Angular [rad/s]')
-		ylabel('Samples')
+		xlabel('Samples')
 		grid (True)
 		draw() # redraw plot
 
