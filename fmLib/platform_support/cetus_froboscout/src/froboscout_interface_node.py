@@ -36,7 +36,7 @@ import rospy
 from msgs.msg import nmea, IntStamped, PropulsionModuleStatus, PropulsionModuleFeedback
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist, TwistStamped
-from differential_kinematics import differential_kinematics
+from differential_ifk_py.differential_kinematics import differential_kinematics
 from time import sleep
 
 class FroboScoutInterfaceNode():
