@@ -44,8 +44,8 @@ class mission_node():
 	def __init__(self):
 		# fixed parameters
 		self.update_rate = 20 # [Hz]
-		self.vel_lin_user_max = 0.5
-		self.vel_ang_user_max = 0.3
+		self.vel_lin_user_max = 0.6
+		self.vel_ang_user_max = 0.4
 
 		# robot state
 		self.STATE_AUTO = 0

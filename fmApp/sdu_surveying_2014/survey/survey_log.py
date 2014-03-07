@@ -75,16 +75,17 @@ class log_node():
 
 		# get topic names
 		cmd_vel_topic = rospy.get_param("~cmd_vel_sub", "/fmCommand/cmd_vel")
-		wptnav_status_topic = rospy.get_param("~wptnav_status_sub", "/fmData/wptnav_status")
+		wptnav_status_topic = rospy.get_param("~wptnav_status_sub", "/fmInformation/wptnav_status")
 		imu_topic = rospy.get_param("~imu_sub", "/fmInformation/imu")
 		gnss_topic = rospy.get_param("~gpgga_tranmerc_sub", "/fmInformation/gpgga_tranmerc")
 		laser_topic = rospy.get_param("~lidar_sub",'/fmSensors/laser_msg')
 
 		# init variables
-		self.vel_lin = 1.0
-		self.vel_ang = 1.0
+		self.cmd_vel_lin = 1.0
+		self.cmd_vel_ang = 1.0
 		self.b = [0.0, 0.0]
-		self.init_log ('#seconds,easting,northing,altitude,dist_to_wpt,pitch,roll,yaw\n')
+		self.init_log ('#wpt_num\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\tyaw\n')
+		self.wpt_num = 0
 
 		# lidar
 		self.laser = []
@@ -103,17 +104,17 @@ class log_node():
 
 	def on_cmd_vel_topic(self, msg):
 		if self.state == self.STATE_LOG:
-			self.vel_lin = msg.twist.linear.x
-			self.vel_ang = msg.twist.angular.z
+			self.cmd_vel_lin = msg.twist.linear.x
+			self.cmd_vel_ang = msg.twist.angular.z
 
-			if self.vel_lin != 0 or self.vel_ang != 0:
+			if self.cmd_vel_lin != 0 or self.cmd_vel_ang != 0:
 				self.end_log()
 				if self.debug:
-					print '%.3f Survey stop due to velocity command: lin %.2f angular %.2f' % (rospy.get_time(), self.vel_lin, self.vel_ang)
+					print '%.3f Survey stop due to velocity command: lin %.2f angular %.2f' % (rospy.get_time(), self.cmd_vel_lin, self.cmd_vel_ang)
 
 	def on_wptnav_status_topic(self, msg):
 		msg_b = [msg.b_easting, msg.b_northing]
-		if msg_b != self.b:
+		if msg_b != self.b and self.state != self.STATE_LOG:
 			self.b = msg_b
 
 		wptnav_wait = (msg.state == 2)
@@ -136,7 +137,7 @@ class log_node():
 			yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
 			pitch = asin((2*qy*qw) - (2*qx*qz))
 			roll = atan2((2*qy*qz) + (2*qx*qw), sqw + sqz - sqy - sqx)
-			self.imu.append([pitch, roll])
+			self.imu.append([pitch, roll, yaw])
 
 	def on_gnss_topic(self, msg):
 		if self.state == self.STATE_LOG:
@@ -162,9 +163,11 @@ class log_node():
 		self.gnss = []
 		self.imu =[]
 		self.laser = [] 
-		if self.debug:
-			print '%.3f Survey begin' % rospy.get_time()
 		self.state = self.STATE_LOG
+		time_now = rospy.get_time()
+		self.begin_log_time = time_now 
+		if self.debug:
+			print '%.3f Survey begin' % time_now
 
 	def init_log (self, header):
 		f = open(self.log_file, 'w')
@@ -196,28 +199,46 @@ class log_node():
 		n = len(self.imu)
 		pitch = 0.0
 		roll = 0.0
+		yaw = 0.0
 		for i in xrange(n):
 			pitch += self.imu[i][0]
 			roll += self.imu[i][1]
+			yaw += self.imu[i][2]
 		pitch /= n
 		roll /= n
+		yaw /= n
 		if self.debug:
 			print 'IMU Pitch: %.3f Roll: %.3f' % (pitch*self.rad_to_deg, roll*self.rad_to_deg)
-		return (pitch, roll)
+		return (pitch, roll, yaw)
 
 	def end_log (self):
-		(gnss_e, gnss_n, gnss_alt) = self.average_gnss_pose()
-		dist_from_wpt =  self.calc_2d_dist ([gnss_e, gnss_n], self.b)
-		(imu_pitch, imu_roll) = self.average_imu()
-		if self.debug:
-			print 'Distance from waypoint: %.3f' % dist_from_wpt
+		self.state = self.STATE_IDLE
+		time_now = rospy.get_time()
+		error = False
+		self.wpt_num += 1
+		log_seconds = time_now	- self.begin_log_time
+		if len(self.gnss) > 0:
+			(gnss_e, gnss_n, gnss_alt) = self.average_gnss_pose()
+			dist_from_wpt =  self.calc_2d_dist ([gnss_e, gnss_n], self.b)
+			if self.debug:
+				print 'Distance from waypoint: %.3f' % dist_from_wpt
+		else:
+			error = True
 
-		s = '%.3f,%.3f,%.3f,%.3f,%.3f,%.2f,%.2f\n' %(rospy.get_time(), gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
+		if len(self.imu) > 0:
+			(imu_pitch, imu_roll, imu_yaw) = self.average_imu()
+		else:
+			error = True
+
+		if error == False:
+			s = '%d\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\t%.2f\n' %(self.wpt_num, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg, imu_yaw*self.rad_to_deg)
+		else:
+			s= '#errror\t%.3f\t%.3f\n' % (time_now, log_seconds)
+
 		self.save_log(s)
-
 		self.state = self.STATE_IDLE
 		if self.debug:
-			print '%.3f Survey end' %  rospy.get_time()
+			print '%.3f Survey end' %  time_now
 
 	def updater(self):
 		while not rospy.is_shutdown():

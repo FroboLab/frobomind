@@ -4,14 +4,23 @@
 <launch>
 
 	<group ns="fmSensors">
-		<node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
+		<!-- node pkg="plot_velocity" name="plot_vel" type="plot_velocity_node.py" output="screen" >
+ 			<param name="velocity_sub" value="/fmCommand/cmd_vel" />
+ 			<param name="update_frequency" value="10" />
+			<param name="plot_title" value="cmd_vel" />
+			<param name="max_linear_velocity" value="1.2" />
+			<param name="max_angular_velocity" value="1.0" />
+			<param name="samples" value="100" />
+		</node-->
+
+		<!--node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
  			<param name="propulsion_feedback_left_sub" value="/fmInformation/wheel_feedback_left" />
  			<param name="propulsion_feedback_right_sub" value="/fmInformation/wheel_feedback_right" />
  			<param name="update_frequency" value="20" />
 			<param name="plot_title" value="Wheel feedback" />
 			<param name="maximum_velocity" value="1.2" />
 			<param name="maximum_thrust" value="540" />
-		</node>
+		</node-->
 
 		<!--node pkg="sdu_surveying_2014" name="pose" type="show_pose_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
@@ -28,7 +37,7 @@
 			<param name="plot_pose_track" value="true" />
 			<param name="plot_gnss_track" value="false" />
 			<param name="plot_odometry_track" value="false" />
-			<param name="plot_pose_yaw" value="false" />
+			<param name="plot_pose_yaw" value="true" />
 			<param name="map_trackpoint_threshold" value="0.02" />
 			<param name="map_max_trackpoints" value="1000" />
 			<param name="map_minimum_size" value="6.0" />

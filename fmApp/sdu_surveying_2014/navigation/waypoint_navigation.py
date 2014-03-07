@@ -390,7 +390,7 @@ class waypoint_navigation():
 				self.left_of_ab = (self.angle_diff(self.bearing, self.ab_bearing) < 0.0)
 
 				self.target_max_angle = pi/6.0 
-				self.target_angle_at_1m_offset = 120*pi/180.0
+				self.target_angle_at_1m_offset = 90*pi/180.0
 			
 				offset_angle = self.ab_dist_to_pose**1.2 * self.target_angle_at_1m_offset
 				if offset_angle > self.target_max_angle:
