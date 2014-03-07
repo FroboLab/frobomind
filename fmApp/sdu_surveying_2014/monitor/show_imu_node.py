@@ -33,7 +33,7 @@ Prints the current imu yaw, pitch, roll at a defined interval.
 """
 
 import rospy
-from math import atan2, asin, pi
+from math import atan2, asin, pi, sqrt
 from sensor_msgs.msg import Imu
 
 rad_to_deg = 180.0/pi
@@ -47,8 +47,20 @@ def on_imu_topic(msg):
 	global yaw, pitch, roll, new_data
 	new_data = True
 
+	ax = msg.linear_acceleration.x
+	ay = msg.linear_acceleration.y
+	az = msg.linear_acceleration.z
+	
+	g = sqrt(ax*ax + ay*ay + az*az)
+	roll = atan2(ay, -az)
+	pitch = asin(ax/-g)
+
+	#roll = atan2(az, -ax)
+	#pitch = asin(ay/-g)
+
+
 	# extract yaw, pitch and roll from the quaternion
-	qx = msg.orientation.x
+	'''qx = msg.orientation.x
 	qy = msg.orientation.y
 	qz = msg.orientation.z
 	qw = msg.orientation.w
@@ -59,7 +71,8 @@ def on_imu_topic(msg):
 	yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
 	pitch = asin((2*qy*qw) - (2*qx*qz))
 	roll = atan2((2*qy*qz) + (2*qx*qw), sqw + sqz - sqy - sqx)
-	
+	'''
+
 # init ros node
 rospy.init_node('show_imu')
 

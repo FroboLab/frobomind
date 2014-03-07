@@ -125,6 +125,11 @@ class log_node():
 
 	def on_imu_topic(self, msg):
 		if self.state == self.STATE_LOG:
+			# save accelerometers
+			ax = msg.linear_acceleration.x
+			ay = msg.linear_acceleration.y
+			az = msg.linear_acceleration.z
+
 			# extract yaw, pitch and roll from the quaternion
 			qx = msg.orientation.x
 			qy = msg.orientation.y
@@ -137,7 +142,8 @@ class log_node():
 			yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
 			pitch = asin((2*qy*qw) - (2*qx*qz))
 			roll = atan2((2*qy*qz) + (2*qx*qw), sqw + sqz - sqy - sqx)
-			self.imu.append([pitch, roll, yaw])
+
+			self.imu.append([yaw, pitch, roll, ax, ay, az])
 
 	def on_gnss_topic(self, msg):
 		if self.state == self.STATE_LOG:
@@ -195,6 +201,36 @@ class log_node():
 			print 'GNSS Easting: %.3f Northing: %.3f Altitude: %.3f' % (easting, northing, alt)
 		return (easting, northing, alt)
 
+	def average_imu_accelerometers(self):
+		n = len(self.imu)
+		ax = 0.0
+		ay = 0.0
+		az = 0.0
+		for i in xrange(n):
+			ax += self.imu[i][3]
+			ay += self.imu[i][4]
+			az += self.imu[i][5]
+		ax /= n
+		ay /= n
+		az /= n
+
+		g = sqrt(ax*ax + ay*ay + az*az)
+
+		# standard orientation 
+		'''
+		roll = atan2(ay, -az)
+		pitch = asin(ax/-g)
+		'''
+
+		# x-axis vertical 
+		roll = atan2(az, -ax)
+		pitch = asin(ay/-g)
+		
+	
+		if self.debug:
+			print 'IMU Roll: %.3f Pitch: %.3f' % (roll*self.rad_to_deg, pitch*self.rad_to_deg)
+		return (roll, pitch)
+
 	def average_imu(self):
 		n = len(self.imu)
 		pitch = 0.0
@@ -210,6 +246,7 @@ class log_node():
 		if self.debug:
 			print 'IMU Pitch: %.3f Roll: %.3f' % (pitch*self.rad_to_deg, roll*self.rad_to_deg)
 		return (pitch, roll, yaw)
+
 
 	def end_log (self):
 		self.state = self.STATE_IDLE
@@ -227,11 +264,12 @@ class log_node():
 
 		if len(self.imu) > 0:
 			(imu_pitch, imu_roll, imu_yaw) = self.average_imu()
+			(imu_roll, imu_pitch) = self.average_imu_accelerometers()
 		else:
 			error = True
 
 		if error == False:
-			s = '%d\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\t%.2f\n' %(self.wpt_num, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg, imu_yaw*self.rad_to_deg)
+			s = '%d\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\n' %(self.wpt_num, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_roll*self.rad_to_deg, imu_pitch*self.rad_to_deg)
 		else:
 			s= '#errror\t%.3f\t%.3f\n' % (time_now, log_seconds)
 
