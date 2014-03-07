@@ -29,7 +29,9 @@
 
 import csv
 import matplotlib.pyplot as plt
-from pylab import plot, axis, grid, title, xlabel, ylabel, xlim, ylim, draw, show, subplot
+from pylab import plot, axis, grid, title, xlabel, ylabel, xlim, ylim, draw, show, subplot, ion, savefig
+import numpy as np
+from numpy import *
 
 
 class scalar_data():
@@ -98,26 +100,67 @@ rt.trim_end(time_end)
 cpu.trim_end(time_end)
 mem.trim_end(time_end)
 
+print "Duration %.2f seconds" % (time_end - time_begin)
+
 # convert CPU load to %
 for i in xrange(len(cpu.data)):
 	cpu.data[i][1] *= 100
 
 tim = []
-clock = 0
+clock = -3
 actual = 0
+
+timing_adjust = 1.000094
+
 for i in xrange(len(rt.data)):
-	actual += (rt.data[i][1]/1.0002)
+	actual += (rt.data[i][1]/timing_adjust)
 	clock += 100
 	tim.append ([rt.data[i][0], 10+(actual-clock)/10.0])
 
 rtperc = []
 for i in xrange(len(rt.data)):
-	rtperc.append ([rt.data[i][0], rt.data[i][1]/1.0002/10.0])
+	rtperc.append ([rt.data[i][0], rt.data[i][1]/timing_adjust/10.0])
+
+
+cpuT = zip(*cpu.data)
+timT = zip(*tim)
+rtT = zip(*rtperc)
+
+avg = 0
+mini = 9999
+maxi = 0
+for i in xrange(len(rtperc)):
+	avg += rtperc[i][1]
+	if rtperc[i][1] > maxi:
+		maxi = rtperc[i][1]
+	if rtperc[i][1] < mini:
+		mini = rtperc[i][1]
+avg /= len(rtperc)
+print 'samples %ld' % len(rtperc)
+print 'average %.6f' % avg 
+print 'min/max %.2f %.2f' % (mini,maxi) 
+
+vari = 0
+for i in xrange(len(rtperc)):
+	vari += (rtperc[i][1] - avg)**2
+vari /= len(rtperc)
+print 'variance %.2f' % vari 
+
+
+hist,bins=np.histogram(array(rtT[1]),bins=50)
+width=1*(bins[1]-bins[0])
+center=(bins[:-1]+bins[1:])/2
+
+ion()
+
+plt.bar(center,hist,align='center',width=width)
+savefig('hist.png')
+
 
 # plot data
 
-subplot (311)
-title ('CPU & memory load')
+subplot (211)
+title ('CPU load & scheduler intervals')
 cpuT = zip(*cpu.data)
 cpu_plt = plot(cpuT[0], cpuT[1], 'red')
 #memT = zip(*mem.data)
@@ -126,22 +169,36 @@ cpu_plt = plot(cpuT[0], cpuT[1], 'red')
 ylim([0.0, 100.0])
 ylabel('CPU load [%]')
 grid (True)
-title ('Real-time timing')
 
-subplot (312)
-#ylim([-5, 5])
-timT = zip(*tim)
-tim_plt = plot(timT[0], timT[1], 'black')
-ylabel('100 Hz err. [ms]')
-grid (True)
-
-subplot (313)
+subplot (212)
 #ylim([0, 20])
 #timT = zip(*tim)
 #tim_plt = plot(timT[0], timT[1], 'black')
-rtT = zip(*rtperc)
 rt_plt = plot(rtT[0], rtT[1], 'black')
-ylabel('Sched. interval [ms]')
+ylabel('Scheduler interval [ms]')
+xlabel('Time [s]')
 grid (True)
 
-show()
+
+'''subplot (211)
+title ('CPU & memory load')
+cpu_plt = plot(cpuT[0], cpuT[1], 'red')
+#memT = zip(*mem.data)
+#mem_plt = plot(memT[0], memT[1], 'black')
+
+ylim([0.0, 100.0])
+ylabel('CPU load [%]')
+grid (True)
+title ('CPU load & scheduler intervals')
+
+subplot (212)
+#ylim([-5, 5])
+tim_plt = plot(timT[0], timT[1], 'black')
+ylabel('100 Hz sched. [ms]')
+grid (True)
+'''
+draw()
+
+raw_input() # wait for enter keypress 
+savefig('cpu_load_sched_interval.png')
+
