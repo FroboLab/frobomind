@@ -1,6 +1,6 @@
 /*****************************************************************************
 # NMEA node
-# Copyright (c) 2012-2013,
+# Copyright (c) 2012-2014,
 #	Leon Bonde Larsen <leon@bondelarsen.d>
 #	Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 #
-# This node reads NMEA messages from a serial stream, decodes the information
+# This node reads NMEA messages from strings, decodes the information
 # and verifys the checksum.
 #
 # 2012-xx-xx lelar original code
@@ -36,6 +36,7 @@
 #                  added length to nmea msg, checksum is validated on
 #                  incoming msgs regardles of use_nmea_checksum value
 #                  OUTGOING CHECKSUM NOT YET IMPLEMENTED
+# 2014-03-07 kjen  Migrated to StringStamped.h
 #
 #****************************************************************************/
 
@@ -45,7 +46,7 @@
 #include <vector>
 #include "ros/ros.h"
 #include "msgs/nmea.h"
-#include "msgs/serial.h"
+#include "msgs/StringStamped.h"
 #include "boost/tokenizer.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
@@ -122,7 +123,7 @@ unsigned char get_checksum(std::string str)
 }
 
 /* Parses from serial message to nmea message */
-void str_to_msg_callback(const msgs::serial::ConstPtr& msg)
+void str_to_msg_callback(const msgs::StringStamped::ConstPtr& msg)
 {
 	//build NMEA message data type
 	nmea_msg.header.stamp = msg->header.stamp;
@@ -167,7 +168,7 @@ void str_to_msg_callback(const msgs::serial::ConstPtr& msg)
 void msg_to_str_callback(const msgs::nmea::ConstPtr& msg)
 {
 	// Construct message object
-	msgs::serial nmea_message;
+	msgs::StringStamped nmea_message;
 	nmea_message.header.stamp = msg->header.stamp;
 
 	std::vector<std::string> nmea_vector;
@@ -220,7 +221,7 @@ int main(int argc, char **argv) {
 	str_to_msg_pub = nh.advertise<msgs::nmea>(str_to_msg_pub_id, 1);
 
 	ros::Subscriber msg_to_str_sub = nh.subscribe(msg_to_str_sub_id, 10, msg_to_str_callback);
-	msg_to_str_pub = nh.advertise<msgs::serial>(msg_to_str_pub_id, 1);
+	msg_to_str_pub = nh.advertise<msgs::StringStamped>(msg_to_str_pub_id, 1);
 
 	ros::spin();
 	return 0;

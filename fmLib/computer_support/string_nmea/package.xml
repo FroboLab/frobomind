@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>serial_nmea</name>
+  <name>string_nmea</name>
   <version>1.0.0</version>
   <description>The nmea package</description>
 

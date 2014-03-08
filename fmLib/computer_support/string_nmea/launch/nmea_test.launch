@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="string_nmea" name="string_nmea" type="nmea_node" output="screen"/>
+    <node pkg="string_nmea" name="nmea_test" type="nmea_test_node.py" output="screen"/>
+</launch>
