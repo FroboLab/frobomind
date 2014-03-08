@@ -1,0 +1,14 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmLib">
+		<node pkg="serial_nmea_combined" name="serial_nmea" type="serial_nmea_combined_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_device"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_device"/>
+			<param name="serial_device" value="/dev/ttyS0"/>
+			<param name="serial_baudrate" value="115200"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+	</group>
+</launch>
+
