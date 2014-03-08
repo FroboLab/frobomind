@@ -1,0 +1,23 @@
+<!-- FroboMind launch file -->
+
+<launch>
+		<node pkg="serial_nmea" name="gps_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_gps"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_gps"/>
+			<param name="serial_device" value="/dev/ttyUSB0"/>
+			<param name="serial_baudrate" value="4800"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+
+		<node pkg="nmea_to_tranmerc" name="nmea_to_tranmerc" type="nmea_to_tranmerc_node" output="screen">
+			<param name="nmea_sub" value="/fmData/nmea_from_gps" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+</launch>
