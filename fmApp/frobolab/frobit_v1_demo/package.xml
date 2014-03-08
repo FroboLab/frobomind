@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>frobit_v1_demo</name>
+  <version>0.0.0</version>
+  <description>The frobit_v1_demo package</description>
+
+  <maintainer email="frobolab@frobomind.org">FroboLab</maintainer>
+  <license>BSD 3-Clause</license>
+  <url type="website">http://www.frobomind.org</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>rospy</build_depend>
+  <run_depend>rospy</run_depend>
+  <build_depend>msgs</build_depend>
+  <run_depend>msgs</run_depend>
+  <build_depend>smach</build_depend>
+  <run_depend>smach</run_depend>
+  <build_depend>smach_ros</build_depend>
+  <run_depend>smach_ros</run_depend>
+  <build_depend>keyboard_interface</build_depend>
+  <run_depend>keyboard_interface</run_depend>
+  <build_depend>generic_smach</build_depend>
+  <run_depend>generic_smach</run_depend>
+  <build_depend>action_primitives</build_depend>
+  <run_depend>action_primitives</run_depend>
+</package>
