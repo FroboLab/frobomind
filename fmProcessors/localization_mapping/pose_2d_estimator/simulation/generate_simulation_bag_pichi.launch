@@ -38,8 +38,8 @@ This launch file generates a simulation bag which contains output from:
 	<group ns="fmProcessors">
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-			<param name="enc_left_sub" value="/fmInformation/enc_left_sim" />
-			<param name="enc_right_sub" value="/fmInformation/enc_right_sim" />
+			<param name="enc_left_sub" value="/fmInformation/encoder_left_sim" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right_sim" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom_sim" />
 			<param name="encoder_output" value="absolute"></param>  
@@ -54,15 +54,6 @@ This launch file generates a simulation bag which contains output from:
 	</group>
 
 	<group ns="fmLib">
-		<!-- launch conversion node to convert IntStamped messages to encoder messages -->
-		<!-- (this is a temporary fix until we get all encoder messages changed to IntStamped) -->
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py">
-			<param name="left_sub" value="/fmInformation/encoder_left" />
-			<param name="right_sub" value="/fmInformation/encoder_right" />
-			<param name="left_pub" value="/fmInformation/enc_left_sim" />
-			<param name="right_pub" value="/fmInformation/enc_right_sim" />
-		</node>
-
 		<!-- extract NMEA messages from serial ascii data -->
 		<!--node pkg="serial_nmea" name="nmea_gps_node" type="nmea_node" output="screen">
 		    <param name="str_to_msg_sub" value="/fmData/gps_rx" />   
@@ -75,7 +66,7 @@ This launch file generates a simulation bag which contains output from:
 
 	<group ns="rosbag">
 		<!-- rosbag the output for simulation -->
-		<node pkg="rosbag" name="record" type="record" args="-O $(find pose_2d_estimator)/simulation/sim.bag /fmKnowledge/encoder_odom_sim /fmInformation/gpgga_tranmerc_sim /fmInformation/imu /fmInformation/enc_left_sim /fmInformation/enc_right_sim"/>
+		<node pkg="rosbag" name="record" type="record" args="-O $(find pose_2d_estimator)/simulation/sim.bag /fmKnowledge/encoder_odom_sim /fmInformation/gpgga_tranmerc_sim /fmInformation/imu /fmInformation/encoder_left_sim /fmInformation/encoder_right_sim"/>
 
 		<!-- launch a bag from the SDU Pichi robot to emulate sensor input -->
 		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find pose_2d_estimator)/simulation/test.bag">

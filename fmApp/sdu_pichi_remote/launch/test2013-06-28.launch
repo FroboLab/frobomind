@@ -10,10 +10,6 @@
 			<param name="termination_character" value="13"/>
 		</node>
 	</group>
-	
-	<group ns="fmTools">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
-	</group>
 
 	<group ns="fmControllers">
 		<node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >

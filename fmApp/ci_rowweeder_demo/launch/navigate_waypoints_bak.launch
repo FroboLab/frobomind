@@ -43,8 +43,8 @@
 	<group ns="fmProcessors">
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-			<param name="enc_left_sub" value="/fmInformation/enc_left" />
-			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
 			<param name="encoder_output" value="absolute"></param>  
@@ -174,14 +174,5 @@
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
 		</node> 	
-
-		<!-- launch conversion node to convert IntStamped messages to encoder messages -->
-		<!-- (this is a temporary fix until we get all encoder messages changed to IntStamped) -->
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py">
-			<param name="left_sub" value="/fmInformation/encoder_left" />
-			<param name="right_sub" value="/fmInformation/encoder_right" />
-			<param name="left_pub" value="/fmInformation/enc_left" />
-			<param name="right_pub" value="/fmInformation/enc_right" />
-		</node>
 	</group>
 </launch>

@@ -55,8 +55,8 @@
 	<group ns="fmProcessors">
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-			<param name="enc_left_sub" value="/fmInformation/enc_left" />
-			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
 			<param name="odom_estimate_frame" value="/odom_combined" />
@@ -121,13 +121,6 @@
 	</group>
 
 	<group ns="fmLib">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py">
-			<param name="left_sub" value="/fmInformation/encoder_left" />
-			<param name="right_sub" value="/fmInformation/encoder_right" />
-			<param name="left_pub" value="/fmInformation/enc_left" />
-			<param name="right_pub" value="/fmInformation/enc_right" />
-		</node>
-
 		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node" >
 			<param name="cmd_vel_left_sub" value="/fmSignals/cmd_vel_left"/>
 			<param name="cmd_vel_right_sub" value="/fmSignals/cmd_vel_right"/>

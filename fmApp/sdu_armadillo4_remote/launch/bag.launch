@@ -33,8 +33,8 @@
 
 	<group ns="platform_processors">
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-			<param name="enc_left_sub" value="/fmInformation/enc_left" />
-			<param name="enc_right_sub" value="/fmInformation/enc_right" />
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom" />
 			<param name="encoder_output" value="absolute"></param>  
@@ -67,7 +67,6 @@
 	</group>
 	
 	<group ns="tools">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
 		<node pkg="sdu_armadillo4" type="test.py" name="tester" output="screen"/>
 		<node pkg="tf" type="static_transform_publisher" name="gps_broadcaster" args="-588784.0 -6137262.0 0 0 0 0 odom map 100"/> 
 		<node pkg="tf" type="static_transform_publisher" name="base_broadcaster" args="0 0 0 3.14 0 0 base_footprint base_link 100"/>

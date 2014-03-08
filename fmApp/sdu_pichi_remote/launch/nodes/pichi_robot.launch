@@ -1,8 +1,4 @@
 <launch>
-	<group ns="fmTools">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py" />
-	</group>
-
 	<group ns="fmControllers">
 		<node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
 			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel"/>

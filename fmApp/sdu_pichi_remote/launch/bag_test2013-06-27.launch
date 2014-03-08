@@ -1,9 +1,4 @@
 <launch>
-	<group ns="fmTools">
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="encoder_converter.py" />
-		<node pkg="sdu_pichi" type="test.py" name="tester" output="screen"/>
-	</group>
-
 	<group ns="fmControllers">
 		
 		<node pkg="sdu_pichi" name="robot_interface" type="sdu_pichi_node" output="screen" >

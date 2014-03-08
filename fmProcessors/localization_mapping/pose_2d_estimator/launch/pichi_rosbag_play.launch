@@ -57,8 +57,8 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
 		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
-			<param name="enc_left_sub" value="/fmInformation/enc_left_sim" />
-			<param name="enc_right_sub" value="/fmInformation/enc_right_sim" />
+			<param name="enc_left_sub" value="/fmInformation/encoder_left_sim" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right_sim" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_pub" value="/fmKnowledge/encoder_odom_sim" />
 			<param name="encoder_output" value="absolute"></param>  
@@ -86,15 +86,6 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 	</group>
 
 	<group ns="fmLib">
-		<!-- launch conversion node to convert IntStamped messages to encoder messages -->
-		<!-- (this is a temporary fix until we get all encoder messages changed to IntStamped) -->
-		<node pkg="int_stamped_to_encoder" name="enc_conversion" type="pichi_encoder_converter.py">
-			<param name="left_sub" value="/fmInformation/encoder_left" />
-			<param name="right_sub" value="/fmInformation/encoder_right" />
-			<param name="left_pub" value="/fmInformation/enc_left_sim" />
-			<param name="right_pub" value="/fmInformation/enc_right_sim" />
-		</node>
-
 		<!-- extract NMEA messages from serial ascii data -->
 		<!--node pkg="serial_nmea" name="nmea_gps_node" type="nmea_node" output="screen">
 		    <param name="str_to_msg_sub" value="/fmData/gps_rx" />   

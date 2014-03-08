@@ -41,13 +41,14 @@
 # 2013-05-02 kjen Added support for absolute encoder values
 # 2013-05-15 kjen Corrected a potential bug when encoder callbacks updates
 #                 the relative tick vars while publishing is in progres.
+# 2014-03-07 kjen Moved from msgs/encoder.h to msgs/IntStamped.h message type
 #
 #****************************************************************************/
 // includes
 #include <ros/ros.h>
 #include <ros/console.h>
 
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 #include <msgs/FloatArrayStamped.h>
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
@@ -131,13 +132,13 @@ public:
 		return diff;
 	}
 
-	void processLeftEncoder(const msgs::encoder::ConstPtr& msg)
+	void processLeftEncoder(const msgs::IntStamped::ConstPtr& msg)
 	{
 		if (encoder_output == ENCODER_OUTPUT_ABSOLUTE)
 		{
 			if (l_first == false)
 			{
-				int64_t dticks = (msg->encoderticks - prev_l.encoderticks);
+				int64_t dticks = (msg->data - prev_l.data);
 				if (abs(dticks) <= max_ticks_per_update)
 				{
 					delta_ticks_l += dticks;
@@ -152,9 +153,9 @@ public:
 		}
 		else
 		{
-			if (abs(msg->encoderticks) <= max_ticks_per_update)
+			if (abs(msg->data) <= max_ticks_per_update)
 			{
-				delta_ticks_l += msg->encoderticks;
+				delta_ticks_l += msg->data;
 				l_time_prev = l_time_latest;
 				l_time_latest = ros::Time::now();
 				l_updated = true;
@@ -162,13 +163,13 @@ public:
 		}
 	}
 
-	void processRightEncoder(const msgs::encoder::ConstPtr& msg)
+	void processRightEncoder(const msgs::IntStamped::ConstPtr& msg)
 	{
 		if (encoder_output == ENCODER_OUTPUT_ABSOLUTE)
 		{
 			if (r_first == false)
 			{
-				int64_t dticks = (msg->encoderticks - prev_r.encoderticks);
+				int64_t dticks = (msg->data - prev_r.data);
 				if (abs(dticks) <= max_ticks_per_update)
 				{
 					delta_ticks_r += dticks;
@@ -183,9 +184,9 @@ public:
 		}
 		else
 		{
-			if (abs(msg->encoderticks) <= max_ticks_per_update)
+			if (abs(msg->data) <= max_ticks_per_update)
 			{
-				delta_ticks_r += msg->encoderticks;
+				delta_ticks_r += msg->data;
 				r_time_prev = r_time_latest;
 				r_time_latest = ros::Time::now();
 				r_updated = true;
@@ -361,7 +362,7 @@ private:
 	bool l_updated, r_updated, l_first, r_first;
 	ros::Time time_launch, l_time_latest, l_time_prev, r_time_latest, r_time_prev, imu_time_latest, imu_time_prev;
 	double x, y, theta;
-	msgs::encoder prev_l, prev_r;
+	msgs::IntStamped prev_l, prev_r;
 	nav_msgs::Odometry odom;
 	geometry_msgs::TransformStamped odom_trans;
 };
