@@ -386,13 +386,13 @@ int main(int argc, char** argv) {
 	ros::Subscriber s1,s2,s3, s4;
 
 	// publishers
-	nh.param<string>("odom_pub", publish_topic, "/fmKnowledge/odom");
+	nh.param<string>("odom_pub", publish_topic, "/fmKnowledge/odometry");
 
 	// subscribers
 	nh.param<string>("enc_left_sub", subscribe_enc_l, "/fmInformation/encoder_left");
 	nh.param<string>("enc_right_sub", subscribe_enc_r, "/fmInformation/encoder_right");
 	nh.param<string>("imu_sub", subscribe_imu, "/fmInformation/imu");
-	nh.param<string>("odom_reset_sub", subscribe_odom_reset, "/fmInformation/odom_reset");
+	nh.param<string>("odom_reset_sub", subscribe_odom_reset, "/fmInformation/odometry_reset");
 
 	// robot parameters
 	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);

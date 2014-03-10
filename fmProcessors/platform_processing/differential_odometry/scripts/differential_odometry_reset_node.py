@@ -55,7 +55,7 @@ northing = rospy.get_param("~northing", '0.0')
 heading = rospy.get_param("~heading", '0.0') 
 
 # create a publisher
-topic_odom_reset = rospy.get_param("~odom_reset_pub", '/fmInformation/odom_reset') 
+topic_odom_reset = rospy.get_param("~odom_reset_pub", '/fmInformation/odometry_reset') 
 pub = rospy.Publisher(topic_odom_reset, FloatArrayStamped)
 
 # define the reset message
