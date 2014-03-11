@@ -1,0 +1,33 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
+		 </node>
+
+		<node pkg="kj_sensor_test" name="show_imu"  type="show_imu_node.py" output="screen" >
+			<param name="imu_sub" value="/fmInformation/imu"/>
+			<param name="update_interval" value="0.5"/>
+		</node>
+	</group>
+
+	<group ns="fmLib">
+		<!-- serial communication with the IMU -->
+		<node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+	</group>
+</launch>
+

@@ -1,0 +1,33 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the SparkFun Razor IMU -->
+		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="true"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
+		 </node>
+
+		<node pkg="kj_sensor_test" name="show_imu"  type="show_imu_node.py" output="screen" >
+			<param name="imu_sub" value="/fmInformation/imu"/>
+			<param name="update_interval" value="0.5"/>
+		</node>
+	</group>
+
+	<group ns="fmLib">
+		<!-- serial device and NMEA protocol handler for the IMU -->
+		<node pkg="serial_nmea" name="imu_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_imu"/>
+			<param name="nmea_to_device_sub" value="/fmSignal/nmea_to_imu"/>
+			<param name="serial_device" value="/dev/imu_razor"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+	</group>
+</launch>
+
