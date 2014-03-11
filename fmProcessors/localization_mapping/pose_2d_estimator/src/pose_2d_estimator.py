@@ -128,9 +128,9 @@ class pose_2d_preprocessor():
 			(heading_valid, heading, var_heading, gnss_dist) = self.gnss_estimate_heading()
 			if heading_valid == True:
 				(odo_valid, odo_dist, odo_angle) = self.odometry_buffer_distance_angle() # calc traversed dist and angle in odo sliding window buffer
-				if True: #odo_valid == True:
-					if True: #fabs (odo_angle) <= self.orientation_odo_max_angle:
-						if True: #fabs(gnss_dist-odo_dist) < self.orientation_odo_gnss_dist_max_diff_percent/100.0*odo_dist:
+				if odo_valid == True:
+					if fabs (odo_angle) <= self.orientation_odo_max_angle:
+						if fabs(gnss_dist-odo_dist) < self.orientation_odo_gnss_dist_max_diff_percent/100.0*odo_dist:
 							yaw = heading
 							valid = True
 		return (valid, self.angle_limit(yaw))
