@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
 	nh.param<string>("enc_left_sub", subscribe_enc_l, "/fmInformation/encoder_left");
 	nh.param<string>("enc_right_sub", subscribe_enc_r, "/fmInformation/encoder_right");
 	nh.param<string>("imu_sub", subscribe_imu, "/fmInformation/imu");
-	nh.param<string>("odom_reset_sub", subscribe_odom_reset, "/fmInformation/odometry_reset");
+	nh.param<string>("odom_reset_sub", subscribe_odom_reset, "/fmKnowledge/odometry_reset");
 
 	// robot parameters
 	nh.param<double>("/diff_steer_wheel_distance", wheel_dist, 1.0);
