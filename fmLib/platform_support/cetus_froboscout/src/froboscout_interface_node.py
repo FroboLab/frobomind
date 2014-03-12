@@ -46,12 +46,25 @@ class FroboScoutInterfaceNode():
 		self.update_rate = 50 # set update frequency [Hz]
 		self.pid_update_interval = 20 # [ms]
 		self.w_STATE_ERR_NO_CONFIG = 3
+		self.w_STATE_ERR = 3
 		self.count = 0
 
 		# locally defined parameters
 		self.deadman_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
 		self.w_tout_duration = 0.2 # [s]
+
+		# variables
+		self.w_voltage_conv = 5.0*(1800.0 + 700.0)/(700.0*1023.0) #(voltage divider 1800/700 ohm)
+		self.supply_voltage_ok = False
+		self.w_current_conv = 5.0/(1023.0*0.075) # according to simple-h controller datasheet
+
+		self.wl_stat_curr = 0.0
+		self.wl_stat_volt = 0.0
+		self.wl_stat_power = 0.0
+		self.wr_stat_curr = 0.0
+		self.wr_stat_volt = 0.0
+		self.wr_stat_power = 0.0
 
 		# get parameters
 		self.w_dist = rospy.get_param("/diff_steer_wheel_distance", 1.0) # [m]
@@ -82,6 +95,12 @@ class FroboScoutInterfaceNode():
 			self.pub_fb_interval = int(self.update_rate/pub_fb_rate)
 		else:
 			self.pub_fb_interval = 0
+
+		show_volt_interval = rospy.get_param("~show_voltage_interval", 60)
+		if show_volt_interval != 0:
+			self.show_volt_interval = int(show_volt_interval) * self.update_rate
+		else:
+			self.show_volt_interval = 0
 
 		#rospy.loginfo (rospy.get_name() + ': Differential wheel distance %.2f' % self.w_dist)
 		#rospy.loginfo (rospy.get_name() + ': Ticks per meter left %d' % self.ticks_per_meter_left)
@@ -127,17 +146,6 @@ class FroboScoutInterfaceNode():
 
 		# setup wheel status topic publisher
 		if self.pub_status_interval > 0:
-			self.w_current_conv = 5.0/(1023.0*0.075) # according to simple-h controller datasheet
-			self.w_voltage_conv = 5.0*(1800.0 + 700.0)/(700.0*1023.0) #(voltage divider 1800/700)
-			#self.w_volt_poly_a = 8.516 # a,b,c are exp. determined (voltage divider 1800/700 with 4.7V zener)
-			#self.w_volt_poly_b = -1.935
-			#self.w_volt_poly_c = 0.8920
-			self.wl_stat_curr_adc = 0.0
-			self.wl_stat_volt_adc = 0.0
-			self.wl_stat_power = 0.0
-			self.wr_stat_curr_adc = 0.0
-			self.wr_stat_volt_adc = 0.0
-			self.wr_stat_power = 0.0
 			self.w_stat_left_pub = rospy.Publisher(self.w_stat_left_pub_topic, PropulsionModuleStatus)
 			self.w_stat_right_pub = rospy.Publisher(self.w_stat_right_pub_topic, PropulsionModuleStatus)
 			self.w_stat = PropulsionModuleStatus()
@@ -171,6 +179,12 @@ class FroboScoutInterfaceNode():
 		self.r = rospy.Rate(self.update_rate)
 		self.updater()
 
+	def check_voltage(self):
+		if self.wl_stat_volt >= self.min_supply_voltage and self.wr_stat_volt >= self.min_supply_voltage: 
+			self.supply_voltage_ok = True
+		else:
+			self.supply_voltage_ok = False
+
 	def accelerate_vel (self, vel_actual, vel_desired, max_step):
 		# update velocity while respecting max acceleration
 		# print '%.4f, %.4f, %.4f' % (vel_actual, vel_desired, max_step)
@@ -185,7 +199,7 @@ class FroboScoutInterfaceNode():
 		return vel_actual
 
 	def update_vel (self):
-		if self.deadman_tout < rospy.get_time():
+		if self.deadman_tout < rospy.get_time() or self.wl_fb_state >= self.w_STATE_ERR or self.wr_fb_state >= self.w_STATE_ERR:
 			self.vel_lin_desired = 0.0
 			self.vel_ang_desired = 0.0
 
@@ -224,13 +238,12 @@ class FroboScoutInterfaceNode():
 
 				self.wl_fb_state = int(msg.data[0])
 				self.enc_left += int(msg.data[1])
+				self.wl_stat_curr = int(msg.data[2])*self.w_current_conv
+				self.wl_stat_volt = int(msg.data[3])*self.w_voltage_conv
 				if self.pub_fb_interval != 0:
 					self.wl_fb_vel_set = int(msg.data[4]) / (1.0*self.ticks_per_meter_left)
 					self.wl_fb_vel = int(msg.data[5]) / (1.0*self.ticks_per_meter_left)
 					self.wl_fb_thrust = int(msg.data[6])
-				if self.pub_status_interval != 0:
-					self.wl_stat_curr_adc = int(msg.data[2])
-					self.wl_stat_volt_adc = int(msg.data[3])
 				if self.wl_fb_state == self.w_STATE_ERR_NO_CONFIG: # wheel module not configured since reset?
 					self.publish_wheel_parameter_message()
 			elif msg.type == 'PFSHI':
@@ -247,13 +260,12 @@ class FroboScoutInterfaceNode():
 				self.wr_tout = rospy.get_time() + self.w_tout_duration
 				self.wr_fb_state = int(msg.data[0])
 				self.enc_right += int(msg.data[1])
+				self.wr_stat_curr = int(msg.data[2])*self.w_current_conv
+				self.wr_stat_volt = int(msg.data[3])*self.w_voltage_conv
 				if self.pub_fb_interval != 0:
 					self.wr_fb_vel_set = int(msg.data[4]) / (1.0*self.ticks_per_meter_left)
 					self.wr_fb_vel = int(msg.data[5]) / (1.0*self.ticks_per_meter_left)
 					self.wr_fb_thrust = int(msg.data[6])
-				if self.pub_status_interval != 0:
-					self.wr_stat_curr_adc = int(msg.data[2])
-					self.wr_stat_volt_adc = int(msg.data[3])
 				if self.wr_fb_state == self.w_STATE_ERR_NO_CONFIG: # wheel module not configured since reset?
 					self.publish_wheel_parameter_message()
 			elif msg.type == 'PFSHI':
@@ -286,23 +298,17 @@ class FroboScoutInterfaceNode():
 		self.w_fb.thrust = self.wr_fb_thrust
 		self.w_fb_right_pub.publish (self.w_fb)
 
-#	def convert_adc_to_volt(self, adc):
-#		v = adc*5.0/1023.0
-#		return self.w_volt_poly_a + self.w_volt_poly_b*v + self.w_volt_poly_c*(v**2) 
-
 	def publish_wheel_status_messages(self):
 		self.w_stat.header.stamp = rospy.Time.now()
 		#left wheel
-		#self.w_stat.voltage = self.convert_adc_to_volt(self.wl_stat_volt_adc)
-		self.w_stat.voltage = self.wl_stat_volt_adc*self.w_voltage_conv		
-		self.w_stat.current = self.wl_stat_curr_adc*self.w_current_conv 
-		self.w_stat.power =  self.w_stat.voltage*self.w_stat.current
+		self.w_stat.voltage = self.wl_stat_volt		
+		self.w_stat.current = self.wl_stat_curr
+		self.w_stat.power =  self.wl_stat_volt*self.wl_stat_curr
 		self.w_stat_left_pub.publish (self.w_stat)
 		# right wheel
-		#self.w_stat.voltage = self.convert_adc_to_volt(self.wr_stat_volt_adc)
-		self.w_stat.voltage = self.wr_stat_volt_adc*self.w_voltage_conv		
-		self.w_stat.current = self.wr_stat_curr_adc*self.w_current_conv 
-		self.w_stat.power =  self.w_stat.voltage*self.w_stat.current
+		self.w_stat.voltage = self.wr_stat_volt		
+		self.w_stat.current = self.wr_stat_curr
+		self.w_stat.power =  self.wl_stat_volt*self.wl_stat_curr
 		self.w_stat_right_pub.publish (self.w_stat)
 
 	def publish_wheel_ctrl_messages(self):
@@ -367,6 +373,8 @@ class FroboScoutInterfaceNode():
 			self.update_vel()
 			self.publish_wheel_ctrl_messages()
 			self.publish_enc_messages()
+			if self.count % 5 == 0:
+				self.check_voltage()
 
 			# wheel status
 			if self.pub_status_interval != 0:
@@ -377,6 +385,15 @@ class FroboScoutInterfaceNode():
 			if self.pub_fb_interval != 0:
    				if self.count % self.pub_fb_interval == 0:
 					self.publish_wheel_fb_messages()
+
+			# show voltage
+			if self.show_volt_interval != 0:
+   				if self.count % self.show_volt_interval == 0:
+					s = rospy.get_name() + ': Voltage left %.1f right %.1f' % (self.wl_stat_volt, self.wr_stat_volt)
+					if self.supply_voltage_ok:
+			 			rospy.loginfo(s)
+					else:
+						rospy.logwarn(s)					
 
 			# check for timeouts
 			if self.cmd_vel_tout_active == False:
