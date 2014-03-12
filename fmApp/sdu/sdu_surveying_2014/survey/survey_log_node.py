@@ -61,7 +61,7 @@ class log_node():
 		# static parameters
 		self.debug = True
 		self.update_rate = 20 # [Hz]
-		self.wait_before_log = 1.0 # [s]
+		self.wait_before_log = 2.0 # [s]
 		self.wait_timeout = 0.0
 		self.log_file = 'survey.txt'
 
@@ -84,7 +84,7 @@ class log_node():
 		self.cmd_vel_lin = 1.0
 		self.cmd_vel_ang = 1.0
 		self.b = [0.0, 0.0]
-		self.init_log ('#wpt_num\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\tyaw\n')
+		self.init_log ('#wpt_num\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\n')
 		self.wpt_num = 0
 
 		# lidar
@@ -197,8 +197,8 @@ class log_node():
 		easting /= n
 		northing /= n
 		alt /= n
-		if self.debug:
-			print 'GNSS Easting: %.3f Northing: %.3f Altitude: %.3f' % (easting, northing, alt)
+		#if self.debug:
+		#	print 'GNSS Easting: %.3f Northing: %.3f Altitude: %.3f' % (easting, northing, alt)
 		return (easting, northing, alt)
 
 	def average_imu_accelerometers(self):
@@ -215,21 +215,10 @@ class log_node():
 		az /= n
 
 		g = sqrt(ax*ax + ay*ay + az*az)
-
-		# standard orientation 
-		'''
-		roll = atan2(ay, -az)
-		pitch = asin(ax/-g)
-		'''
-
-		# x-axis vertical 
-		roll = atan2(az, -ax)
 		pitch = asin(ay/-g)
-		
-	
-		if self.debug:
-			print 'IMU Roll: %.3f Pitch: %.3f' % (roll*self.rad_to_deg, pitch*self.rad_to_deg)
-		return (roll, pitch)
+		roll = atan2(ax, az)
+
+		return (pitch, roll)
 
 	def average_imu(self):
 		n = len(self.imu)
@@ -243,8 +232,6 @@ class log_node():
 		pitch /= n
 		roll /= n
 		yaw /= n
-		if self.debug:
-			print 'IMU Pitch: %.3f Roll: %.3f' % (pitch*self.rad_to_deg, roll*self.rad_to_deg)
 		return (pitch, roll, yaw)
 
 
@@ -257,26 +244,24 @@ class log_node():
 		if len(self.gnss) > 0:
 			(gnss_e, gnss_n, gnss_alt) = self.average_gnss_pose()
 			dist_from_wpt =  self.calc_2d_dist ([gnss_e, gnss_n], self.b)
-			if self.debug:
-				print 'Distance from waypoint: %.3f' % dist_from_wpt
 		else:
 			error = True
 
 		if len(self.imu) > 0:
-			(imu_pitch, imu_roll, imu_yaw) = self.average_imu()
-			(imu_roll, imu_pitch) = self.average_imu_accelerometers()
+			#(imu_pitch, imu_roll, imu_yaw) = self.average_imu()
+			(imu_pitch, imu_roll) = self.average_imu_accelerometers()
 		else:
 			error = True
 
 		if error == False:
-			s = '%d\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\n' %(self.wpt_num, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_roll*self.rad_to_deg, imu_pitch*self.rad_to_deg)
+			s = '%d\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\n' %(self.wpt_num, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
 		else:
 			s= '#errror\t%.3f\t%.3f\n' % (time_now, log_seconds)
 
 		self.save_log(s)
 		self.state = self.STATE_IDLE
 		if self.debug:
-			print '%.3f Survey end' %  time_now
+			print '%.3f Survey end. Dist from wpt %.3fm Pitch %.2f Roll %.2f' %  (time_now, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
 
 	def updater(self):
 		while not rospy.is_shutdown():

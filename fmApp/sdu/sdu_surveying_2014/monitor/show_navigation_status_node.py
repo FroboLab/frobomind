@@ -51,7 +51,7 @@ class ros_node():
 		self.mode_prev = -1
 
 		# Get parameters
-		wptnav_status_topic = rospy.get_param("~wptnav_status_sub",'/fmData/wptnav_status')
+		wptnav_status_topic = rospy.get_param("~wptnav_status_sub",'/fmInformation/wptnav_status')
 
 		# Setup subscription topic callbacks
 		rospy.Subscriber(wptnav_status_topic, waypoint_navigation_status, self.on_wptnav_status_topic)

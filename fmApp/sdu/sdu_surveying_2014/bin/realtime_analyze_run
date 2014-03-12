@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# parameters
+#WPTLIST='waypoints.txt'
+#WPTLIST='waypoints_rel_square.txt'
+#WPTLIST='waypoints_rel_zigzag.txt'
+#WPTLIST='waypoints_rel_ahead_back.txt'
+WPTLIST='waypoints_sdu_zigzag.txt'
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+# copy waypoint list to the ROS working directory
+cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
+
+# launch the ROS node
+roslaunch ../launch/realtime_analyze_run.launch

@@ -206,6 +206,7 @@ class mission_node():
 			self.state = self.STATE_AUTO
 			self.wii_1_changed = False
 		elif self.wii_2_changed:
+			self.reset_vel()
 			self.state = self.STATE_MANUAL
 			self.wii_2_changed = False
 
@@ -234,6 +235,12 @@ class mission_node():
 			if vel_actual < vel_desired:
 				vel_actual = vel_desired
 		return vel_actual
+
+	def reset_vel (self):
+		self.vel_lin = 0.0
+		self.vel_ang = 0.0
+		self.vel_lin_user = 0.0
+		self.vel_ang_user = 0.0
 
 	def updater(self):
 		while not rospy.is_shutdown():
