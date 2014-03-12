@@ -50,7 +50,7 @@ class Pose2DEstimatorNode():
 		rospy.loginfo(rospy.get_name() + ": Start")
 		self.pose_msg = Odometry()
 		self.quaternion = np.empty((4, ), dtype=np.float64) 
-		self.odom_topic_received = False
+		self.first_odom_topic_received = False
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
 		self.odometry_yaw_prev = 0.0
@@ -72,7 +72,7 @@ class Pose2DEstimatorNode():
 		self.odometry_var_angle = rospy.get_param("~odometry_angular_variance", "0.0")
 
 		# Get topic names
-		self.odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/encoder_odom')
+		self.odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/odometry')
 		self.imu_topic = rospy.get_param("~imu_sub",'/fmInformation/imu')
 		self.gga_topic = rospy.get_param("~gga_sub",'/fmInformation/gpgga_tranmerc')
 		self.pose_topic = rospy.get_param("~pose_pub",'/fmKnowledge/pose')
@@ -114,7 +114,7 @@ class Pose2DEstimatorNode():
 		else:
 			forward = False
 
-		if self.odom_topic_received == True: # if we have received a first odom message
+		if self.first_odom_topic_received == True: # if we have received a first odom message
 
 			# EKF system update (odometry)
 			time_recv = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
@@ -128,7 +128,7 @@ class Pose2DEstimatorNode():
 			self.publish_pose()
 
 		# housekeeping
-		self.odom_topic_received = True
+		self.first_odom_topic_received = True
 		self.odometry_x_prev = x
 		self.odometry_y_prev = y
 		self.odometry_yaw_prev = yaw
@@ -181,7 +181,7 @@ class Pose2DEstimatorNode():
 		while not rospy.is_shutdown():
 				
 			# do updating stuff
-			if self.odom_topic_received == False:
+			if self.first_odom_topic_received == False:
 				self.publish_pose()
 
 			# go back to sleep
