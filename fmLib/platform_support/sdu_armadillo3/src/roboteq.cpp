@@ -3,11 +3,15 @@
  *
  *  Created on: May 15, 2012
  *      Author: morl
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #include <ros/ros.h>
 #include <msgs/serial.h>
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 #include <msgs/motor_status.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/Joy.h>
@@ -39,7 +43,7 @@ private:
 
 	// messages sent out are stored by the class to avoid reallocations.
 	msgs::serial serial_out;
-	msgs::encoder encoder_out;
+	msgs::IntStamped encoder_out;
 	msgs::motor_status motor_out;
 
 
@@ -108,7 +112,7 @@ private:
 	void publish_encoder()
 	{
 		encoder_out.header.stamp = ros::Time::now();
-		encoder_out.encoderticks = cbr_total;
+		encoder_out.data = cbr_total;
 
 		encoder_publisher.publish(encoder_out);
 	}
@@ -413,7 +417,7 @@ int main(int argc,char** argv)
 	controller.max_time_diff = ros::Duration(max_time_diff);
 
 	controller.serial_publisher = nh.advertise<msgs::serial>(serial_tx_topic,10);
-	controller.encoder_publisher = nh.advertise<msgs::encoder>(encoder_topic,10);
+	controller.encoder_publisher = nh.advertise<msgs::IntStamped>(encoder_topic,10);
 	controller.status_publisher = nh.advertise<msgs::motor_status>(status_topic,10);
 
 	s1 = nh.subscribe<msgs::serial>(serial_rx_topic,10,&RoboTeq::onSerialMsgReceived,&controller);
