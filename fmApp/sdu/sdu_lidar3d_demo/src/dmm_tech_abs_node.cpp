@@ -47,7 +47,7 @@
 #include <boost/system/system_error.hpp>
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 
 #define RAD_2_DEG(x) (x/M_PI*180)
 
@@ -71,8 +71,8 @@ int main(int argc, char **argv)
   ros::NodeHandle n("~");
 
   ros::Publisher enc_pub;
-  msgs::encoder enc;
-  enc_pub = n.advertise<msgs::encoder>("/fmInformation/encoder_value", 25); 
+  msgs::IntStamped enc;
+  enc_pub = n.advertise<msgs::IntStamped>("/fmInformation/encoder_value", 25); 
 
   /* read parameters from ros parameter server if available otherwise use default values */
   n.param<std::string> ("device", device, "/dev/ttyUSB0");
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
 	enc.header.stamp = ros::Time::now();
 	enc.header.frame_id = "laser";
-	enc.encoderticks = vl;
+	enc.data = vl;
 	enc_pub.publish(enc);
 
 
