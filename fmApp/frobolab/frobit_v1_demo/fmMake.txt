@@ -1,0 +1,15 @@
+/fmApp/frobolab/frobit_v1_demo
+/fmDecisionMakers/behaviours/generic_smach
+/fmExecutors/platform/action_primitives
+/fmLib/msgs
+/fmLib/msg_converters/twist_stamped_to_twist
+/fmLib/hmi_support/keyboard_interface
+/fmLib/hmi_support/wiimote_interface
+/fmLib/platform_support/sdu_frobit
+/fmLib/computer_support/serial_nmea
+/fmLib/computer_support/serial_bluetooth
+/fmLib/kinematics/differential_ifk
+/fmDependencies/executive_smach/smach
+/fmDependencies/executive_smach/smach_ros
+/fmDependencies/executive_smach/smach_msgs
+
