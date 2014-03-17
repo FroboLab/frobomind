@@ -1,0 +1,206 @@
+#!/bin/sh
+#*****************************************************************************
+# frobomind_make script
+# Copyright (c) 2014, Kjeld Jensen <kjeld@frobomind.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#	* Redistributions of source code must retain the above copyright
+#	  notice, this list of conditions and the following disclaimer.
+#	* Redistributions in binary form must reproduce the above copyright
+#	  notice, this list of conditions and the following disclaimer in the
+#	  documentation and/or other materials provided with the distribution.
+#	* Neither the name FroboMind nor the
+#	  names of its contributors may be used to endorse or promote products
+#	  derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#*****************************************************************************
+# This frobomind_make script allows making only the FroboMind components
+# (implemented as ROS packages) relevant for a given application.
+#
+# 2014-02-17 KJ First version
+#
+#*****************************************************************************
+
+# find out where FroboMind is
+ROOT_FM=`dirname $(readlink -f $0)`
+ROOT_WS=$ROOT_FM/..
+FILE_MAKE="fmMake.txt"
+
+# this function shows the help text
+show_help(){
+	echo "\nFroboMind make v2014-02-17" 
+    echo "Usage:"
+    echo "  frobomind_make [options] command"
+	echo "Commands:"
+	echo "  all         Make all FroboMind components"
+	echo "  list        List all FroboMind components"
+    echo "  /fmApp/...  Make FroboMind components listed in $FILE_MAKE in this application directory"
+    echo "  clean       Make clean"
+    echo "  cleanall    Clean up everything (remove devel and build directories)"
+    echo "Options:"
+    echo "  -i          Do not ignore (other) components" 
+    echo ""
+}
+
+
+# this function adds a CATKIN_IGNORE file to all directories containing a package.xml file
+add_ignore_to_all_packages(){
+	cd $ROOT_FM
+    PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
+    for LINE in $PACKAGES; do # for each directory
+       LEN=`expr ${#LINE} - 12` # determine string length minus "/package.xml"
+       DIR_PACKAGE=`echo $LINE | cut -c1-$LEN)` # cut first part of string
+       echo > $DIR_PACKAGE/CATKIN_IGNORE # add ignore file
+	done 
+}
+
+# this function lists all directories containing a package.xml file
+list_all_packages(){
+	cd $ROOT_FM
+    PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
+    for LINE in $PACKAGES; do # for each directory
+       LEN=`expr ${#LINE} - 12` # determine string length minus "/package.xml"
+       DIR_PACKAGE=`echo $LINE | cut -c1-$LEN)` # cut first part of string
+       echo $DIR_PACKAGE
+	done 
+}
+
+# this function removes the CATKIN_IGNORE file from all directories containing a package.xml file
+remove_ignore_from_all_packages(){
+	cd $ROOT_FM
+    PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
+    for LINE in $PACKAGES; do # for each directory
+       LEN=`expr ${#LINE} - 12` # determine string length minus "/package.xml"
+       DIR_PACKAGE=`echo $LINE | cut -c1-$LEN)` # cut first part of string
+       FILE_IGNORE=$DIR_PACKAGE/CATKIN_IGNORE
+       if [ -e $FILE_IGNORE ]; then
+         rm $FILE_IGNORE
+       fi
+	done 
+}
+
+CMD=""
+APP=""
+IGNORE=0
+
+# parse all command line arguments
+case $# in
+  0)
+    show_help
+    ;;
+  *)
+    while test $# -gt 0 ; do
+      case $1 in
+        all)
+          CMD="all"
+          shift
+          ;;     
+        clean)
+          CMD="clean"
+          shift
+          ;; 
+        cleanall)
+          CMD="cleanall"
+          shift
+          ;; 
+        list)
+          CMD="list"
+          shift
+          ;; 
+        -i)
+          IGNORE=1
+          shift
+          ;;
+        *)
+          CMD="app"
+          APP="$1"
+          shift
+          ;;
+      esac
+    done
+esac
+
+# run the command defined by the user
+case $CMD in
+  all)
+    echo "Making all FroboMind components"
+    remove_ignore_from_all_packages
+    cd $ROOT_WS
+    catkin_make
+    ;;
+  list)
+    list_all_packages
+    ;;
+  app)
+    APP_FIRST=`echo $APP | cut -c1-3)`
+    case "$APP_FIRST" in
+      /fm)
+        ROOT_APP=$ROOT_FM$APP 
+        if [ -d $ROOT_APP ]; then
+          if [ -e $ROOT_APP/$FILE_MAKE ]; then
+            echo "Making the FroboMind components listed in:" $APP/$FILE_MAKE
+            if [ $IGNORE -eq 0 ]; then
+              echo "  Ignoring all other FroboMind components"
+              add_ignore_to_all_packages
+            fi
+            # removing ignore files
+            APP_PACKAGES=`cat $ROOT_APP/$FILE_MAKE`
+            for LINE in $APP_PACKAGES; do # for each directory
+              echo "  Adding directory:" $LINE
+              FILE_IGNORE=$ROOT_FM$LINE/CATKIN_IGNORE
+              if [ -e $FILE_IGNORE ]; then
+                rm $FILE_IGNORE
+              fi
+            done 
+            cd $ROOT_WS
+            catkin_make
+          else  
+            echo $FILE_MAKE "does not exist in application directory:" $APP
+          fi
+        else
+          echo "Application does not exist:" $APP
+        fi
+        ;;
+      *)
+        echo "No proper application defined:" $APP 
+        ;;
+    esac
+    ;;
+  clean)
+    echo "Make clean"
+    remove_ignore_from_all_packages
+    cd $ROOT_WS
+    catkin_make clean
+    if [ $IGNORE -eq 0 ]; then
+      echo "Ignoring all packages"
+      add_ignore_to_all_packages
+    fi
+    ;;
+  cleanall)
+    echo "Cleaning up everything"
+    remove_ignore_from_all_packages
+    if [ -d $ROOT_WS/devel ]; then
+      rm -r $ROOT_WS/devel
+    fi
+    if [ -d $ROOT_WS/build ]; then
+      rm -r $ROOT_WS/build
+    fi
+    if [ $IGNORE -eq 0 ]; then
+      echo "Ignoring all packages"
+      add_ignore_to_all_packages
+    fi
+    ;;
+esac  
+
