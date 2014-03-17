@@ -3,6 +3,10 @@
  *
  *  Created on: Sep 23, 2012
  *      Author: morl
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #ifndef EXSINTERFACE_H_
@@ -12,7 +16,7 @@
 #include <msgs/can.h>
 #include <msgs/steering_angle_cmd.h>
 #include <geometry_msgs/Twist.h>
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 #include <msgs/engine_rpm.h>
 #include <sensor_msgs/Joy.h>
 
@@ -77,8 +81,8 @@ private:
 	static const can_id_rx_t can_id_rx;
 	static const can_id_tx_t can_id_tx;
 
-	msgs::encoder enc_msg;
-	msgs::encoder angle_msg;
+	msgs::IntStamped enc_msg;
+	msgs::IntStamped angle_msg;
 	msgs::can can_msg;
 
 	double steering_angle_rad;

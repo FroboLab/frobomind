@@ -3,6 +3,10 @@
  *
  *  Created on: Sep 23, 2012
  *      Author: morl
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #include "EXSInterface.h"
@@ -53,7 +57,7 @@ void EXSInterface::onCANMsg(const msgs::can::ConstPtr& msg)
 			break;
 		case can_id_rx_t::CAN_ID_ODOM:
 			// XXX: unpack info from can msg
-			enc_msg.encoderticks = (msg->data[0] | (msg->data[1] << 8) | (msg->data[2] << 16) | (msg->data[3] << 24));
+			enc_msg.data = (msg->data[0] | (msg->data[1] << 8) | (msg->data[2] << 16) | (msg->data[3] << 24));
 			enc_msg.header.stamp = msg->header.stamp;
 			encoder_pub.publish(enc_msg);
 			break;
@@ -61,7 +65,7 @@ void EXSInterface::onCANMsg(const msgs::can::ConstPtr& msg)
 			break;
 		case can_id_rx_t::CAN_ID_STEERING_ANGLE_ACK:
 			angle = msg->data[0] | (msg->data[1] << 8);
-			angle_msg.encoderticks = angle;
+			angle_msg.data = angle;
 			angle_msg.header.stamp = msg->header.stamp;
 			angle_pub.publish(angle_msg);
 			break;

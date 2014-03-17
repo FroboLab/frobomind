@@ -3,11 +3,15 @@
  *
  *  Created on: Sep 23, 2012
  *      Author: morl
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #include <ros/ros.h>
 #include <msgs/can.h>
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 #include <msgs/steering_angle_cmd.h>
 #include "EXSInterface.h"
 
@@ -35,8 +39,8 @@ int main(int argc, char** argv)
 
 	EXSInterface esx;
 
-	esx.encoder_pub = nh.advertise<msgs::encoder>(encoder_pub,10);
-	esx.angle_pub = nh.advertise<msgs::encoder>(angle_pub,10);
+	esx.encoder_pub = nh.advertise<msgs::IntStamped>(encoder_pub,10);
+	esx.angle_pub = nh.advertise<msgs::IntStamped>(angle_pub,10);
 	esx.can_tx_pub = nh.advertise<msgs::can>(can_pub,10);
 
 	s1 = nh.subscribe<msgs::can>(can_sub.c_str(),10,&EXSInterface::onCANMsg,&esx);
