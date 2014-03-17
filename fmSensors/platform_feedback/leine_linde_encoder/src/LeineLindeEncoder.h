@@ -3,6 +3,10 @@
  *
  *  Created on: Feb 21, 2012
  *      Author: molar
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #ifndef LEINELINDEENCODER_H_
@@ -11,7 +15,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 #include <msgs/can.h>
 
 #include <stdint.h>
@@ -101,7 +105,7 @@ private:
 
 	ros::Publisher can_tx_pub;
 	ros::Publisher encoder_pub;
-	msgs::encoder enc_msg;
+	msgs::IntStamped enc_msg;
 
 	uint32_t last_position;
 	int32_t current_position;

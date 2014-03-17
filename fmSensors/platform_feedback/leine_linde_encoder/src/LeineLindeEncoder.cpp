@@ -3,6 +3,10 @@
  *
  *  Created on: Feb 21, 2012
  *      Author: molar
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #include "LeineLindeEncoder.h"
@@ -558,7 +562,7 @@ void LeineLindeEncoder::processStateMachine(const ros::TimerEvent& e)
 		}
 
 		this->enc_msg.header.stamp = ros::Time::now();
-		this->enc_msg.encoderticks = current_position;
+		this->enc_msg.data = current_position;
 		encoder_pub.publish(this->enc_msg);
 
 		break;

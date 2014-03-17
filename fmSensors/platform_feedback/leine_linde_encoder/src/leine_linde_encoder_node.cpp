@@ -3,6 +3,10 @@
  *
  *  Created on: Feb 22, 2012
  *      Author: molar
+ *
+ *  Modified on: Mar 17, 2014
+ *      Changed encoder message type to IntStamped
+ *      Author: Kjeld Jensen kjeld@frobomind.org
  */
 
 #include "LeineLindeEncoder.h"
@@ -10,7 +14,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <msgs/can.h>
-#include <msgs/encoder.h>
+#include <msgs/IntStamped.h>
 
 int main(int argc, char **argv)
 {
@@ -52,7 +56,7 @@ int main(int argc, char **argv)
   ll.read_encoder_offset = read_offset;
 
   ll.setCanPub(nh.advertise<msgs::can> (publisher_topic.c_str(), 5));
-  ll.setEncoderPub(nh.advertise<msgs::encoder> (enc_publisher_topic.c_str(), 5));
+  ll.setEncoderPub(nh.advertise<msgs::IntStamped> (enc_publisher_topic.c_str(), 5));
   sub = nh.subscribe<msgs::can> (subscriber_topic.c_str(), 100, &LeineLindeEncoder::processRXEvent, &ll);
 
   t= nh.createTimer(ros::Duration(1.0/publish_rate),&LeineLindeEncoder::processStateMachine,&ll);
