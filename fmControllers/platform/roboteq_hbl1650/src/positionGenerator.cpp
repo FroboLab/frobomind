@@ -230,7 +230,7 @@ double PositionGenerator::getNewPosition(void)
 
     if ( isBraking() )
     {
-    	// Velocity setpoint is zero or the robot is changing direction
+    	// Velocity setpoint is zero(velocity.current*period);// or the robot is changing direction
         velocity.setpoint = 0;
         brake();
         std::cout << "Position generator is in braking mode" << std::endl;
@@ -294,7 +294,7 @@ double PositionGenerator::getNewPosition(void)
     position.current = position.previous + (velocity.current*period);
     upkeep();
     std::cout << std::endl;
-//    std::cout << "Position generator post-state:  Position: "<< position.current << " velocity: " << velocity.current
-//    		<< " acceleration: " << acceleration.current << " setpoint:" << velocity.setpoint << std::endl;
+    std::cout << "Position generator post-state:  Position: "<< position.current << " velocity: " << velocity.current
+    		<< " acceleration: " << acceleration.current << " setpoint:" << velocity.setpoint << std::endl;
     return position.current;
 }

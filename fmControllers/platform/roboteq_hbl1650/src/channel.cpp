@@ -95,6 +95,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 
 						if(position_control)
 						{
+							velocity = 0.25;
 							/* Position control with s-ramps */
 							position_generator.setPeriod(period); //in seconds
 							position_generator.setCurrentPosition(((double)last_hall)*ticks_to_meter); //in meters
@@ -102,9 +103,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 							desired_position = position_generator.getNewPosition(); //in meters
 
 							/* Force 1m/s */
-							desired_position = (((double)last_hall)*ticks_to_meter) + 0.25*period;
-							current_setpoint = regulator.output_from_input(desired_position*mps_to_thrust, ((double)last_hall)*ticks_to_meter*mps_to_thrust, period);
-							//current_setpoint = regulator.output_from_input(desired_position, ((double)last_hall)*ticks_to_meter, period); //setpoint in meters per second from inputs in meters, meters and seconds
+							//desired_position = (((double)last_hall)*ticks_to_meter) + 0.25*period;
+							current_setpoint = regulator.output_from_input(desired_position, ((double)last_hall)*ticks_to_meter, period); //setpoint in meters per second from inputs in meters, meters and seconds
 
 						}
 						else
@@ -121,7 +121,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 
 
 						/* Send motor output command  */
-						out << "!G " << ch << " " << current_thrust;
+						out << "!G " << current_thrust;
 						transmit(out.str());
 
 						// Upkeep
@@ -132,8 +132,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						/* Set speeds to 0 and activate emergency stop */
 						transmit("!EX");
 						status.emergency_stop = true;
-						transmit("!G 1 0");
-						transmit("!G 2 0");
+						transmit("!G 0");
+						transmit("!G 0");
 						current_setpoint = current_thrust = 0;
 						velocity = 0;
 						regulator.reset_integrator();
@@ -144,8 +144,8 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 					/* Set speeds to 0 and activate emergency stop */
 					transmit("!EX");
 					status.emergency_stop = true;
-					transmit("!G 1 0");
-					transmit("!G 2 0");
+					transmit("!G 0");
+					transmit("!G 0");
 					current_setpoint = current_thrust = 0;
 					velocity = 0;
 					regulator.reset_integrator();
