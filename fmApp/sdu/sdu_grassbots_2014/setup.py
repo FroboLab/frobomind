@@ -3,8 +3,8 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
   scripts=[
-  'mission/keyboard_mission.py',
-  'mission/wiimote_mission.py',
+  'mission/keyboard_mission_node.py',
+  'mission/wiimote_mission_node.py',
   'route/route_socketd.py',
   'navigation/area_coverage_casmo_node.py',
   'navigation/area_coverage_casmo_implement_node.py',
