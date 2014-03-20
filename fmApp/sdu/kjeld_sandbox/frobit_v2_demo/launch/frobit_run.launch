@@ -1,0 +1,147 @@
+<!-- frobit launch file -->
+
+<launch>
+	<!-- frobit parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.215"/>
+	<param name="ticks_per_meter_left" value="-562" />
+	<param name="ticks_per_meter_right" value="-562" />
+
+	<param name="robot_max_velocity" value="1.0"/>
+	<param name="diff_steer_wheel_radius" value="0.051"/>
+	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
+
+	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the SparkFun Razor IMU -->
+		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="false"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
+		 </node>
+	</group>
+
+	<group ns="fmProcessors">
+		<!-- calculate odometry based on wheel encoders and IMU yaw axis orientation -->
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_reset_sub" value="/fmInformation/odom_reset" />
+			<!--param name="odom_pub" value="/fmKnowledge/odom" /-->
+			<param name="odom_pub" value="/fmKnowledge/pose" />
+			<param name="odom_estimate_frame" value="/odom_combined" />
+			<param name="vehicle_frame" value="base_footprint" />
+			<param name="encoder_output" value="relative" />
+			<param name="max_ticks_per_update" value="200" />
+			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="imu_angular_velocity_yaw_axis" value="z" />
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="frobit_v2_demo" name="mission" type="keyboard_mission_node.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="0.7"/>
+            <param name="max_angular_velocity" value="0.5"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.25"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="frobit_v2_demo" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
+			<param name="status_pub" value="/fmInformation/wptnav_status" />
+			<param name="pid_pub" value="/fmInformation/wptnav_pid" />
+			<param name="status_publish_interval" value="1" />
+			<param name="pid_publish_interval" value="1" />
+			<param name="print_debug_information" value="false" />
+
+            <param name="max_linear_velocity" value="1.2"/>
+            <param name="max_angular_velocity" value="0.70"/>
+
+            <param name="drive_kp" value="1.6"/>
+            <param name="drive_ki" value="0.0"/>
+            <param name="drive_kd" value="0.0"/>
+            <param name="drive_feed_forward" value="0.00"/>
+            <param name="drive_max_output" value="0.50"/>
+
+            <param name="turn_kp" value="1.8"/>
+            <param name="turn_ki" value="0.0"/>
+            <param name="turn_kd" value="0.0"/>
+            <param name="turn_feed_forward" value="0.0"/>
+            <param name="turn_max_output" value="1.0"/>
+
+			<param name="wpt_default_mode" value="MCTE" />
+			<param name="wpt_default_tolerance" value="0.20" />
+			<param name="wpt_default_drive_velocity" value="0.4" />
+			<param name="wpt_default_turn_velocity" value="0.6" />
+			<param name="wpt_default_wait_after_arrival" value="2.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="target_distance" value="0.4" />
+			<param name="turn_start_at_heading_err" value="90.0" />
+			<param name="turn_stop_at_heading_err" value="2.0" />
+			<param name="ramp_drive_velocity_at_distance" value="1.5" />
+			<param name="ramp_min_drive_velocity" value="0.15" />
+			<param name="ramp_turn_velocity_at_angle" value="30.0" />
+			<param name="ramp_min_turn_velocity" value="0.20" />
+		</node>		
+	</group>
+
+	<group ns="fmControllers">
+		<node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
+			<param name="hl_subscriber_topic" value="/fmCommand/cmd_vel"/>
+			<param name="ll_publisher_topic_left" value="/fmSignal/cmd_vel_left"/>
+			<param name="ll_publisher_topic_right" value="/fmSignal/cmd_vel_right"/>
+		</node>	     
+	</group>
+
+	<group ns="fmLib">
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
+		<!-- frobit interface node -->
+		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node">
+			<param name="cmd_vel_left_sub" value="/fmSignal/cmd_vel_left"/>
+			<param name="cmd_vel_right_sub" value="/fmSignal/cmd_vel_right"/>
+			<param name="deadman_sub" value="/fmCommand/deadman"/>
+			<param name="nmea_sub" value="/fmSignal/nmea_from_frobit"/>
+			<param name="nmea_pub" value="/fmSignal/nmea_to_frobit"/>
+			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
+			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
+			<param name="castor_front" value="false"/>
+			<param name="nmea_to_frobit_interval" value="0.05"/>          
+			<param name="cmd_vel_timeout" value="1"/>          
+        </node>
+
+		<!-- frobit serial device and protocol interface -->
+		<node pkg="serial_nmea" name="frobit_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmSignal/nmea_from_frobit"/>
+			<param name="nmea_to_device_sub" value="/fmSignal/nmea_to_frobit"/>
+			<param name="serial_device" value="/dev/frobit"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+
+		<node pkg="serial_nmea" name="imu_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_imu"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_imu"/>
+			<param name="serial_device" value="/dev/imu_razor"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+	</group>
+</launch>
+

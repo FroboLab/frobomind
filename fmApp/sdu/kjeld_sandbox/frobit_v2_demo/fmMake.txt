@@ -1,0 +1,12 @@
+/fmApp/sdu/kjeld_sandbox/frobit_v2_demo
+/fmApp/sdu/kjeld_sandbox/frobit_sim
+/fmApp/sdu/kjeld_sandbox/frobit_plot
+/fmSensors/global_sensing/imu/sparkfun_razor_9dof
+/fmSensors/global_sensing/imu/vectornav_vn100
+/fmProcessors/platform_processing/differential_odometry
+/fmLib/msgs
+/fmLib/platform_support/sdu_frobit
+/fmLib/kinematics/differential_ifk_py
+/fmLib/hmi_support/keyboard_interface
+/fmLib/computer_support/serial_string
+/fmLib/computer_support/serial_nmea
