@@ -53,7 +53,7 @@ class ROSnode():
 		self.q = np.empty((4, ), dtype=np.float64) 
 
 		# Get parameters
-		plot_pose_track = rospy.get_param("~plot_pose_track",False)
+		plot_pose_track = rospy.get_param("~plot_pose_track",True)
 		plot_gnss_track = rospy.get_param("~plot_gnss_track",False)
 		plot_odometry_track = rospy.get_param("~plot_odometry_track",False)
 		plot_yaw = rospy.get_param("~plot_pose_yaw",False)
@@ -75,7 +75,7 @@ class ROSnode():
 		# Get topic names
 		pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		gnss_topic = rospy.get_param("~gnss_sub",'/fmInformation/gpgga_tranmerc')
-		odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/encoder_odom')
+		odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/odometry')
 		wptnav_status_topic = rospy.get_param("~wptnav_status_sub",'/fmData/wptnav_status')
 
 		# Setup subscription topic callbacks
