@@ -71,13 +71,9 @@
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
-			<param name="update_rate" value="50" />
 			<param name="publish_relative_pose" type="boolean" value="false" />
-			<param name="ekf_initial_guess_easting" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
-			<param name="ekf_initial_guess_northing" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
-			<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->
 			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
-			<param name="odometry_angular_variance" value="0.00035" /> <!-- [rad/update] -->
+			<param name="odometry_angular_variance" value="0.000035" /> <!-- [rad/update] -->
 		</node>
 
 		<node pkg="sdu_surveying_2014" name="survey_log" type="survey_log_node.py" output="screen" >
@@ -91,7 +87,7 @@
 		<!--node pkg="frobit_plot" name="froboscout_plot" type="frobit_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/odom" />
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
 			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
 			<param name="plot_pose_track" value="true" />
 			<param name="plot_gnss_track" value="false" />
