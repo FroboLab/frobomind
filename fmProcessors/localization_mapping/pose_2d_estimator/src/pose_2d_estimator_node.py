@@ -32,6 +32,7 @@ Most documentation of the library is in pose_2d_estimator.py
 
 Revision
 2013-05-16 KJ First version
+2014-03-18 KJ Various bug fixes and computation optimizations
 """
 # ROS imports
 import rospy,tf
@@ -48,28 +49,32 @@ class Pose2DEstimatorNode():
 	def __init__(self):
 		# initialization
 		rospy.loginfo(rospy.get_name() + ": Start")
+		self.count = 0
+		self.pi2 = 2.0*pi
+		self.update_rate = 5
 		self.pose_msg = Odometry()
 		self.quaternion = np.empty((4, ), dtype=np.float64) 
 		self.first_odom_topic_received = False
 		self.odometry_x_prev = 0.0
 		self.odometry_y_prev = 0.0
 		self.odometry_yaw_prev = 0.0
+		self.estimate_orientation_now = False
 		self.first_absolute_pos_update = False
 		self.first_absolute_yaw_update = False
+		self.time = 0.0
 
 		# Get parameters
 		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
 		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
 
-		robot_max_velocity = float(rospy.get_param("~/robot_max_velocity", "1.0")) # Robot maximum velocity [m/s]
-		self.update_rate = int(rospy.get_param("~update_rate", "20")) # set update frequency [Hz]
+		robot_max_velocity = float(rospy.get_param("~/robot_max_velocity", 1.0)) # Robot maximum velocity [m/s]
 		self.publish_rel_pose = rospy.get_param("~publish_relative_pose", True)
-		ekf_init_guess_easting = rospy.get_param("~ekf_initial_guess_easting", "0.0")
-		ekf_init_guess_northing = rospy.get_param("~ekf_initial_guess_northing", "0.0")
-		ekf_init_guess_yaw = rospy.get_param("~ekf_initial_guess_yaw", "0.0")
+		ekf_init_guess_easting = rospy.get_param("~ekf_initial_guess_easting", 0.0)
+		ekf_init_guess_northing = rospy.get_param("~ekf_initial_guess_northing", 0.0)
+		ekf_init_guess_yaw = rospy.get_param("~ekf_initial_guess_yaw", 0.0)
 
-		self.odometry_var_dist = rospy.get_param("~odometry_distance_variance", "0.0")
-		self.odometry_var_angle = rospy.get_param("~odometry_angular_variance", "0.0")
+		self.odometry_var_dist = rospy.get_param("~odometry_distance_variance", 0.0)
+		self.odometry_var_angle = rospy.get_param("~odometry_angular_variance", 0.0)
 
 		# Get topic names
 		self.odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/odometry')
@@ -90,9 +95,8 @@ class Pose2DEstimatorNode():
 		self.pp = pose_2d_preprocessor (robot_max_velocity)
 
 		# initialize estimator (EKF)
-		self.ekf = pose_2d_ekf()
 		self.pose = [ekf_init_guess_easting, ekf_init_guess_northing, ekf_init_guess_yaw]
-		self.ekf.set_initial_guess(self.pose)
+		self.ekf = pose_2d_ekf(self.pose)
 		self.yawekf = yaw_ekf() # !!! TEMPORARY HACK
 
 		# Call updater function
@@ -117,12 +121,16 @@ class Pose2DEstimatorNode():
 		if self.first_odom_topic_received == True: # if we have received a first odom message
 
 			# EKF system update (odometry)
-			time_recv = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
+			self.time = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
 			delta_dist =  sqrt((x-self.odometry_x_prev)**2 + (y-self.odometry_y_prev)**2)
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
-			self.pp.odometry_new_feedback (time_recv, delta_dist, delta_angle, forward)
-			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
-			self.pose[2] = self.yawekf.system_update (delta_angle, self.odometry_var_angle) # !!! TEMPORARY HACK
+			self.pp.odometry_new_data (self.time, delta_dist, delta_angle, forward)
+
+			# !!! TEMPORARY HACK: Defining a seperate yaw kalman filter due to a practical unsolved problem
+			pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_angle)
+			self.pose[0] = pose[0]
+			self.pose[1] = pose[1]
+			self.pose[2] = self.yawekf.system_update (delta_angle, self.odometry_var_angle)
 
 			# publish the estimated pose	
 			self.publish_pose()
@@ -134,36 +142,36 @@ class Pose2DEstimatorNode():
 		self.odometry_yaw_prev = yaw
 
 	def on_imu_topic(self, msg):
-		self.quaternion[0] = msg.orientation.x
-		self.quaternion[1] = msg.orientation.y
-		self.quaternion[2] = msg.orientation.z
-		self.quaternion[3] = msg.orientation.w
-		#rot = self.quat(0,1,0,pi/3)
-		#self.quaternion = self.multiply(self.quaternion, rot)
-		#rot = self.quat(1,0,0,pi/3)
-		#self.quaternion = self.multiply(self.quaternion, rot)
-		#rot = self.quat(0,0,1,(2*pi)/3)
-		#self.quaternion = self.multiply(self.quaternion, rot)
-		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
-		# self.pose[2] = yaw # NOT ACCURATE ENOUGH FROM THE VECTORNAV !!!
+		self.time = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
+		self.pp.imu_new_data (self.time, msg.angular_velocity.z)
+		#self.quaternion[0] = msg.orientation.x
+		#self.quaternion[1] = msg.orientation.y
+		#self.quaternion[2] = msg.orientation.z
+		#self.quaternion[3] = msg.orientation.w
+		#(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 
 	def on_gga_topic(self, msg):
 		if msg.fix > 0: # if satellite fix
 			# GNSS data preprocessing
-			time_recv = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
-			valid = self.pp.gnss_new_measurement (time_recv, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
+			self.time = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
+			valid = self.pp.gnss_new_data (self.time, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
 			if valid == True: # if we have a valid position 
 				self.first_absolute_pos_update = True
 				var_pos = self.pp.gnss_estimate_variance_pos()
 				# EKF measurement update (GNSS)
 				self.pose = self.ekf.measurement_update_pos ([msg.easting, msg.northing], var_pos)
-				(valid, yaw) = self.pp.estimate_absolute_orientation()
-				if valid == True:
-					var_yaw = 0.1
-					self.pose[2] = self.yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
-					if self.first_absolute_yaw_update == False:
-						self.first_absolute_yaw_update = True
-						rospy.loginfo(rospy.get_name() + ': First absolute orientation update')
+				if self.estimate_orientation_now == True:
+					self.estimate_orientation_now = False
+					self.estimate_absolute_orientation()
+
+	def estimate_absolute_orientation(self):
+		(valid, yaw) = self.pp.estimate_absolute_orientation()
+		if valid == True:
+			var_yaw = 0.1
+			self.pose[2] = self.yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
+			if self.first_absolute_yaw_update == False:
+				self.first_absolute_yaw_update = True
+				rospy.loginfo(rospy.get_name() + ': First absolute orientation update')
 
 	def publish_pose(self):
 		if self.publish_rel_pose == True or (self.first_absolute_pos_update == True and self.first_absolute_yaw_update == True):
@@ -172,6 +180,7 @@ class Pose2DEstimatorNode():
 			self.pose_msg.pose.pose.position.y = self.pose[1]
 			self.pose_msg.pose.pose.position.z = 0
 			q = quaternion_from_euler (0, 0, self.pose[2])
+			#print self.pose[2]*180.0/3.14
 			self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
 			self.pose_pub.publish(self.pose_msg); # publish the pose message
 			self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), \
@@ -179,10 +188,13 @@ class Pose2DEstimatorNode():
 
 	def updater(self):
 		while not rospy.is_shutdown():
-				
 			# do updating stuff
+			self.count += 1	
 			if self.first_odom_topic_received == False:
 				self.publish_pose()
+
+			if self.count % self.update_rate == 0: # each second
+				self.estimate_orientation_now = True
 
 			# go back to sleep
 			self.r.sleep()
@@ -191,9 +203,9 @@ class Pose2DEstimatorNode():
 	def angle_diff (self, angle_new, angle_old):
 		diff = angle_new - angle_old
 		while diff < -pi:
-			diff += 2*pi
+			diff += self.pi2
 		while diff > pi:
-			diff -= 2*pi
+			diff -= self.pi2
 		return diff
 
 # Main function.    

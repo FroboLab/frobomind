@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #*****************************************************************************
 # export_simulation_data
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ bag = rosbag.Bag ('test.bag')
 
 # extract odometry data
 f = open ('sim_odometry.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/encoder_odom']):
+for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/odometry']):
 	secs = msg.header.stamp.secs
 	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
 	if msecs == 1000:

@@ -45,8 +45,6 @@ The pose is estimated based on sensor inputs from:
 		Wheel encoders (typically fused with a gyro)
 	Absolute position sensor:
 		Real Time Kinematic GPS (RTK-GPS)
-	Absolute orientation sensor:
-		Attitude and heading reference system (AHRS)
 
 Each sensor input is validated and filtered, and the actual variance is
 estimated. This is based on generic and parameterized knowledge about
@@ -61,16 +59,12 @@ but during development and test everything will be written in Python.
 
 Revision
 2013-04-25 KJ First version
+2014-03-18 KJ Various bug fixes and computation optimizations
 """
 # imports
 import numpy as np
 from math import sqrt, pi, sin, cos, atan2, fabs
 from numpy import matrix, array, linalg, mat
-
-# defines
-buffer_initial_size_gnss = 100
-buffer_initial_size_imu = 100
-buffer_initial_size_odo = 100
 
 class pose_2d_preprocessor():
 	def __init__(self, max_speed):
@@ -79,18 +73,20 @@ class pose_2d_preprocessor():
 		self.pi2 = 2.0*pi
 		self.max_speed = max_speed
 		self.buffer_period = 2.0 # [s] PARAMETER
+		self.buf_init_size = 25
 		self.gnss = []
-		self.gnss_measurement_interval = -1 # [s]
-		self.gnss_buffer_size = buffer_initial_size_gnss
+		self.gnss_interval = 0.0 # [s]
+		self.gnss_interval_valid = False
+		self.gnss_buf_size = self.buf_init_size
 		self.imu = []
-		self.imu_measurement_interval = -1 # [s]
-		self.imu_buffer_size = buffer_initial_size_imu
+		self.imu_interval = 0.0 # [s]
+		self.imu_interval_valid = False
+		self.imu_buf_size = self.buf_init_size
 		self.odo = []
-		self.odo_measurement_interval = -1 # [s]
-		self.odo_buffer_size = buffer_initial_size_odo
-		self.absolute_orientation_timeout = 0.0
-		self.absolute_orientation_timeout_period = 1.0
-		self.gnss_heading_min_dist = 0.25
+		self.odo_interval = 0.0 # [s]
+		self.odo_interval_valid = False
+		self.odo_buf_size = self.buf_init_size
+		self.gnss_heading_min_dist = 0.25 # [m]
 		self.orientation_odo_gnss_dist_max_diff_percent = 10.0
 		self.orientation_odo_max_angle = 5.0 * self.deg_to_rad
 		self.gnss_orientation_prev_yaw = -10.0
@@ -104,35 +100,30 @@ class pose_2d_preprocessor():
 		var_heading = pi
 		E = 1
 		N = 2
-		if len(self.gnss) == self.gnss_buffer_size: # if we have a full gnss buffer
+		if self.gnss_interval_valid and len(self.gnss) == self.gnss_buf_size: # if we have a full gnss buffer
 			if self.gnss[-1][3] == 4 and self.gnss[0][3] == 4: # if we have a RTK fixed solution
 				dist = sqrt ((self.gnss[-1][E]- self.gnss[0][E])**2 + (self.gnss[-1][N]- self.gnss[0][N])**2)
 				if dist >= self.gnss_heading_min_dist: # if we have travelled a configurable minimum distance 
 					# calc gnss coordinate vector heading
-					easting_axis_vector_len = self.gnss[-1][E] - self.gnss[0][E]
-					northing_axis_vector_len = self.gnss[-1][N] - self.gnss[0][N]
-					heading = self.angle_limit(atan2 (northing_axis_vector_len, easting_axis_vector_len))
-
+					e_vec_len = self.gnss[-1][E] - self.gnss[0][E]
+					n_vec_len = self.gnss[-1][N] - self.gnss[0][N]
+					heading = self.angle_limit(atan2 (n_vec_len, e_vec_len))
 					var_heading = 0.0 # OI OI MUST BE CALCULATED !!!			
-
 					valid = True
 		return (valid, heading, var_heading, dist)
 	
 	def estimate_absolute_orientation (self):
 		valid = False
 		yaw = 0.0
-		if self.gnss[-1][0] > self.absolute_orientation_timeout:
- 			self.absolute_orientation_timeout = self.gnss[-1][0] + 0.2
-
-			# estimate heading based on gnss waypoints
-			(heading_valid, heading, var_heading, gnss_dist) = self.gnss_estimate_heading()
-			if heading_valid == True:
-				(odo_valid, odo_dist, odo_angle) = self.odometry_buffer_distance_angle() # calc traversed dist and angle in odo sliding window buffer
-				if odo_valid == True:
-					if fabs (odo_angle) <= self.orientation_odo_max_angle:
-						if fabs(gnss_dist-odo_dist) < self.orientation_odo_gnss_dist_max_diff_percent/100.0*odo_dist:
-							yaw = heading
-							valid = True
+		# estimate heading based on gnss waypoints
+		(heading_valid, heading, var_heading, gnss_dist) = self.gnss_estimate_heading()
+		if heading_valid == True:
+			(odo_valid, odo_dist, odo_angle) = self.odometry_buf_distance_angle() # calc traversed dist and angle in odo sliding window buffer
+			if odo_valid == True:
+				if fabs (odo_angle) <= self.orientation_odo_max_angle:
+					if fabs(gnss_dist-odo_dist) < self.orientation_odo_gnss_dist_max_diff_percent/100.0*odo_dist:
+						yaw = heading
+						valid = True
 		return (valid, self.angle_limit(yaw))
 
 	def gnss_estimate_variance_pos(self):
@@ -162,63 +153,56 @@ class pose_2d_preprocessor():
 				#print "  GNSS unexpected position jump %.1f m at time stamp: %.3f: E%.3f, N%.3f" % (ddist, time_stamp, easting, northing)
 		return valid
 
-	def gnss_new_measurement (self, time_stamp, easting, northing, solution, sat, hdop):
+	def gnss_new_data (self, time_stamp, easting, northing, solution, sat, hdop):
 		valid = False
 		if solution > 0: # if satellite fix
 			if self.gnss_validate_new_position (time_stamp, easting, northing): 
 				self.gnss.append([time_stamp, easting, northing, solution, sat, hdop]) # add measurement to sliding window
 				valid = True
-				if len(self.gnss) > self.gnss_buffer_size: # trim buffer length to size
-					self.gnss.pop(0)
-				elif len(self.gnss) == 50 and self.gnss_measurement_interval == -1: # update buffer size based on gnss update interval
-					self.gnss_measurement_interval = (self.gnss[-1][0] - self.gnss[0][0])/50.0
-					print "  Estimated GNSS measurement interval: %.3fs" % (self.gnss_measurement_interval)
-					self.gnss_buffer_size = int(self.buffer_period / self.gnss_measurement_interval)
-					while len(self.gnss) > self.gnss_buffer_size: # trim buffer length to size
-						self.gnss.pop(0)	
+				if self.gnss_interval_valid == False and len(self.gnss) == self.buf_init_size: # if time to calc update interval
+					self.gnss_interval_valid = True
+					self.gnss_interval = (self.gnss[-1][0] - self.gnss[0][0])/(self.buf_init_size - 1.0)
+					print "  Estimated GNSS measurement interval: %.3fs" % (self.gnss_interval)
+					self.gnss_buf_size = int(self.buffer_period / self.gnss_interval)
+				while len(self.gnss) > self.gnss_buf_size: # trim buffer length to size
+					self.gnss.pop(0)	
 		if valid == False: # dischard the entire buffer
 			self.gnss = []
 			self.gnss_latest_invalid = time_stamp
-			self.absolute_orientation_timeout = time_stamp + self.absolute_orientation_timeout_period 
 		return valid
 
-	def imu_new_measurement(self, time_stamp, yaw_rate, yaw_orientation):
-		self.imu.append([time_stamp, yaw_rate, yaw_orientation])
-		if len(self.imu) > self.imu_buffer_size: # trim buffer length to size
+	def imu_new_data(self, time_stamp, yaw_rate):
+		self.imu.append([time_stamp, yaw_rate])
+		if self.imu_interval_valid == False and len(self.imu) == self.buf_init_size: # if time to calc update interval
+			self.imu_interval_valid = True
+			self.imu_interval = (self.imu[-1][0] - self.imu[0][0])/(self.buf_init_size - 1.0)
+			print "  Estimated IMU measurement interval: %.3fs" % (self.imu_interval)
+			self.imu_buf_size = int(self.buffer_period / self.imu_interval)
+		while len(self.imu) > self.imu_buf_size:
 			self.imu.pop(0)
-		elif len(self.imu) == 50: # update buffer size based on gnss update interval
-			self.imu_measurement_interval = (self.imu[-1][0] - self.imu[0][0])/50.0
-			print "  Estimated IMU measurement interval: %.3fs" % (self.imu_measurement_interval)
-			self.imu_buffer_size = self.buffer_period / self.imu_measurement_interval
-			while len(self.imu) > self.imu_buffer_size:
-				self.imu.pop(0)
 
-	def odometry_new_feedback(self, time_stamp, delta_dist, delta_angle, forward):
+	def odometry_new_data(self, time_stamp, delta_dist, delta_angle, forward):
 		self.odo.append([time_stamp, delta_dist, delta_angle, forward])
-		if len(self.odo) > self.odo_buffer_size: # trim buffer length to size
+		if self.odo_interval_valid == False and len(self.odo) == self.buf_init_size: # update buffer size based on gnss update interval
+			self.odo_interval_valid = True
+			self.odo_interval = (self.odo[-1][0] - self.odo[0][0])/(self.buf_init_size - 1.0)
+			print "  Estimated odometry update interval: %.3fs" % (self.odo_interval)
+			self.odo_buf_size = int(self.buffer_period / self.odo_interval)
+		while len(self.odo) > self.odo_buf_size:
 			self.odo.pop(0)
-		elif len(self.odo) == 50: # update buffer size based on gnss update interval
-			self.odo_measurement_interval = (self.odo[-1][0] - self.odo[0][0])/50.0
-			print "  Estimated odometry update interval: %.3fs" % (self.odo_measurement_interval)
-			self.odo_buffer_size = int(self.buffer_period / self.odo_measurement_interval)
-			while len(self.odo) > self.odo_buffer_size:
-				self.odo.pop(0)
 
-	def odometry_buffer_distance_angle (self):
+	def odometry_buf_distance_angle (self):
 		valid = False
 		buffer_dist = 0.0
 		buffer_angle = 0.0
-		if  len(self.odo) == self.odo_buffer_size: # if we have a full odometry buffer
+		if  len(self.odo) == self.odo_buf_size: # if we have a full odometry buffer
 			valid = True
-			for i in xrange(self.odo_buffer_size):
+			for i in xrange(self.odo_buf_size):
 				buffer_dist += self.odo[i][1]
 				buffer_angle += self.odo[i][2]
 				if self.odo[i][3] == False: # if we have been driving backwards the data may be invalid
 					valid = False
 		return (valid, buffer_dist, buffer_angle)
-
-	def estimate_yaw(self):
-		pass
 
 	def angle_limit (self, angle): # return angle within [0;2pi[
 		while angle < 0:
@@ -237,17 +221,14 @@ class pose_2d_preprocessor():
 		return diff
 
 class pose_2d_ekf():
-	def __init__(self):
+	def __init__(self, initial_guessX):
 		self.pi2 = 2.0*pi
-		self.prevX = self.set_initial_guess([0.0, 0.0, 0.0])
+		self.prevX = np.matrix(initial_guessX)
 		self.prevCov = np.matrix([[100000000**2.0,0.0,0.0],[0.,100000000**2,0.0], \
 			[0.0,0.0,pi**2]]) # high variance for the initial guess 
 		self.Q = np.identity(3)
 		self.Hpos= np.matrix([[1., 0., 0.,],[0., 1., 0.]]) # Position observation matrix
 		self.Hyaw = np.matrix([[0., 0., 0.,],[0., 0., 1.]]) # Yaw angle observation matrix
-
-	def set_initial_guess (self, x):
-		self.prevX = np.matrix(x)
 
 	def system_update (self, delta_dist, var_dist, delta_angle, var_angle):
 		u = [delta_dist, delta_angle]

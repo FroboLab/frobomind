@@ -52,7 +52,6 @@ on a rosbag recorded during a drive test of the Armadillo Pichi robot.
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose_sim" />
-			<param name="update_rate" value="20" />
 			<param name="publish_relative_pose" type="boolean" value="true" />
 			<param name="ekf_initial_guess_easting" value="588784.0" /> <!-- [m] if unsure set to 0.0 -->
 			<param name="ekf_initial_guess_northing" value="6137262.0" /> <!-- [m] if unsure set to 0.0 -->

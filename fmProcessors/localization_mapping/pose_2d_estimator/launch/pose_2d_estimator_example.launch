@@ -1,0 +1,19 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmProcessors">
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="publish_relative_pose" type="boolean" value="false" />
+			<param name="ekf_initial_guess_easting" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
+			<param name="ekf_initial_guess_northing" value="0.0" /> <!-- [m] if unsure set to 0.0 -->
+			<param name="ekf_initial_guess_yaw" value="0.0" /> <!-- [rad] if unsure set to 0.0 -->
+			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
+			<param name="odometry_angular_variance" value="0.000035" /> <!-- [rad/update] -->
+		</node>
+	</group>
+</launch>
+
