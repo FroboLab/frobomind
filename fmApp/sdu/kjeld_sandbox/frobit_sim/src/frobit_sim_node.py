@@ -63,9 +63,10 @@ class ROSnode():
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 1.8) # [rad/s^2]
 		self.wheel_speed_variance = 0.01
-		self.wheel_speed_delay = 0.05 # [s]
+		self.wheel_speed_delay = 0.1 # [s]
 		self.wheel_speed_delay_variance = 0.05
-		self.wheel_speed_error = 0.2 # [m/s]
+		self.wheel_speed_error = 0.25 # [m/s]
+		self.wheel_speed_minimum = 0.07 
 
 		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
 		if pub_fb_rate != 0:
@@ -168,6 +169,16 @@ class ROSnode():
 		return var
 		
 	def update_sim (self):
+		if self.ref_vel_left > 0.0 and self.ref_vel_left < self.wheel_speed_minimum:
+			self.ref_vel_left = 0.0
+		elif self.ref_vel_left < 0.0 and self.ref_vel_left > -self.wheel_speed_minimum:
+			self.ref_vel_left = 0.0
+
+		if self.ref_vel_right > 0.0 and self.ref_vel_right < self.wheel_speed_minimum:
+			self.ref_vel_right = 0.0
+		elif self.ref_vel_right < 0.0 and self.ref_vel_right > -self.wheel_speed_minimum:
+			self.ref_vel_righjt = 0.0
+
 		if self.ref_vel_left != 0 or self.ref_vel_right != 0:
 			#self.sim_vel_left = self.ref_vel_left + np.random.randn()* self.wheel_speed_variance
 			#self.sim_vel_right = self.ref_vel_right + np.random.randn()* self.wheel_speed_variance
@@ -178,8 +189,12 @@ class ROSnode():
 			self.wheel_speed_err_right += np.random.randn()*0.008
 			self.wheel_speed_err_right = self.keep_within (self.wheel_speed_err_right, self.wheel_speed_error)
 
+			#self.sim_vel_left = self.ref_vel_left + self.wheel_speed_err_left*self.ref_vel_left + np.random.randn()* self.wheel_speed_variance
+			#self.sim_vel_right = self.ref_vel_right + self.wheel_speed_err_right*self.ref_vel_right + np.random.randn()* self.wheel_speed_variance
+
 			self.sim_vel_left = self.ref_vel_left + self.wheel_speed_err_left + np.random.randn()* self.wheel_speed_variance
 			self.sim_vel_right = self.ref_vel_right + self.wheel_speed_err_right + np.random.randn()* self.wheel_speed_variance
+
 			(sim_vel_lin, sim_vel_ang) = self.dk.forward(self.sim_vel_left, self.sim_vel_right)
 		else:
 			self.sim_vel_left = 0.0
