@@ -62,7 +62,6 @@ class ROSnode():
 			self.ser = serial.Serial(self.device, 57600, timeout=0)
 		except Exception as e:
 			rospy.logerr(rospy.get_name() + ": Unable to open serial device: %s" % self.device)
-			self.ser.close()
 			ser_error = True
 
 		if ser_error == False:
