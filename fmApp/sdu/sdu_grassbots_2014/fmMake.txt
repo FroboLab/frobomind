@@ -1,0 +1,16 @@
+/fmApp/sdu/sdu_grassbots_2014
+/fmApp/sdu/kjeld_sandbox/frobit_sim
+/fmApp/sdu/kjeld_sandbox/frobit_plot
+/fmSensors/global_sensing/imu/vectornav_vn100
+/fmSensors/global_sensing/gnss/nmea_to_tranmerc
+/fmProcessors/platform_processing/differential_odometry
+/fmProcessors/localization_mapping/pose_2d_estimator
+/fmLib/msgs
+/fmLib/math/geographics/transverse_mercator
+/fmLib/kinematics/differential_ifk_py
+/fmLib/hmi_support/keyboard_interface
+/fmLib/computer_support/serial_string
+/fmLib/computer_support/serial_nmea
+/fmMon/plot_pid
+/fmMon/plot_velocity
+/fmMon/plot_propulsion_feedback_leftright

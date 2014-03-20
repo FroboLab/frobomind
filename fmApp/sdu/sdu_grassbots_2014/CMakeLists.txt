@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sdu_grassbots_trial_2014)
+project(sdu_grassbots_2014)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -49,7 +49,7 @@ catkin_python_setup()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES sdu_grassbots_trial_2014
+#  LIBRARIES sdu_grassbots_2014
 #  CATKIN_DEPENDS msgs roscpp rospy
 #  DEPENDS system_lib
 )
@@ -65,19 +65,19 @@ include_directories(include
 )
 
 ## Declare a cpp library
-# add_library(sdu_grassbots_trial_2014
-#   src/${PROJECT_NAME}/sdu_grassbots_trial_2014.cpp
+# add_library(sdu_grassbots_2014
+#   src/${PROJECT_NAME}/sdu_grassbots_2014.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(sdu_grassbots_trial_2014_node src/sdu_grassbots_trial_2014_node.cpp)
+# add_executable(sdu_grassbots_2014_node src/sdu_grassbots_2014_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(sdu_grassbots_trial_2014_node sdu_grassbots_trial_2014_generate_messages_cpp)
+# add_dependencies(sdu_grassbots_2014_node sdu_grassbots_2014_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(sdu_grassbots_trial_2014_node
+# target_link_libraries(sdu_grassbots_2014_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -96,7 +96,7 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS sdu_grassbots_trial_2014 sdu_grassbots_trial_2014_node
+# install(TARGETS sdu_grassbots_2014 sdu_grassbots_2014_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -121,7 +121,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_grassbots_trial_2014.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_grassbots_2014.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
