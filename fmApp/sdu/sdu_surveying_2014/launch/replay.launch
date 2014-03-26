@@ -1,18 +1,18 @@
 <!-- FroboMind -->
 
 <launch>
-		<node pkg="rosbag" name="sensors" type="play" args="--start=130 --rate=1 --clock $(find sdu_surveying_2014)/test.bag">
+		<node pkg="rosbag" name="sensors" type="play" args="--start=0 --rate=1 --clock $(find sdu_surveying_2014)/test.bag">
 			<remap from="/rosbag/clock" to="/clock"/>
 		</node>
 
 	<group ns="fmProcessors">
-		<!--node pkg="sdu_surveying_2014" name="survey_log" type="survey_log_node.py" output="screen" >
+		<node pkg="sdu_surveying_2014" name="survey_log" type="survey_log_node.py" output="screen" >
 			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
 			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gpgga_tranmerc_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="lidar_sub" value="/fmSensors/laser_msg" />
-		</node-->
+		</node>
 
 		<node pkg="sdu_surveying_2014" name="wptnav" type="show_navigation_status_node.py"  output="screen">
 			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />

@@ -2,6 +2,8 @@
 
 
 <launch>
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
 		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
@@ -34,12 +36,11 @@
 	</group>
 
 	<group ns="fmLib">
-
 		<!-- serial communication with the IMU -->
 		<node pkg="serial_string" name="imu_serial_string_node" type="serial_string_node" output="screen" respawn="true">
 			<param name="publisher_topic" value="/fmData/imu_rx" />	 
 			<param name="subscriber_topic" value="/fmData/imu_tx" />
-			<param name="device" value="/dev/ttyUSB0" />	
+			<param name="device" value="/dev/imu" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
 		</node> 	

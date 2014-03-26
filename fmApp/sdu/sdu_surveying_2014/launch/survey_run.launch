@@ -257,10 +257,10 @@
 			<param name="use_nmea_checksum" value="true"/>
         </node>
 
-		<node pkg="real_time_analyze" name="rt_node" type="real_time_analyze_node.py" output="screen" >
+		<!--node pkg="real_time_analyze" name="rt_node" type="real_time_analyze_node.py" output="screen" >
 			<param name="timing_pub" value="/fmInformation/rt_timing"/>
 			<param name="device" value="/dev/rt_analyze" />	
-        </node> 	
+        </node--> 	
 	</group>
 </launch>
 

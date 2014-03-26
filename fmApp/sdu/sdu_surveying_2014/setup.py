@@ -8,6 +8,7 @@ d = generate_distutils_setup(
   'survey/survey_log_node.py',
   'monitor/plot_lidar_node.py',
   'monitor/plot_lidar_line_node.py',
+  'monitor/show_imu_node.py',
   'monitor/show_pose_node.py',
   'monitor/show_navigation_status_node.py'],)
 

@@ -6,12 +6,7 @@ DIR_USB="/media/FROBOMIND"
 # change dir to the location of the shell script
 DIR_APP=`dirname $(readlink -f $0)`
 cd $DIR_APP
-cp $DIR_USB/waypoints.csv $DIR_APP/../waypoints
+cp $DIR_USB/waypoints.geo $DIR_APP/../waypoints
 
-
-
-
-pwd
-../utils/convert_waypoints.py kp2000j_ll $DIR_APP/../waypoints/waypoints.csv $DIR_APP/../waypoints/waypoints.ll
-../utils/convert_waypoints.py ll_utm32 $DIR_APP/../waypoints/waypoints.ll $DIR_APP/../waypoints/waypoints.txt
+../utils/load_waypoints_geo.py $DIR_APP/../waypoints/waypoints.geo $DIR_APP/../waypoints/waypoints.txt
 
