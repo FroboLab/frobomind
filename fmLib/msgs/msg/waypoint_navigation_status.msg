@@ -4,6 +4,7 @@ int8 state
 # 0=stop/standby, 1=drive, 2=turn
 int8 mode
 # ab line
+string b_id
 float64 b_easting
 float64 b_northing
 float64 a_easting
