@@ -178,7 +178,7 @@ class WptNavNode():
 		if self.wpt != False:
 			self.update_implement_value()
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
-			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm, bearing %.0f)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist, self.wptnav.bearing*180.0/pi))
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist, self.wptnav.bearing*180.0/pi))
 		else:
 			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
 			self.wptnav.stop()
@@ -190,7 +190,7 @@ class WptNavNode():
 			self.prev_wpt = prev_wpt
 			self.update_implement_value()
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
-			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm, bearing %.0f)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist, self.wptnav.bearing*180.0/pi))
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist, self.wptnav.bearing*180.0/pi))
 		else:
 			rospy.loginfo(rospy.get_name() + ": This is the first waypoint")
 
@@ -265,6 +265,7 @@ class WptNavNode():
 				self.wptnav_status.mode = 1
 			elif self.wptnav.state == self.wptnav.STATE_TURN:
 				self.wptnav_status.mode = 2
+			self.wptnav_status.b_id = self.wptnav.b[self.wptnav.W_ID]
 			self.wptnav_status.b_easting = self.wptnav.b[self.wptnav.W_E]
 			self.wptnav_status.b_northing = self.wptnav.b[self.wptnav.W_N]
 			self.wptnav_status.a_easting = self.wptnav.a[self.wptnav.W_E]

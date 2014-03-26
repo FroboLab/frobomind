@@ -64,11 +64,11 @@ class waypoint_list():
 						yaw = float(data[2])
 					else:
 						yaw = -1
-					mode = 1 # default is 'minimize cross track error'
 					if len(data) >= 4 and data[3] != '':
 						name = data[3]
 					else:
 						name = 'Wpt%d' % (wpt_num)
+					mode = 1 # default is 'minimize cross track error'
 					if  len(data) >= 5 and data[4] == 'STWP': # 'straight to waypoint' 
 						mode = 0 
 					if len(data) >= 6 and data[5] != '':  # waypoint reach tolerance

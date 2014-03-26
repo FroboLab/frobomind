@@ -39,7 +39,8 @@ from msgs.msg import waypoint_navigation_status, gpgga_tranmerc
 from sensor_msgs.msg import Imu, LaserScan
 from geometry_msgs.msg import TwistStamped
 from math import pi, asin, atan2, sqrt
-
+import time
+import datetime
 import numpy as np
 
 class linear_least_squares_2d_model:
@@ -63,7 +64,8 @@ class log_node():
 		self.update_rate = 20 # [Hz]
 		self.wait_before_log = 2.0 # [s]
 		self.wait_timeout = 0.0
-		self.log_file = 'survey.txt'
+		ts = time.time()
+		self.log_file = datetime.datetime.fromtimestamp(ts).strftime('survey_%Y-%m-%d-%H-%M-%S.txt')
 
 		# robot state
 		self.STATE_IDLE = 0
@@ -84,8 +86,8 @@ class log_node():
 		self.cmd_vel_lin = 1.0
 		self.cmd_vel_ang = 1.0
 		self.b = [0.0, 0.0]
-		self.init_log ('#wpt_num\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\n')
-		self.wpt_num = 0
+		self.b_id = ''
+		self.init_log ('#wpt_name\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\n')
 
 		# lidar
 		self.laser = []
@@ -116,6 +118,7 @@ class log_node():
 		msg_b = [msg.b_easting, msg.b_northing]
 		if msg_b != self.b and self.state != self.STATE_LOG:
 			self.b = msg_b
+			self.b_id = msg.b_id
 
 		wptnav_wait = (msg.state == 2)
 		if wptnav_wait == True and self.state == self.STATE_IDLE:
@@ -239,7 +242,6 @@ class log_node():
 		self.state = self.STATE_IDLE
 		time_now = rospy.get_time()
 		error = False
-		self.wpt_num += 1
 		log_seconds = time_now	- self.begin_log_time
 		if len(self.gnss) > 0:
 			(gnss_e, gnss_n, gnss_alt) = self.average_gnss_pose()
@@ -254,7 +256,7 @@ class log_node():
 			error = True
 
 		if error == False:
-			s = '%d\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\n' %(self.wpt_num, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
+			s = '%s\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\n' %(self.b_id, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
 		else:
 			s= '#errror\t%.3f\t%.3f\n' % (time_now, log_seconds)
 

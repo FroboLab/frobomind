@@ -36,7 +36,7 @@ def load_waypoints_geo(filename):
 	for i in xrange(len(lines)): # for all lines
 		if len(lines[i]) > 0 and lines[i][0] != '#': # if not a comment or empty line
 			if lines[i][:7] == '\tPoint ':
-				data = lines[i][8:].split (',') # split into comma separated list
+				data = lines[i][7:].split (',') # split into comma separated list
 				name = data[0]
 				kp2000_n = float (data[1])
 				kp2000_e = float (data[2])
@@ -57,6 +57,6 @@ f = open(file_out, 'w')
 if header != '':
 	f.write ('%s\n' % header)
 for i in xrange(len(wpts)):
-	f.write ("%.4f,%.4f\n" % (wpts[i][1],wpts[i][2])) 
+	f.write ("%.4f,%.4f,,%s\n" % (wpts[i][1],wpts[i][2],wpts[i][0])) 
 f.close()	
 
