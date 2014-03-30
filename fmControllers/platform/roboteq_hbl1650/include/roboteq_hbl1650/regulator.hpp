@@ -27,7 +27,9 @@
  ****************************************************************************
  # 2013-06-02 Leon: Implemented regulator
  #
- #
+ ****************************************************************************
+ # This class implements a general PID regulator as the method output_from_input
+ # taking as input the current setpoint, feedback and time since last call.
  ****************************************************************************/
 #ifndef REGULATOR_HPP_
 #define REGULATOR_HPP_

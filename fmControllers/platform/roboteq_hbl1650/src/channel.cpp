@@ -1,6 +1,10 @@
+/****************************************************************************
+ # FroboMind
+ # Licence and description in .hpp file
+ ****************************************************************************/
 #include "roboteq_hbl1650/hbl1650.hpp"
 
-Channel::Channel( ) : velocity_filter(8) // do not change!!
+Channel::Channel( ) : velocity_filter(8)
 {
 	down_time = 0;
 	current_setpoint = 0;
@@ -167,8 +171,6 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 		else /* Controller is not initialised */
 		{
 			ROS_INFO("%s: Controller is not initialised",ros::this_node::getName().c_str());
-			//initController("standard");
-			//status.initialised = true;'
 			transmit("?FID");
 		}
 	}
@@ -190,11 +192,5 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 	message.status.data = ss.str();
 	publisher.status.publish(message.status);
 
-//	std::cout << "Period[s]:" << period <<
-//			" Setpoint[m/s]:" << velocity <<
-//			" Current position[m]:" << ((double)last_hall)*ticks_to_meter <<
-//			" Desired position[m]:" << desired_position <<
-//			" Thrust[]:" << current_thrust <<
-//			" " << std::endl;
 }
 

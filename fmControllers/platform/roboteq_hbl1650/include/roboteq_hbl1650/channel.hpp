@@ -26,8 +26,11 @@
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************
  # 2013-06-02 Leon: Implemented regulator
- #
- #
+ # 
+ ****************************************************************************
+ # This class implements the concept of a motor channel on a RoboTeQ controller.
+ # One or more channels are instantiated from the controller class and
+ # communication between channel and controller is through callbacks
  ****************************************************************************/
 #ifndef CHANNEL_HPP_
 #define CHANNEL_HPP_
@@ -48,7 +51,9 @@
 class BaseCB
 {
 /*
- * Abstract class overloading the function call operator with a pure virtual function
+ * Abstract class overloading the function call operator with 
+ * a pure virtual function. This is part of a construction 
+ * necessary to allow callbacks back to the instantiating class.
  * */
 public:
 	virtual void operator()(std::string)=0;
@@ -59,7 +64,9 @@ template<class ClassT>
 class CallbackHandler : public BaseCB
 {
 /*
- * Templated placeholder class for handling callback methods to member functions
+ * Templated placeholder class for handling callback methods to 
+ * member functions. This is part of a construction necessary 
+ * to allow callbacks back to the instantiating class.
  * */
 public:
 	typedef void(ClassT::* FuncT)(std::string);
@@ -125,9 +132,11 @@ public:
 	// Subscriber callbacks
 	void onCmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
 	void onDeadman(const std_msgs::Bool::ConstPtr&);
+
+	// Timer callback running the regulator algorithm
 	void onTimer(const ros::TimerEvent&, RoboTeQ::status_t&);
 
-	// Mutator method for setting up publisher
+	// Mutators for setting up publisher
 	void setStatusPub(ros::Publisher pub){publisher.status = pub;}
 	void setPropulsionFeedbackPub(ros::Publisher pub){publisher.feedback = pub;}
 	void setVelPub(ros::Publisher pub){publisher.feedback = pub;}

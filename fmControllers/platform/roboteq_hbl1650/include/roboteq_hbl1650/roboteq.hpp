@@ -27,7 +27,9 @@
  ****************************************************************************
  # 2013-06-02 Leon: Implemented regulator
  #
- #
+ ****************************************************************************
+ # This class implements the low level communication to the RoboTeQ controllers.
+ # 
  ****************************************************************************/
 #ifndef ROBOTEQ_HPP_
 #define ROBOTEQ_HPP_
@@ -42,31 +44,31 @@
 class RoboTeQ
 {
 public:
-	// Convenience struct for holding status variables
+	// Convenience struct for holding status booleans
 	struct status_t
 	{
-		bool 				online, 				// True when controller is online
-							deadman_pressed, 		// True when deadman button is pressed
-							cmd_vel_publishing, 	// True if cmd_vel message has been received within time limit
-							initialised, 			// True if controller is initialised
-							responding, 			// True is serial message has been received within time limit
-							emergency_stop;			// True if emgency stop is activated !
+		bool online, 		// True when controller is online
+		deadman_pressed, 	// True when deadman button is pressed
+		cmd_vel_publishing, 	// True if cmd_vel message has been received within time limit
+		initialised, 		// True if controller is initialised
+		responding, 		// True is serial message has been received within time limit
+		emergency_stop;		// True if emgency stop is activated !
 	} status;
 
-	bool					two_channel;			// True if controller has two channel mode
-	unsigned int			ff,fs;					// Variables for holding status flags
-	int						cb1,cb2,				// Variables for holding absolute hall values
-							a1,a2,					// Variables for holding motor current readings
-							ba1,ba2,				// Variables for holding battery current readings
-							p1,p2,					// Variables for holding power readings
-							t1,t2,t3,				// Variables for holding temperature readings
-							v1,v2,v3;				// Variables for holding voltage readings
+	bool two_channel;		// True if controller has two channel mode
+	unsigned int ff,fs;		// Variables for holding status flags
+	int cb1,cb2,			// Variables for holding absolute hall values
+	a1,a2,				// Variables for holding motor current readings
+	ba1,ba2,			// Variables for holding battery current readings
+	p1,p2,				// Variables for holding power readings
+	t1,t2,t3,			// Variables for holding temperature readings
+	v1,v2,v3;			// Variables for holding voltage readings
 
-	msgs::serial 			serial_out;
-	msgs::StringStamped		status_out;
+	msgs::serial serial_out;
+	msgs::StringStamped status_out;
 	msgs::PropulsionModuleStatus propulsion_module_status_message;
-	ros::Time 				last_serial_msg;
-	ros::Publisher 			serial_publisher, status_publisher, temperature_publisher, propulsion_module_status_publisher;
+	ros::Time last_serial_msg;
+	ros::Publisher serial_publisher, status_publisher, temperature_publisher, propulsion_module_status_publisher;
 
 	RoboTeQ();
 

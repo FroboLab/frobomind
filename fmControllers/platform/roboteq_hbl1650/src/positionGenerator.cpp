@@ -1,3 +1,7 @@
+/****************************************************************************
+ # FroboMind
+ # Licence and description in .hpp file
+ ****************************************************************************/
 #include "roboteq_hbl1650/positionGenerator.hpp"
 
 PositionGenerator::PositionGenerator()

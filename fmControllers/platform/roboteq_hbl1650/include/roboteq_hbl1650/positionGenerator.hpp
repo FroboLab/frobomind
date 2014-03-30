@@ -27,7 +27,12 @@
  ****************************************************************************
  # 2014-02-02 Leon: Implemented s-curves
  #
+ ****************************************************************************
+ # This class implements s-curves for the motorcontroller, tesselating the
+ # setpoint into desired setpoints at a given time.
  #
+ #             !!!!!!! This is currently untested code !!!!!!!
+ # 
  ****************************************************************************/
 
 #ifndef POSITIONGENERATOR_HPP_
@@ -61,6 +66,7 @@ private:
 
     double period, brake_zeroband;
 
+	// Methods to discern state
     bool isBraking(void);
     bool isAtRest(void);
     bool isOnSetpoint(void);
@@ -69,21 +75,23 @@ private:
     bool isDecliningAcceleration(void);
     bool isIncliningAcceleration(void);
 
+	// Methods performing actions
     void declineAcceleration(void);
     void inclineAcceleration(void);
     void hault(void);
     void enforceVelocityMaximum(void);
     void enforceAccelerationMaximum(void);
     void upkeep(void);
-
     void brake(void);
 
+	// Math
     int sign(double);
 
 public:
 	PositionGenerator();
 	~PositionGenerator();
 
+	// Mutators
 	void setPeriod(double);
 	void setCurrentPosition(double);
 	void setCurrentVelocityInput(double);
@@ -94,6 +102,7 @@ public:
 	void setBrakeZeroband(double);
 	void setVelocityTolerance(double);
 
+	// Accessors
 	double getNewPosition(void);
 };
 
