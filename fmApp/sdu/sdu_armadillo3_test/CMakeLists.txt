@@ -1,29 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(lidar_row_extractor)
+project(sdu_armadillo3_test)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure msgs geometry_msgs laser_geometry pcl_ros roscpp sensor_msgs tf visualization_msgs)
-
-##      PCL
-find_package(PCL 1.6 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
+find_package(catkin REQUIRED COMPONENTS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(Eigen REQUIRED)
-
-include_directories(${EIGEN_INCLUDE_DIRS})
-
-add_definitions(${EIGEN_DEFINITIONS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
-# catkin_python_setup()
+ catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -46,10 +34,8 @@ add_definitions(${EIGEN_DEFINITIONS})
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   visualization_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
-
-generate_dynamic_reconfigure_options(cfg/lidar_row_extractor.cfg)
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -59,9 +45,9 @@ generate_dynamic_reconfigure_options(cfg/lidar_row_extractor.cfg)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-#  LIBRARIES row_extractor
-  CATKIN_DEPENDS dynamic_reconfigure msgs geometry_msgs laser_geometry pcl_ros roscpp sensor_msgs tf visualization_msgs
+#  INCLUDE_DIRS include
+#  LIBRARIES sdu_armadillo_3
+  CATKIN_DEPENDS rospy msgs smach smach_ros wiimote_interface generic_smach action_primitives
 #  DEPENDS system_lib
 )
 
@@ -70,26 +56,23 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-  cfg/cpp
-)
+# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(row_extractor
-#   src/${PROJECT_NAME}/row_extractor.cpp
+# add_library(sdu_armadillo_3
+#   src/${PROJECT_NAME}/sdu_armadillo_3.cpp
 # )
 
 ## Declare a cpp executable
-add_executable(lidar_row_extractor_node src/ransac_row_node.cpp src/ransac_extractor.cpp)
+# add_executable(sdu_armadillo_3_node src/sdu_armadillo_3_node.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(lidar_row_extractor_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp visualization_msgs_gencpp)
+# add_dependencies(sdu_armadillo_3_node ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(lidar_row_extractor_node
-   ${catkin_LIBRARIES}
- )
+# target_link_libraries(sdu_armadillo_3_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -98,12 +81,12 @@ add_dependencies(lidar_row_extractor_node ${PROJECT_NAME} msgs_gencpp geometry_m
 ## Mark executable scripts (Python etc.) for installation
 ## not required for python when using catkin_python_setup()
 # install(PROGRAMS
-#   scripts/my_python_script
+#   mission_planners/wii_remote
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS row_extractor row_extractor_node
+# install(TARGETS sdu_armadillo_3 sdu_armadillo_3_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -128,7 +111,7 @@ add_dependencies(lidar_row_extractor_node ${PROJECT_NAME} msgs_gencpp geometry_m
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_row_extractor.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_armadillo_3.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -4,7 +4,7 @@ project(sdu_armadillo3)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp msgs geometry_msgs sensor_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp msgs geometry_msgs sensor_msgs roboteq_hbl1650)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system thread)
@@ -66,13 +66,24 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
-add_executable(roboteq_node src/roboteq.cpp)
+#add_executable(roboteq_node src/roboteq.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(roboteq_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp)
+# add_dependencies(roboteq_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(roboteq_node
+# target_link_libraries(roboteq_node
+#   ${catkin_LIBRARIES}
+# )
+ 
+ ## Declare a cpp executable
+add_executable(sdu_armadillo3_node src/sdu_armadillo3_node.cpp)
+
+## Add dependencies to the executable
+ add_dependencies(sdu_armadillo3_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpp sensor_msgs_gencpp)
+
+## Specify libraries to link a library or executable target against
+ target_link_libraries(sdu_armadillo3_node
    ${catkin_LIBRARIES}
  )
 

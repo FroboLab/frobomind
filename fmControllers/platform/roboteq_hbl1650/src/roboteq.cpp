@@ -1,3 +1,7 @@
+/****************************************************************************
+ # FroboMind
+ # Licence and description in .hpp file
+ ****************************************************************************/
 #include "roboteq_hbl1650/roboteq.hpp"
 
 RoboTeQ::RoboTeQ()
@@ -24,7 +28,7 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 		args--;
 	}
 
-	ss << "\r";
+	ss << "\r\n";
 
 	serial_out.data = ss.str();
 	serial_out.header.stamp = ros::Time::now();
@@ -33,14 +37,18 @@ void RoboTeQ::transmit(int args, std::string cmd , ...)
 	va_end(arguments);
 }
 
+/* Transmits character string to the controller*/
 void RoboTeQ::transmit(std::string cmd)
 {
-	serial_out.data = cmd;
+	std::stringstream ss;
+	ss << cmd << "\r\n";
+
+	serial_out.data = ss.str();
 	serial_out.header.stamp = ros::Time::now();
 	serial_publisher.publish(serial_out);
 }
 
-/* Callback for handling serial message*/
+/* Callback for handling serial messages from the controller*/
 void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 {
 	ROS_DEBUG("Message received %s",msg->data.c_str());
@@ -53,10 +61,6 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 	if(sscanf(msg->data.c_str(),"+%s",dummy))
 	{
 		ss << dummy << " ";
-	}
-	else if(sscanf(msg->data.c_str(),"CB=%d:%d", &cb1,&cb2))
-	{
-		hall_feedback(msg->header.stamp, cb1, cb2);
 	}
 	else if(sscanf(msg->data.c_str(),"CB=%d",&cb1))
 	{
@@ -78,25 +82,13 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 	{
 		ss << "temp_ic:" << t1 << " temp_ch1:" << t2 << " ";
 	}
-	else if(sscanf(msg->data.c_str(),"T=%d:%d:%d",&t1,&t2,&t3))
-	{
-		ss << "temp_ic:" << t1 << " temp_ch1:" << t2 << " temp_ch2:" << t3 << " ";
-	}
 	else if(sscanf(msg->data.c_str(),"A=%d",&a1))
 	{
 		ss << "motor_amps_ch1:" << a1/10.0 << " ";
 	}
-	else if(sscanf(msg->data.c_str(),"A=%d:%d",	&a1,&a2))
-	{
-		ss << "motor_amps_ch1:" << a1/10.0 << " motor_amps_ch1:" << a2/10.0 << " ";
-	}
 	else if(sscanf(msg->data.c_str(),"BA=%d",&ba1))
 	{
 		ss << "battery_amps:" << ba1/10.0 << " ";
-	}
-	else if(sscanf(msg->data.c_str(),"BA=%d:%d",&ba1,&ba2))
-	{
-		ss << "battery_amps_ch1:" << ba1/10.0 << " " << "battery_amps_ch2:" << ba2/10.0 << " " ;
 	}
 	else if(sscanf(msg->data.c_str(),"FID=%s",dummy))
 	{

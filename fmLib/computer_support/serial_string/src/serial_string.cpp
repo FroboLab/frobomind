@@ -63,10 +63,10 @@ int main(int argc, char **argv)
   ros::NodeHandle n("~");
 
   /* read parameters from ros parameter server if available otherwise use default values */
-  n.param<std::string> ("device", device, "/dev/ttyS0");
-  n.param<std::string> ("publisher_topic", publisher_topic, "S0_rx_msg");
-  n.param<std::string> ("subscriber_topic", subscriber_topic, "S0_tx_msg");
-  n.param<int> ("termination_character", term,10);
+  n.param<std::string> ("device", device, "/dev/ttyUSB0");
+  n.param<std::string> ("publisher_topic", publisher_topic, "/rx");
+  n.param<std::string> ("subscriber_topic", subscriber_topic, "/tx");
+  n.param<int> ("termination_character", term,13);
   n.param<int> ("baudrate", baudrate, 115200);
 
   s_publisher = nh.advertise<msgs::serial> (publisher_topic.c_str(), 20,1);

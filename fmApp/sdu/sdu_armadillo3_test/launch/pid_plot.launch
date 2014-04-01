@@ -1,0 +1,29 @@
+<!-- FroboMind plot_pid example launch file -->
+
+<launch>
+	<group ns="fmSensors">
+		<node pkg="sdu_armadillo3_test" name="pid_left" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/pid_left" />
+ 			<param name="update_rate" value="10" />
+			<param name="plot_title" value="PID state" />
+			<param name="samples" value="500" />
+			<param name="max_error" value="0.1" />
+			<param name="max_output" value="0.1" />
+			<param name="max_pid" value="0.1" />
+			<param name="plot_feed_forward" value="false" />
+		</node>
+		
+		<node pkg="sdu_armadillo3_test" name="pid_right" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/pid_right" />
+ 			<param name="update_rate" value="10" />
+			<param name="plot_title" value="PID state" />
+			<param name="samples" value="500" />
+			<param name="max_error" value="0.1" />
+			<param name="max_output" value="0.1" />
+			<param name="max_pid" value="0.1" />
+			<param name="plot_feed_forward" value="false" />
+		</node>
+	</group>
+</launch>
+
+

@@ -1,3 +1,7 @@
+/****************************************************************************
+ # FroboMind
+ # Licence and description in .hpp file
+ ****************************************************************************/
 #include "roboteq_hbl1650/regulator.hpp"
 
 Regulator::Regulator()
@@ -6,7 +10,6 @@ Regulator::Regulator()
 	integrator = previous = 0;
 }
 
-/* PID regulator. Input and output must be in equal units */
 double Regulator::output_from_input( double setpoint , double input , double period)
 {
 	// Implement max period
@@ -29,7 +32,7 @@ double Regulator::output_from_input( double setpoint , double input , double per
 	double differentiator = ( previous - input ) / period;
 
 	// Calculate output
-	double output = (error * p) + (integrator) - (differentiator * d);
+	double output = (error * p) + (integrator) + (differentiator * d);
 
 	// Implement output max
 	if(output > out_max)
@@ -39,5 +42,15 @@ double Regulator::output_from_input( double setpoint , double input , double per
 
 	// Upkeep
 	previous = input;
+
+	// Debug
+	msgs::FloatArrayStamped msg;
+	msg.header.stamp = ros::Time::now();
+	msg.data.push_back(error);
+	msg.data.push_back(output);
+	msg.data.push_back(error*p);
+	msg.data.push_back(integrator);
+	msg.data.push_back(differentiator * d);
+	pid_publisher.publish(msg);
 	return output;
 }

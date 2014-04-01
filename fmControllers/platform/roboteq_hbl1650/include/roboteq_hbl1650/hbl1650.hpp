@@ -27,12 +27,15 @@
  ****************************************************************************
  # 2013-06-02 Leon: Implemented regulator
  #
+ ****************************************************************************
+ # This class implements the specific controller model, in this case HBL1650.
+ # It is derived from the general RoboTeQ class and instantiates one channel.
  #
  ****************************************************************************/
 #ifndef HBL1650_HPP_
 #define HBL1650_HPP_
 
-#define TIME_BETWEEN_COMMANDS 0.2
+#define TIME_BETWEEN_COMMANDS 0.2 //Time between commands sent to the controller during initialisation
 
 #include <ros/ros.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -75,6 +78,7 @@ public:
 	void onDeadman(const std_msgs::Bool::ConstPtr& msg){ch1.onDeadman(msg);}
 	void onTimer(const ros::TimerEvent& event){updateStatus(); ch1.onTimer(event,status);}
 	void onSerial(const msgs::serial::ConstPtr& msg){serialCallback(msg);}
+	void onStatusTimer(const ros::TimerEvent& event);
 
 	// Mutator methods for setting up publishers
 	void setSerialPub(ros::Publisher pub){serial_publisher = pub;}
@@ -84,7 +88,7 @@ public:
 	void setEncoderCh1Pub(ros::Publisher pub){ch1.publisher.hall = pub;}
 
 	// Accessor method to block on during startup
-	int	subscribers(){return serial_publisher.getNumSubscribers();}
+	int subscribers(){return serial_publisher.getNumSubscribers();}
 };
 
 #endif /* HBL2350_HPP_ */

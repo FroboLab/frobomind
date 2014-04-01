@@ -3,7 +3,7 @@
 		<node pkg="serial_string" type="serial_string_node" name="serial_comm_left">
 			<param name="publisher_topic" value="serial_comm_left_rx" />
 			<param name="subscriber_topic" value="serial_comm_left_tx" />
-			<param name="device" value="/dev/ttyUSB2" />
+			<param name="device" value="/dev/ttyUSB0" />
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="13" />
 		</node>

@@ -1,3 +1,7 @@
+/****************************************************************************
+ # FroboMind
+ # Licence and description in .hpp file
+ ****************************************************************************/
 #include "roboteq_hbl1650/hbl1650.hpp"
 
 hbl1650::hbl1650( )
@@ -24,10 +28,10 @@ hbl1650::hbl1650( )
 	double max_time_diff_input;
 	std::string cmd_vel_ch1_topic, cmd_vel_ch2_topic, serial_tx_topic, serial_rx_topic, command_relay_topic, deadman_topic,
 	encoder_ch1_topic, encoder_ch2_topic, power_ch1_topic, power_ch2_topic, status_topic, temperature_topic,velocity_topic,
-	propulsion_module_status_topic, propulsion_module_feedback_topic;
+	propulsion_module_status_topic, propulsion_module_feedback_topic, pid_topic;
 
 	// Parse from parameter server
-
+	local_node_handler.param<std::string>("pid_topic", pid_topic, "/fmInformation/pid");
 	local_node_handler.param<std::string>("serial_rx_topic", serial_rx_topic, "/fmCSP/S0_rx");
 	local_node_handler.param<std::string>("serial_tx_topic", serial_tx_topic, "/fmCSP/S0_tx");
 	local_node_handler.param<std::string>("command_relay_topic", command_relay_topic, "/fmData/command");
@@ -61,6 +65,20 @@ hbl1650::hbl1650( )
 	ch1.velocity = 0;
 	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
 
+	// Init position control
+	double max_acceleration, max_jerk, brake_zeroband, velocity_tolerance;
+	local_node_handler.param<bool>("position_control", ch1.position_control, true);
+	local_node_handler.param<double>("robot_max_acceleration", max_acceleration, 0.5);
+	local_node_handler.param<double>("robot_max_jerk", max_jerk, 0.5);
+	local_node_handler.param<double>("brake_zeroband",brake_zeroband,0.2);
+	local_node_handler.param<double>("velocity_tolerance",velocity_tolerance,0.05);
+
+	ch1.position_generator.setMaximumVelocity(ch1.max_velocity_mps);
+	ch1.position_generator.setMaximumAcceleration(0.5);
+	ch1.position_generator.setMaximumJerk(0.5);
+	ch1.position_generator.setBrakeZeroband(0.2);
+	ch1.position_generator.setVelocityTolerance(0.05);
+
 	// Init general parameters
 	local_node_handler.param<double>("max_time_diff",max_time_diff_input,0.5);
 	max_time_diff = ros::Duration(max_time_diff_input);
@@ -76,6 +94,7 @@ hbl1650::hbl1650( )
 	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
 	ch1.setVelPub(local_node_handler.advertise<std_msgs::Float64>( velocity_topic, 10));
 	ch1.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_topic, 10));
+	ch1.setPidPub( local_node_handler.advertise<msgs::FloatArrayStamped>( pid_topic, 10));
 	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
 
 	// Set up subscribers
@@ -97,8 +116,27 @@ void hbl1650::spin(void)
 
 	// Initialize timer
 	ros::Timer t = global_node_handler.createTimer(ros::Duration(0.05),&hbl1650::onTimer,this);
+	ros::Timer status_timer = global_node_handler.createTimer(ros::Duration(0.5),&hbl1650::onStatusTimer,this);
 
 	ros::spin();
+}
+
+void hbl1650::onStatusTimer(const ros::TimerEvent& event)
+{
+	propulsion_module_status_message.header.stamp = ros::Time::now();
+	propulsion_module_status_message.voltage = v2/10.0;
+	propulsion_module_status_message.current = ba1/10.0;
+	propulsion_module_status_message.power = (v2*ba1)/100.0;
+	propulsion_module_status_publisher.publish(propulsion_module_status_message);
+
+	transmit(1,	"# C"); sleep(TIME_BETWEEN_COMMANDS);
+	transmit(1,	"?V"); sleep(TIME_BETWEEN_COMMANDS);								// Request power readings
+	transmit(1,	"?BA"); sleep(TIME_BETWEEN_COMMANDS);								// Request voltage readings
+	transmit(1,	"?T"); sleep(TIME_BETWEEN_COMMANDS);								// Request temperature readings
+	transmit(1,	"?FS"); sleep(TIME_BETWEEN_COMMANDS);								// Request status flag
+	transmit(1, "?FF"); sleep(TIME_BETWEEN_COMMANDS);								// Request fault flag
+	transmit(1, "?CB"); sleep(TIME_BETWEEN_COMMANDS);								// Request absolute hall count
+	transmit(1,	"# 20" ); sleep(TIME_BETWEEN_COMMANDS);							    // Repeat buffer every 50 ms
 }
 
 void hbl1650::updateStatus(void)

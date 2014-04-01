@@ -1,0 +1,10 @@
+# Rules for running Aradillo 3 from a laptop
+#
+# put in /etc/udev/rules.d/
+#
+# sudo cp 90-frobomind-udev.rules /etc/udev/rules.d/90-frobomind-udev.rules
+
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTV9DVWT", GROUP="dialout", MODE="0666", SYMLINK+="left_belt"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTV902Z5", GROUP="dialout", MODE="0666", SYMLINK+="right_belt"
+
+

@@ -1,0 +1,85 @@
+<launch>
+    <group ns="fmHMI">
+        <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true" />
+	</group>
+	
+	<group ns="DecisionMaking">
+    	<node pkg="sdu_armadillo4_remote" type="remote.py" name="remote" output="screen">
+    		<param name="deadman_topic" value="/fmSignals/deadman" />
+			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
+			<param name="max_linear_velocity" value="0.5"/>
+			<param name="max_angular_velocity" value="0.2"/>
+			<param name="deadband" value="1"/>
+			<param name="reduced_range" value="40"/>
+			<param name="feedback_topic" value="/fmHMI/joy/set_feedback" />
+			<param name="joy_topic" value="/fmHMI/joy" />
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="publish_frequency" value="10"/>
+		</node>
+	</group>
+   
+	<group ns="Action">
+		<node pkg="differential_ifk" type="differential_ifk_node" name="differential_ifk" output="screen">
+			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel" />
+			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left" />
+			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right" />
+			<param name="distance_center_to_wheel" value="1.10" />
+			<param name="deadmanbutton_topic" value="/fmSignals/deadman" />
+		</node>
+	</group>
+
+	<group ns="Robot">
+		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_left" output="screen">
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
+			<param name="serial_rx_topic" value="/fmData/left_belt_rx" />
+			<param name="serial_tx_topic" value="/fmData/left_belt_tx" />
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
+			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
+			<param name="propulsion_module_feedback_left_topic" value="/fmInformation/propulsion_module_feedback_left"/>
+			<param name="power_ch1_topic" value="/fmData/power_left"/>
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="ticks_per_meter" value="-1432" />
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="1000" />
+			<param name="p_gain" value="0.1"/>
+			<param name="i_gain" value="0.0"/>
+			<param name="d_gain" value="0.0"/>
+			<param name="i_max" value="1"/>
+			<param name="closed_loop_operation" value="true"/>    
+			<param name="position_control" value="true"/>
+			<param name="robot_max_acceleration" value="0.5"/>
+			<param name="robot_max_jerk" value="0.5"/>
+			<param name="brake_zeroband" value="0.2"/>  
+			<param name="velocity_tolerance" value="0.05"/>  
+		</node>
+	
+		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_right" output="screen">
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_right"/>
+			<param name="serial_rx_topic" value="/fmData/right_belt_rx" />
+			<param name="serial_tx_topic" value="/fmData/right_belt_tx" />
+			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_right"/>
+			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
+			<param name="propulsion_module_feedback_right_topic" value="/fmInformation/propulsion_module_feedback_right"/>
+			<param name="power_ch1_topic" value="/fmData/power_right"/>
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="ticks_per_meter" value="1432" />
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="1000" />
+			<param name="p_gain" value="0.1"/>
+			<param name="i_gain" value="0.0"/>
+			<param name="d_gain" value="0.0"/>
+			<param name="i_max" value="1"/>
+			<param name="closed_loop_operation" value="true"/>  
+			<param name="position_control" value="true"/>
+			<param name="robot_max_acceleration" value="0.5"/>
+			<param name="robot_max_jerk" value="0.5"/>
+			<param name="brake_zeroband" value="0.2"/>  
+			<param name="velocity_tolerance" value="0.05"/>     
+		</node>
+		
+		<node pkg="sdu_armadillo3_test" type="roboteq_test.py" name="test_interface" output="screen" />
+		
+	</group>
+</launch>

@@ -26,8 +26,11 @@
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************
  # 2013-06-02 Leon: Implemented regulator
- #
- #
+ # 
+ ****************************************************************************
+ # This class implements the concept of a motor channel on a RoboTeQ controller.
+ # One or more channels are instantiated from the controller class and
+ # communication between channel and controller is through callbacks
  ****************************************************************************/
 #ifndef CHANNEL_HPP_
 #define CHANNEL_HPP_
@@ -41,13 +44,16 @@
 #include <msgs/PropulsionModuleFeedback.h>
 #include "roboteq_hbl1650/roboteq.hpp"
 #include "roboteq_hbl1650/regulator.hpp"
+#include "roboteq_hbl1650/positionGenerator.hpp"
 #include "filter/IRR.h"
 #include "filter/sliding_window.hpp"
 
 class BaseCB
 {
 /*
- * Abstract class overloading the function call operator with a pure virtual function
+ * Abstract class overloading the function call operator with 
+ * a pure virtual function. This is part of a construction 
+ * necessary to allow callbacks back to the instantiating class.
  * */
 public:
 	virtual void operator()(std::string)=0;
@@ -58,7 +64,9 @@ template<class ClassT>
 class CallbackHandler : public BaseCB
 {
 /*
- * Templated placeholder class for handling callbacks to member functions
+ * Templated placeholder class for handling callback methods to 
+ * member functions. This is part of a construction necessary 
+ * to allow callbacks back to the instantiating class.
  * */
 public:
 	typedef void(ClassT::* FuncT)(std::string);
@@ -75,7 +83,7 @@ public:
 class Channel
 {
 /*
- * Class implementing the concept of a motCircular_queue::or controller channel
+ * Class implementing the concept of a motor controller channel
  * */
 public:
 	// Convenience structs for holding related variables
@@ -98,12 +106,14 @@ public:
 
 	ros::Subscriber cmd_vel_sub;
 
+	bool position_control;
 	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm, current_thrust;
-	double i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
+	double desired_position,i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
 
 	IRR velocity_filter;
 	SlidingWindowFilter feedback_filter;
 	Regulator regulator;
+	PositionGenerator position_generator;
 	BaseCB* transmit_cb;
 	BaseCB* init_cb;
 
@@ -122,12 +132,15 @@ public:
 	// Subscriber callbacks
 	void onCmdVel(const geometry_msgs::TwistStamped::ConstPtr&);
 	void onDeadman(const std_msgs::Bool::ConstPtr&);
+
+	// Timer callback running the regulator algorithm
 	void onTimer(const ros::TimerEvent&, RoboTeQ::status_t&);
 
-	// Mutator method for setting up publisher
+	// Mutators for setting up publisher
 	void setStatusPub(ros::Publisher pub){publisher.status = pub;}
 	void setPropulsionFeedbackPub(ros::Publisher pub){publisher.feedback = pub;}
 	void setVelPub(ros::Publisher pub){publisher.feedback = pub;}
+	void setPidPub(ros::Publisher pub){regulator.setPidPub(pub);}
 
 };
 

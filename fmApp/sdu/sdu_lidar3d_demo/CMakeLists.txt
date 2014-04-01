@@ -4,10 +4,16 @@ project(sdu_lidar3d_demo)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs geometry_msgs msgs nav_msgs roscpp rospy sensor_msgs tf pcl pcl_ros laser_geometry)
+find_package(catkin REQUIRED COMPONENTS actionlib actionlib_msgs geometry_msgs msgs nav_msgs roscpp rospy sensor_msgs tf pcl_ros laser_geometry)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+
+##      PCL
+find_package(PCL 1.6 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})

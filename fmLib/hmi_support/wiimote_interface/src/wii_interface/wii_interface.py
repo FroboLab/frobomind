@@ -73,7 +73,7 @@ class WiiInterface():
         self.reduced_range = rospy.get_param("~reduced_range",40) # Given in percent
         self.reduced_range = self.reduced_range / 100.0 # Convert to ratio
         self.deadband = rospy.get_param("~deadband",5) # Given in percent
-        self.deadband = self.deadband / 100.0 # Convert to rati
+        self.deadband = self.deadband / 100.0 # Convert to ratio TODO: Wrong implementation    
         self.max_linear_velocity = rospy.get_param("~max_linear_velocity",2)
         self.max_angular_velocity = rospy.get_param("~max_angular_velocity",4)
         self.publish_frequency = rospy.get_param("~publish_frequency",10) 

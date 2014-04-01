@@ -25,40 +25,88 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************
- # 2013-06-02 Leon: Implemented regulator
+ # 2014-02-02 Leon: Implemented s-curves
  #
  ****************************************************************************
- # This class implements a general PID regulator as the method output_from_input
- # taking as input the current setpoint, feedback and time since last call.
+ # This class implements s-curves for the motorcontroller, tesselating the
+ # setpoint into desired setpoints at a given time.
+ #
+ #             !!!!!!! This is currently untested code !!!!!!!
+ # 
  ****************************************************************************/
-#ifndef REGULATOR_HPP_
-#define REGULATOR_HPP_
 
-#include <ros/ros.h>
-#include <msgs/FloatArrayStamped.h>
+#ifndef POSITIONGENERATOR_HPP_
+#define POSITIONGENERATOR_HPP_
+
 #include <iostream>
 
-class Regulator
+class PositionGenerator
 {
-/*
- * Class implementing the concept of a PID controller simplified to work on any
- * numbers of equal units
- * */
-
 private:
-	double previous,integrator;
-	ros::Publisher pid_publisher;
+	struct
+	{
+		double current, previous;
+	} position;
+
+	struct
+	{
+		double max, current, previous, setpoint, input, tolerance;
+	} velocity;
+
+	struct
+	{
+		double max, current, previous;
+	} acceleration;
+
+	struct
+	{
+		double max;
+	} jerk;
+
+
+    double period, brake_zeroband;
+
+	// Methods to discern state
+    bool isBraking(void);
+    bool isAtRest(void);
+    bool isOnSetpoint(void);
+    bool isAccelerating(void);
+    bool isDecelerating(void);
+    bool isDecliningAcceleration(void);
+    bool isIncliningAcceleration(void);
+
+	// Methods performing actions
+    void declineAcceleration(void);
+    void inclineAcceleration(void);
+    void hault(void);
+    void enforceVelocityMaximum(void);
+    void enforceAccelerationMaximum(void);
+    void upkeep(void);
+    void brake(void);
+
+	// Math
+    int sign(double);
 
 public:
-	double p,i,d,i_max,out_max;
+	PositionGenerator();
+	~PositionGenerator();
 
-	Regulator();
+	// Mutators
+	void setPeriod(double);
+	void setCurrentPosition(double);
+	void setCurrentVelocityInput(double);
 
-	void setPidPub(ros::Publisher pub){pid_publisher = pub;}
-	double output_from_input( double , double , double);
-	void reset_integrator(){integrator = 0;}
-	void set_params( double p_gain , double i_gain , double d_gain , double imax , double outmax)
-	{p = p_gain; i = i_gain; d = d_gain; i_max = imax; out_max = outmax; }
+	void setMaximumVelocity(double);
+	void setMaximumAcceleration(double);
+	void setMaximumJerk(double);
+	void setBrakeZeroband(double);
+	void setVelocityTolerance(double);
+
+	// Accessors
+	double getNewPosition(void);
 };
 
-#endif /* REGULATOR_HPP_ */
+#endif /* POSITIONGENERATOR_HPP_ */
+
+
+
