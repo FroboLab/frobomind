@@ -6,24 +6,7 @@
 	<param name="ticks_per_meter_left" value="2627" />
 	<param name="ticks_per_meter_right" value="2627" />
 
-	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
-
 	<group ns="fmSensors">
-		<node pkg="computer_load_monitor" name="load_monitor" type="computer_load_monitor_node" output="screen" >
-			<param name="update_rate" value="5" />
-		</node>
-
-		<!-- interface to the Hokuyo lidar -->
-		<param name="use_rep_117" value="true"/>
-		<node name="hokuyo" pkg="hokuyo_node" type="hokuyo_node" output="screen" >
-			<param name="port" value="/dev/ttyACM0"/>
-			<param name="frame_id" type="string" value="/laser_link"/> 
-			<param name="calibrate_time" value="true"/>
-			<remap from="scan" to="/fmInformation/laser_msg"/>
-			<param name="min_ang" type="double" value="-0.785" />
-			<param name="max_ang" type="double" value="0.785" />
-		 </node>
-
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
 		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
 			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
@@ -75,37 +58,6 @@
 			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
 			<param name="odometry_angular_variance" value="0.000035" /> <!-- [rad/update] -->
 		</node>
-
-		<node pkg="sdu_surveying_2014" name="survey_log" type="survey_log_node.py" output="screen" >
-			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
-			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
-			<param name="imu_sub" value="/fmInformation/imu" />
-			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="gpgga_tranmerc_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="lidar_sub" value="/fmSensors/laser_msg" />
-		</node>
-
-		<!--node pkg="frobit_plot" name="froboscout_plot" type="frobit_plot_node.py" output="screen" >
-			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/odometry" />
-			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
-			<param name="plot_pose_track" value="true" />
-			<param name="plot_gnss_track" value="false" />
-			<param name="plot_odometry_track" value="false" />
-			<param name="plot_pose_yaw" value="false" />
-			<param name="map_trackpoint_threshold" value="0.02" />
-			<param name="map_max_trackpoints" value="500" />
-			<param name="map_minimum_size" value="4.0" />
-			<param name="map_easting_offset" value="0.0" />
-			<param name="map_northing_offset" value="0.0" />
-			<param name="map_update_frequency" value="2" />
-			<param name="map_title" value="Frobit track" />
-			<param name="map_window_size" value="8.0" />
-			<param name="avatar_extension_front" value="0.19" />
-			<param name="avatar_extension_rear" value="0.505" />
-			<param name="avatar_extension_lateral" value="0.30" />
-		</node-->
 	</group>
 
 	<group ns="fmDecisionMakers">
@@ -121,18 +73,6 @@
             <param name="max_linear_deceleration" value="0.8"/>
             <param name="max_angular_deceleration" value="2.0"/>
 		</node>
-
-		<!--node pkg="sdu_surveying_2014" name="mission" type="keyboard_mission_node.py" output="screen">
-			<param name="keyboard_sub" value="/fmHMI/keyboard" />
-			<param name="automode_pub" value="/fmDecision/automode" />
-    		<param name="deadman_pub" value="/fmCommand/deadman" />
-			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
-            <param name="max_linear_velocity" value="0.8"/>
-            <param name="max_angular_velocity" value="0.6"/>
-            <param name="linear_velocity_step" value="0.1"/>
-            <param name="angular_velocity_step" value="0.1"/>
-		</node-->
-	</group>
 
 	<group ns="fmExecutors">
 		<node pkg="sdu_surveying_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">
@@ -218,10 +158,6 @@
 			<param name="fixed_wiimote_address" value="00:1E:35:03:B8:81"/> 
 		</node>		
 
-	 	<!--node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
-			<param name="keyboard_pub" value="/fmHMI/keyboard" />
-		</node-->
-
 		<!-- serial device and NMEA protocol handler for the FroboScout left wheel module -->
 		<node pkg="serial_nmea" name="wheel_left_nmea" type="serial_nmea_node" respawn="true" output="screen" >
 			<param name="nmea_from_device_pub" value="/fmSignal/nmea_from_wheel_left"/>
@@ -257,11 +193,6 @@
 			<param name="serial_baudrate" value="115200"/>
 			<param name="use_nmea_checksum" value="true"/>
         </node>
-
-		<!--node pkg="real_time_analyze" name="rt_node" type="real_time_analyze_node.py" output="screen" >
-			<param name="timing_pub" value="/fmInformation/rt_timing"/>
-			<param name="device" value="/dev/rt_analyze" />	
-        </node--> 	
 	</group>
 </launch>
 

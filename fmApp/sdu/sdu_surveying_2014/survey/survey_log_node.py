@@ -36,6 +36,7 @@ Revision
 
 import rospy
 from msgs.msg import waypoint_navigation_status, gpgga_tranmerc
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, LaserScan
 from geometry_msgs.msg import TwistStamped
 from math import pi, asin, atan2, sqrt
@@ -78,6 +79,7 @@ class log_node():
 		# get topic names
 		cmd_vel_topic = rospy.get_param("~cmd_vel_sub", "/fmCommand/cmd_vel")
 		wptnav_status_topic = rospy.get_param("~wptnav_status_sub", "/fmInformation/wptnav_status")
+		pose_topic = rospy.get_param("~pose_sub", "/fmKnowledge/pose")
 		imu_topic = rospy.get_param("~imu_sub", "/fmInformation/imu")
 		gnss_topic = rospy.get_param("~gpgga_tranmerc_sub", "/fmInformation/gpgga_tranmerc")
 		laser_topic = rospy.get_param("~lidar_sub",'/fmSensors/laser_msg')
@@ -87,7 +89,8 @@ class log_node():
 		self.cmd_vel_ang = 1.0
 		self.b = [0.0, 0.0]
 		self.b_id = ''
-		self.init_log ('#wpt_name\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\n')
+		self.robot_yaw = 0.0
+		self.init_log ('#wpt_id\twpt_e\twpt_n\ttime\taverage_time\teasting\tnorthing\taltitude\tdist_to_wpt\tpitch\troll\n')
 
 		# lidar
 		self.laser = []
@@ -96,6 +99,7 @@ class log_node():
 		# setup subscription topic callbacks
 		rospy.Subscriber(cmd_vel_topic, TwistStamped, self.on_cmd_vel_topic)
 		rospy.Subscriber(wptnav_status_topic, waypoint_navigation_status, self.on_wptnav_status_topic)
+		rospy.Subscriber(pose_topic, Odometry, self.on_pose_topic)
 		rospy.Subscriber(imu_topic, Imu, self.on_imu_topic)
 		rospy.Subscriber(gnss_topic, gpgga_tranmerc, self.on_gnss_topic)
 		rospy.Subscriber(laser_topic, LaserScan, self.on_laser_topic)
@@ -148,6 +152,18 @@ class log_node():
 
 			self.imu.append([yaw, pitch, roll, ax, ay, az])
 
+	def on_pose_topic(self, msg):
+		# extract yaw, pitch and roll from the quaternion
+		qx = msg.pose.pose.orientation.x
+		qy = msg.pose.pose.orientation.y
+		qz = msg.pose.pose.orientation.z
+		qw = msg.pose.pose.orientation.w
+		sqx = qx**2
+		sqy = qy**2
+		sqz = qz**2
+		sqw = qw**2
+		self.robot_yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
+
 	def on_gnss_topic(self, msg):
 		if self.state == self.STATE_LOG:
 			self.gnss.append([msg.easting, msg.northing, msg.alt])
@@ -171,7 +187,8 @@ class log_node():
 	def begin_log (self):
 		self.gnss = []
 		self.imu =[]
-		self.laser = [] 
+		self.laser = []
+		self.robot_yaw_survey = self.robot_yaw # save orientation now, it probably won't be better during the standstill
 		self.state = self.STATE_LOG
 		time_now = rospy.get_time()
 		self.begin_log_time = time_now 
@@ -256,14 +273,14 @@ class log_node():
 			error = True
 
 		if error == False:
-			s = '%s\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\n' %(self.b_id, time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
+			s = '%s\t%.4f\t%.4f\t%.3f\t%.3f\t%.4f\t%.4f\t%.4f\t%.3f\t%.2f\t%.2f\t%.2f\n' %(self.b_id, self.b[0], self.b[1], time_now, log_seconds, gnss_e, gnss_n, gnss_alt, dist_from_wpt, self.robot_yaw_survey*self.rad_to_deg, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
 		else:
 			s= '#errror\t%.3f\t%.3f\n' % (time_now, log_seconds)
 
 		self.save_log(s)
 		self.state = self.STATE_IDLE
 		if self.debug:
-			print '%.3f Survey end. Dist from wpt %.3fm Pitch %.2f Roll %.2f' %  (time_now, dist_from_wpt, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
+			print '%.3f Survey end. Dist from wpt %.3fm Yaw %.2f Pitch %.2f Roll %.2f' %  (time_now, dist_from_wpt, self.robot_yaw_survey*self.rad_to_deg, imu_pitch*self.rad_to_deg, imu_roll*self.rad_to_deg)
 
 	def updater(self):
 		while not rospy.is_shutdown():

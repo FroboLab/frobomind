@@ -10,6 +10,7 @@
 			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
 			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
 			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gpgga_tranmerc_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="lidar_sub" value="/fmSensors/laser_msg" />
 		</node>
