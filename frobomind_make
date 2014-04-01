@@ -29,18 +29,18 @@
 # This frobomind_make script allows making only the FroboMind components
 # (implemented as ROS packages) relevant for a given application.
 #
-# 2014-02-17 KJ First version
-#
+# 2014-03-17 KJ First version
+# 2014-03-26 KJ A few optimizations, no functionality changed.
 #*****************************************************************************
 
 # find out where FroboMind is
-ROOT_FM=`dirname $(readlink -f $0)`
+ROOT_FM=$(dirname $(readlink -f $0))
 ROOT_WS=$ROOT_FM/..
 FILE_MAKE="fmMake.txt"
 
 # this function shows the help text
 show_help(){
-	echo "\nFroboMind make v2014-02-17" 
+	echo "\nFroboMind make v2014-03-26" 
     echo "Usage:"
     echo "  frobomind_make [options] command"
 	echo "Commands:"
@@ -60,9 +60,7 @@ add_ignore_to_all_packages(){
 	cd $ROOT_FM
     PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
     for LINE in $PACKAGES; do # for each directory
-       LEN=`expr ${#LINE} - 12` # determine string length minus "/package.xml"
-       DIR_PACKAGE=`echo $LINE | cut -c1-$LEN)` # cut first part of string
-       echo > $DIR_PACKAGE/CATKIN_IGNORE # add ignore file
+       echo > $(dirname $LINE)/CATKIN_IGNORE # add ignore file
 	done 
 }
 
@@ -71,9 +69,7 @@ list_all_packages(){
 	cd $ROOT_FM
     PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
     for LINE in $PACKAGES; do # for each directory
-       LEN=`expr ${#LINE} - 12` # determine string length minus "/package.xml"
-       DIR_PACKAGE=`echo $LINE | cut -c1-$LEN)` # cut first part of string
-       echo $DIR_PACKAGE
+       echo $(dirname $LINE)
 	done 
 }
 
@@ -82,9 +78,7 @@ remove_ignore_from_all_packages(){
 	cd $ROOT_FM
     PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
     for LINE in $PACKAGES; do # for each directory
-       LEN=`expr ${#LINE} - 12` # determine string length minus "/package.xml"
-       DIR_PACKAGE=`echo $LINE | cut -c1-$LEN)` # cut first part of string
-       FILE_IGNORE=$DIR_PACKAGE/CATKIN_IGNORE
+       FILE_IGNORE=$(dirname $LINE)/CATKIN_IGNORE
        if [ -e $FILE_IGNORE ]; then
          rm $FILE_IGNORE
        fi
