@@ -1,5 +1,14 @@
 <launch>
 	<group ns="fmSensors">
+		<node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
+ 			<param name="propulsion_feedback_left_sub" value="/fmInformation/propulsion_module_feedback_left" />
+ 			<param name="propulsion_feedback_right_sub" value="/fmInformation/propulsion_module_feedback_right" />
+ 			<param name="update_frequency" value="10" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="maximum_velocity" value="1.2" />
+			<param name="maximum_thrust" value="540" />
+		</node>
+
 		<node pkg="sdu_armadillo3_test" name="pid_left" type="plot_pid_node.py" output="screen" >
  			<param name="pid_sub" value="/fmInformation/pid_left" />
  			<param name="update_rate" value="10" />
@@ -23,45 +32,43 @@
 		</node>
 	</group>
 	
-    <group ns="fmHMI">
-        <node pkg="wiimote" type="wiimote_node.py" name="remote_control" respawn="true" />
-	</group>
-	
-	<group ns="DecisionMaking">
-    	<node pkg="sdu_armadillo4_remote" type="remote.py" name="remote" output="screen">
-    		<param name="deadman_topic" value="/fmSignals/deadman" />
-			<param name="cmd_vel_topic" value="/fmSignals/cmd_vel" />
-			<param name="max_linear_velocity" value="1.0"/>
-			<param name="max_angular_velocity" value="0.5"/>
-			<param name="deadband" value="1"/>
-			<param name="reduced_range" value="100"/>
-			<param name="feedback_topic" value="/fmHMI/joy/set_feedback" />
-			<param name="joy_topic" value="/fmHMI/joy" />
-			<param name="status_topic" value="/fmData/status"/>
-			<param name="publish_frequency" value="10"/>
-		</node>f
-	</group>
-   
-	<group ns="Action">
-		<node pkg="differential_ifk" type="differential_ifk_node" name="differential_ifk" output="screen">
-			<param name="hl_subscriber_topic" value="/fmSignals/cmd_vel" />
-			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left" />
-			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right" />
-			<param name="distance_center_to_wheel" value="1.10" />
-			<param name="deadmanbutton_topic" value="/fmSignals/deadman" />
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_armadillo3_test" name="mission" type="keyboard_mission_node.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="0.8"/>
+            <param name="max_angular_velocity" value="0.6"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.1"/>
 		</node>
 	</group>
 
-	<group ns="Robot">
+
+
+	<group ns="fmLib">
+		 <node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
+		<node pkg="differential_ifk" type="differential_ifk_node" name="differential_ifk" output="screen">
+			<param name="hl_subscriber_topic" value="/fmCommand/cmd_vel" />
+			<param name="ll_publisher_topic_left" value="/fmSignals/cmd_vel_left" />
+			<param name="ll_publisher_topic_right" value="/fmSignals/cmd_vel_right" />
+			<param name="distance_center_to_wheel" value="1.10" />
+			<param name="deadmanbutton_topic" value="/fmCommand/deadman" />
+		</node>
+
 		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_left" output="screen">
 			<param name="pid_topic" value="/fmInformation/pid_left" />
 			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
 			<param name="serial_rx_topic" value="/fmData/left_belt_rx" />
 			<param name="serial_tx_topic" value="/fmData/left_belt_tx" />
-			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="deadman_topic" value="/fmCommand/deadman"/>
 			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
 			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
-			<param name="propulsion_module_feedback_left_topic" value="/fmInformation/propulsion_module_feedback_left"/>
+			<param name="propulsion_module_feedback_topic" value="/fmInformation/propulsion_module_feedback_left"/>
 			<param name="power_ch1_topic" value="/fmData/power_left"/>
 			<param name="status_topic" value="/fmData/status"/>
 			<param name="ticks_per_meter" value="740" />
@@ -78,16 +85,15 @@
 			<param name="brake_zeroband" value="0.2"/>  
 			<param name="velocity_tolerance" value="0.05"/>  
 		</node>
-	
 		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_right" output="screen">
 			<param name="pid_topic" value="/fmInformation/pid_right" />
 			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_right"/>
 			<param name="serial_rx_topic" value="/fmData/right_belt_rx" />
 			<param name="serial_tx_topic" value="/fmData/right_belt_tx" />
-			<param name="deadman_topic" value="/fmSignals/deadman"/>
+			<param name="deadman_topic" value="/fmCommand/deadman"/>
 			<param name="encoder_ch1_topic" value="/fmInformation/encoder_right"/>
 			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
-			<param name="propulsion_module_feedback_right_topic" value="/fmInformation/propulsion_module_feedback_right"/>
+			<param name="propulsion_module_feedback_topic" value="/fmInformation/propulsion_module_feedback_right"/>
 			<param name="power_ch1_topic" value="/fmData/power_right"/>
 			<param name="status_topic" value="/fmData/status"/>
 			<param name="ticks_per_meter" value="740" />
@@ -120,5 +126,5 @@
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="13" />
 		</node>
-	</group>
+	</group>	
 </launch>
