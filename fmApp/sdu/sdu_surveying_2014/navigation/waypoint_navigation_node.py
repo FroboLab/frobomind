@@ -178,7 +178,7 @@ class WptNavNode():
 		if self.wpt != False:
 			self.update_implement_value()
 			self.wptnav.navigate(self.wpt, self.prev_wpt)
-			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist, self.wptnav.bearing*180.0/pi))
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist))
 		else:
 			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
 			self.wptnav.stop()

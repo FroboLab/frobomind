@@ -73,6 +73,7 @@
             <param name="max_linear_deceleration" value="0.8"/>
             <param name="max_angular_deceleration" value="2.0"/>
 		</node>
+	</group>
 
 	<group ns="fmExecutors">
 		<node pkg="sdu_surveying_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">

@@ -1,6 +1,7 @@
 #!/bin/sh
 
 WPTLIST='waypoints.txt'
+WPTLIST='waypoints_sdu_zigzag.txt'
 
 # change dir to the location of the shell script
 APPDIR=`dirname $(readlink -f $0)`
