@@ -6,7 +6,7 @@
 /fmProcessors/platform_processing/differential_odometry
 /fmLib/msgs
 /fmLib/platform_support/sdu_frobit
-/fmLib/kinematics/differential_ifk_py
+/fmLib/kinematics/differential_ifk_lib
 /fmLib/hmi_support/keyboard_interface
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea

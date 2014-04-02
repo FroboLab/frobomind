@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>differential_ifk_py</name>
+  <name>differential_ifk_lib</name>
   <version>0.0.0</version>
-  <description>The differential_ifk_py package</description>
+  <description>The differential_ifk_lib package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

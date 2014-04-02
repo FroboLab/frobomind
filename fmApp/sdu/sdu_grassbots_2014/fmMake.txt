@@ -7,7 +7,7 @@
 /fmProcessors/localization_mapping/pose_2d_estimator
 /fmLib/msgs
 /fmLib/math/geographics/transverse_mercator
-/fmLib/kinematics/differential_ifk_py
+/fmLib/kinematics/differential_ifk_lib
 /fmLib/hmi_support/keyboard_interface
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea
