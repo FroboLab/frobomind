@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# parameters
+DIR_USB="/media/FROBOMIND"
+
+# change dir to the location of the shell script
+DIR_APP=`dirname $(readlink -f $0)`
+cd $DIR_APP
+cp ~/.ros/survey*.txt $DIR_USB
+

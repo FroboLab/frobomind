@@ -15,7 +15,7 @@
 
 		<!-- interface to the Hokuyo lidar -->
 		<param name="use_rep_117" value="true"/>
-		<node name="hokuyo" pkg="hokuyo_node" type="hokuyo_node" output="screen" >
+		<node name="hokuyo" pkg="hokuyo_node" type="hokuyo_node" output="screen"  respawn="true">
 			<param name="port" value="/dev/ttyACM0"/>
 			<param name="frame_id" type="string" value="/laser_link"/> 
 			<param name="calibrate_time" value="true"/>
@@ -25,7 +25,7 @@
 		 </node>
 
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
-		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen"  respawn="true">
 			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
 			<param name="imu_pub" value="/fmInformation/imu"/>
 			<param name="frame_id" value="imu_link"/>
@@ -36,7 +36,7 @@
 		 </node>
 
 		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
-		<node pkg="nmea_to_tranmerc" name="nmea_to_tranmerc" type="nmea_to_tranmerc_node" output="screen">
+		<node pkg="nmea_to_tranmerc" name="nmea_to_tranmerc" type="nmea_to_tranmerc_node" output="screen" respawn="true">
 			<param name="nmea_sub" value="/fmData/nmea_from_gps" />
 			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="transverse_mercator_a" value="6378137.0" />
@@ -51,7 +51,7 @@
 
 	<group ns="fmProcessors">
 		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
-		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" respawn="true">
 			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
 			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
@@ -66,7 +66,7 @@
 		</node>
 
 		<!-- estimate robot 2d pose -->
-		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" respawn="true">
 			<param name="odom_sub" value="/fmKnowledge/odometry" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
@@ -84,28 +84,6 @@
 			<param name="gpgga_tranmerc_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="lidar_sub" value="/fmSensors/laser_msg" />
 		</node>
-
-		<!--node pkg="frobit_plot" name="froboscout_plot" type="frobit_plot_node.py" output="screen" >
-			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/odometry" />
-			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
-			<param name="plot_pose_track" value="true" />
-			<param name="plot_gnss_track" value="false" />
-			<param name="plot_odometry_track" value="false" />
-			<param name="plot_pose_yaw" value="false" />
-			<param name="map_trackpoint_threshold" value="0.02" />
-			<param name="map_max_trackpoints" value="500" />
-			<param name="map_minimum_size" value="4.0" />
-			<param name="map_easting_offset" value="0.0" />
-			<param name="map_northing_offset" value="0.0" />
-			<param name="map_update_frequency" value="2" />
-			<param name="map_title" value="Frobit track" />
-			<param name="map_window_size" value="8.0" />
-			<param name="avatar_extension_front" value="0.19" />
-			<param name="avatar_extension_rear" value="0.505" />
-			<param name="avatar_extension_lateral" value="0.30" />
-		</node-->
 	</group>
 
 	<group ns="fmDecisionMakers">
@@ -150,9 +128,9 @@
             <param name="max_linear_velocity" value="1.2"/>
             <param name="max_angular_velocity" value="0.70"/>
 
-            <param name="drive_kp" value="0.90"/>
+            <param name="drive_kp" value="0.80"/>
             <param name="drive_ki" value="0.20"/>
-            <param name="drive_kd" value="0.25"/>
+            <param name="drive_kd" value="0.20"/>
             <param name="drive_feed_forward" value="0.00"/>
             <param name="drive_max_output" value="0.40"/>
 
