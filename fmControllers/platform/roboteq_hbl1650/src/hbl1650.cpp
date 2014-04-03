@@ -49,6 +49,7 @@ hbl1650::hbl1650( )
 	local_node_handler.param<double>("p_gain", ch1.p_gain, 1);
 	local_node_handler.param<double>("i_gain", ch1.i_gain, 0);
 	local_node_handler.param<double>("d_gain", ch1.d_gain, 0);
+	local_node_handler.param<double>("feed_forward", ch1.ff_gain, 0);
 	local_node_handler.param<double>("i_max",ch1.i_max,50);
 
 	local_node_handler.param<double>("/robot_max_velocity",ch1.max_velocity_mps,1.0);
@@ -63,7 +64,7 @@ hbl1650::hbl1650( )
 
 	ch1.time_stamp.last_deadman_received = ros::Time::now();
 	ch1.velocity = 0;
-	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain ,ch1.i_max , ch1.roboteq_max);
+	ch1.regulator.set_params(ch1.p_gain , ch1.i_gain , ch1.d_gain, ch1.ff_gain ,ch1.i_max , ch1.roboteq_max);
 
 	// Init position control
 	double max_acceleration, max_jerk, brake_zeroband, velocity_tolerance;

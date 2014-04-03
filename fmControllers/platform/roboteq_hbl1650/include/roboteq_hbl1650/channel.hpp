@@ -108,7 +108,7 @@ public:
 
 	bool position_control;
 	int	ch, last_hall, anti_windup_percent, max_acceleration, max_deceleration, roboteq_max, hall_value,down_time,max_rpm, current_thrust;
-	double desired_position,i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
+	double desired_position,i_max, max_output, current_setpoint, velocity,mps_to_rpm,p_gain, i_gain, d_gain, ff_gain, ticks_to_meter, max_velocity_mps, mps_to_thrust;
 
 	IRR velocity_filter;
 	SlidingWindowFilter feedback_filter;

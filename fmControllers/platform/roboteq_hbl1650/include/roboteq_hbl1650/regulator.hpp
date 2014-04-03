@@ -50,15 +50,15 @@ private:
 	ros::Publisher pid_publisher;
 
 public:
-	double p,i,d,i_max,out_max;
+	double p,i,d,ff,i_max,out_max;
 
 	Regulator();
 
 	void setPidPub(ros::Publisher pub){pid_publisher = pub;}
 	double output_from_input( double , double , double);
 	void reset_integrator(){integrator = 0;}
-	void set_params( double p_gain , double i_gain , double d_gain , double imax , double outmax)
-	{p = p_gain; i = i_gain; d = d_gain; i_max = imax; out_max = outmax; }
+	void set_params( double p_gain , double i_gain , double d_gain , double ff_gain, double imax , double outmax)
+	{p = p_gain; i = i_gain; d = d_gain; ff = ff_gain; i_max = imax; out_max = outmax; }
 };
 
 #endif /* REGULATOR_HPP_ */
