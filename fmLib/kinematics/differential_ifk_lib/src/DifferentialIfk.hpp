@@ -25,40 +25,45 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************
- # 2013-06-02 Leon: Implemented regulator
+ # 2013-10-05 Kjeld Jensen: First version
+ # 2014-04-06 Leon Bonde Larsen: Translated library to C++
  #
  ****************************************************************************
- # This class implements a general PID regulator as the method output_from_input
- # taking as input the current setpoint, feedback and time since last call.
+ # This library contains functions for forward and inverse kinematics of a
+ # differentially steered vehicle.
+ #
+ # The forward kinematic model describes how the speed of the two wheels
+ # (vel_right, vel_left) translate into a forward speed (vel_lin) and an angular
+ # speed (vel_ang).
+ #
+ # The inverse kinematic model describes how the speed of the wheels
+ # (vel_left, vel_right) must be set for the robot to obtain a forward speed
+ # (vel_lin) and an angular speed (vel_ang).
  ****************************************************************************/
-#ifndef REGULATOR_HPP_
-#define REGULATOR_HPP_
+#ifndef DIFFERENTIALIFK_HPP_
+#define DIFFERENTIALIFK_HPP_
 
-#include <ros/ros.h>
-#include <msgs/FloatArrayStamped.h>
-#include <iostream>
-
-class Regulator
+class DifferentialIfk
 {
-/*
- * Class implementing the concept of a PID controller simplified to work on any
- * numbers of equal units
- * */
-
 private:
-	double previous,integrator;
-	ros::Publisher pid_publisher;
+	double _wheel_dist;
 
 public:
-	double p,i,d,ff,i_max,out_max;
+	DifferentialIfk(double);
+	virtual ~DifferentialIfk();
 
-	Regulator();
+	typedef struct twist_t
+	{
+		double linear, angular;
+	};
 
-	void setPidPub(ros::Publisher pub){pid_publisher = pub;}
-	double output_from_input( double , double , double);
-	void reset_integrator(){integrator = 0;}
-	void set_params( double p_gain , double i_gain , double d_gain , double ff_gain, double imax , double outmax)
-	{p = p_gain; i = i_gain; d = d_gain; ff = ff_gain; i_max = imax; out_max = outmax; }
+	typedef struct wheel_t
+	{
+		double left, right;
+	};
+
+	twist_t forward(double, double);
+	wheel_t inverse(double, double);
 };
 
-#endif /* REGULATOR_HPP_ */
+#endif /* DIFFERENTIALIFK_HPP_ */

@@ -1,5 +1,12 @@
 RoboTeQ HBL1650 driver for ROS, FroboMind 
 
+Notice that the controller is installed as a library. 
+To see instantiation examples see for example fmLib/platform_support/sdu_armadillo3
+
+The controller has two modes as either velocity control, where the regulator is applied 
+directly to the velocity setpoint or position control, where the velocity setpoint 
+is converted to a position before being fed to the regulator.
+
 The RoboTeQ driver consists of 3 main classes
 
 - The RoboTeQ class

@@ -4,7 +4,7 @@ project(differential_ifk_lib)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS msgs rospy)
+find_package(catkin REQUIRED COMPONENTS msgs rospy roscpp)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -45,9 +45,9 @@ find_package(catkin REQUIRED COMPONENTS msgs rospy)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- # INCLUDE_DIRS include
-#  LIBRARIES wiimote_interface
-#  CATKIN_DEPENDS msgs rospy
+#   INCLUDE_DIRS include
+   LIBRARIES differential_ifk
+   CATKIN_DEPENDS msgs roscpp
 #  DEPENDS system_lib
 )
 
@@ -56,18 +56,16 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+ include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Declare a cpp library
-# add_library(wiimote_interface
-#   src/${PROJECT_NAME}/wiimote_interface.cpp
-# )
+ add_library(${PROJECT_NAME} src/DifferentialIfk.cpp)
 
 ## Declare a cpp executable
 # add_executable(wiimote_interface_node src/wiimote_interface_node.cpp)
 
 ## Add dependencies to the executable
-# add_dependencies(wiimote_interface_node ${PROJECT_NAME})
+ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(wiimote_interface_node
@@ -93,11 +91,10 @@ catkin_package(
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+ install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.hpp"
+ )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -111,10 +108,10 @@ catkin_package(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_wiimote_interface.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+ catkin_add_gtest(${PROJECT_NAME}-test src/DifferentialIfk-test.cpp)
+ if(TARGET ${PROJECT_NAME}-test)
+   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} pthread)
+ endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

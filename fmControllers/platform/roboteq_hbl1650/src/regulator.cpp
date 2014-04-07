@@ -12,15 +12,18 @@ Regulator::Regulator()
 
 double Regulator::output_from_input( double setpoint , double input , double period)
 {
-	// Implement max period
-	if(period > 0.5)
-		period = 0.5;
-
-	// Calculate errors
+	// Calculate error
 	double error = setpoint - input;
 
+	// Implement sanity checks
+	if(period > 0.5)
+		period = 0.5;
+	if(error > 3.0 | error < -3.0)
+		error = 0;
+
+
 	// Calculate integrator
-	integrator += error * period * i;
+	integrator += error * period;
 
 	// Implement anti wind up
 	if(integrator > i_max)
@@ -28,11 +31,12 @@ double Regulator::output_from_input( double setpoint , double input , double per
 	else if(integrator < -i_max)
 		integrator = -i_max;
 
-	// Calculate differentiator
+	// Calculate differentiator + sanity check
 	double differentiator = ( previous - input ) / period;
 
-	// Calculate output
-	double output = (error * p) + (integrator) + (differentiator * d);
+
+	// Calculate output;
+	double output = (setpoint*ff) + (error * p) + (integrator * i) + (differentiator * d);
 
 	// Implement output max
 	if(output > out_max)

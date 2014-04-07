@@ -114,7 +114,7 @@ void Channel::onTimer(const ros::TimerEvent& e, RoboTeQ::status_t& status)
 						else
 						{
 							/* Velocity control with feed forward */
-							current_setpoint = velocity + regulator.output_from_input(velocity, current_velocity , period);
+							current_setpoint = regulator.output_from_input(velocity, current_velocity , period);
 						}
 
 						current_thrust =  (int)(current_setpoint * mps_to_thrust); //Thrust in RoboTeQ units
