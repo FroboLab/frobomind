@@ -1,0 +1,67 @@
+<!--
+-->
+
+<launch>
+
+	<group ns="fmSensors">
+		<!-- node pkg="plot_velocity" name="plot_vel" type="plot_velocity_node.py" output="screen" >
+ 			<param name="velocity_sub" value="/fmCommand/cmd_vel" />
+ 			<param name="update_frequency" value="10" />
+			<param name="plot_title" value="cmd_vel" />
+			<param name="max_linear_velocity" value="1.2" />
+			<param name="max_angular_velocity" value="1.0" />
+			<param name="samples" value="100" />
+		</node-->
+
+		<node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
+ 			<param name="propulsion_feedback_left_sub" value="/fmInformation/wheel_feedback_left" />
+ 			<param name="propulsion_feedback_right_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="20" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="maximum_velocity" value="1.2" />
+			<param name="maximum_thrust" value="540" />
+		</node>
+
+		<!--node pkg="sdu_surveying_2014" name="pose" type="show_pose_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="update_interval" value="0.05" />
+		</node-->
+	</group>
+
+	<group ns="fmProcessors">
+		<node pkg="frobit_plot" name="froboscout_plot" type="frobit_plot_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
+			<param name="plot_pose_track" value="true" />
+			<param name="plot_gnss_track" value="false" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="map_trackpoint_threshold" value="0.02" />
+			<param name="map_max_trackpoints" value="1000" />
+			<param name="map_minimum_size" value="6.0" />
+			<param name="map_easting_offset" value="0.0" />
+			<param name="map_northing_offset" value="0.0" />
+			<param name="map_update_frequency" value="20.0" />
+			<param name="map_title" value="Frobit track" />
+			<param name="map_window_size" value="7.0" />
+			<param name="avatar_extension_front" value="0.19" />
+			<param name="avatar_extension_rear" value="0.505" />
+			<param name="avatar_extension_lateral" value="0.30" />
+		</node>
+
+		<node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
+ 			<param name="update_rate" value="5" />
+			<param name="plot_title" value="Navigation PID status" />
+			<param name="samples" value="40" />
+			<param name="max_error" value="0.5" />
+			<param name="max_output" value="0.5" />
+			<param name="max_pid" value="0.8" />
+			<param name="plot_feed_forward" value="true" />
+		</node>
+	</group>
+</launch>
+
+

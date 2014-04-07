@@ -1,0 +1,16 @@
+#!/bin/sh
+
+BAG_TMP='test.bag' 
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+# determine latest rosbag
+BAG_LATEST=`ls -al -r  -t ~/.ros/*bag | tail -n 1 | cut -c 47-`
+
+cp $BAG_LATEST $APPDIR/../$BAG_TMP
+
+
+# launch the ROS node
+roslaunch ../launch/replay.launch
