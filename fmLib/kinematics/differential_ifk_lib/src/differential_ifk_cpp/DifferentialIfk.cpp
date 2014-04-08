@@ -2,7 +2,8 @@
  # FroboMind
  # Licence and description in .hpp file
  ****************************************************************************/
-#include "differential_ifk_lib/DifferentialIfk.hpp"
+#include "DifferentialIfk.hpp"
+
 
 DifferentialIfk::DifferentialIfk()
 {
@@ -27,10 +28,17 @@ DifferentialIfk::twist_t DifferentialIfk::forward(double vel_left, double vel_ri
 	return out;
 }
 
+
+
 DifferentialIfk::wheel_t DifferentialIfk::inverse(double vel_lin, double vel_ang)
 {
 	DifferentialIfk::wheel_t out;
 	out.left  = vel_lin - _wheel_dist*vel_ang;
 	out.right = vel_lin + _wheel_dist*vel_ang;
 	return out;
+}
+
+void DifferentialIfk::setWheelDistance(double wheel_distance)
+{
+	_wheel_dist = wheel_distance;
 }

@@ -5,7 +5,7 @@
  # catkin_make run_tests_differential_ifk_lib
  ****************************************************************************/
 #include <gtest/gtest.h>
-#include "differential_ifk_lib/DifferentialIfk.hpp"
+#include "DifferentialIfk.hpp"
 
 TEST(KinematicsTest, Forward) {
 	DifferentialIfk object(1.0);

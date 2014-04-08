@@ -49,6 +49,7 @@ private:
 	double _wheel_dist;
 
 public:
+	DifferentialIfk();
 	DifferentialIfk(double);
 	virtual ~DifferentialIfk();
 
@@ -64,6 +65,7 @@ public:
 
 	twist_t forward(double, double);
 	wheel_t inverse(double, double);
+	void setWheelDistance(double);
 };
 
 #endif /* DIFFERENTIALIFK_HPP_ */
