@@ -5,7 +5,6 @@
 #include <sstream>
 #include <string>
 #include "geometry_msgs/TwistStamped.h"
-#include "differential_ifk_lib/DifferentialIfk.hpp"
 
 // published data
 geometry_msgs::TwistStamped rtq_command_msg_left;
@@ -15,20 +14,22 @@ ros::Subscriber hl_subscriber;
 ros::Publisher ll_publisher_left;
 ros::Publisher ll_publisher_right;
 
-DifferentialIfk differential;
+double W = 0.755; //length from center to meter
 
 // Input is a twist message from highlevel
 // Output is two rtq command messages, one for each wheel
 void callbackHandlerHlSubscriber(const geometry_msgs::TwistStamped::ConstPtr& twi)
 {
   // Forward Kinematics
-	DifferentialIfk::wheel_t velocities = differential.inverse(twi->twist.linear.x, twi->twist.angular.z);
 
-  rtq_command_msg_left.twist.linear.x = velocities.left;
+  double vel_right = twi->twist.linear.x + ( W * twi->twist.angular.z );
+  double vel_left = (twi->twist.linear.x - ( W * twi->twist.angular.z ));
+
+  rtq_command_msg_left.twist.linear.x = vel_left;
   rtq_command_msg_left.header.stamp = ros::Time::now();
   ll_publisher_left.publish(rtq_command_msg_left);
 
-  rtq_command_msg_right.twist.linear.x = velocities.right;
+  rtq_command_msg_right.twist.linear.x = vel_right;
   rtq_command_msg_right.header.stamp = ros::Time::now();
   ll_publisher_right.publish(rtq_command_msg_right);
 }
@@ -46,16 +47,16 @@ int main(int argc, char **argv){
   nh.param<std::string>("hl_subscriber_topic", hl_subscriber_topic, "hl_subscriber_topic");
   nh.param<std::string>("ll_publisher_topic_left", ll_publisher_topic_left, "ll_publisher_topic_left");
   nh.param<std::string>("ll_publisher_topic_right", ll_publisher_topic_right, "ll_publisher_topic_right");
-  n.param<double>("/diff_steer_wheel_distance",differential._wheel_dist,0);
+  n.param<double>("/diff_steer_wheel_distance",W,0);
 
-  if(! differential._wheel_dist) //if global parameter was not found, look for local
+  if(! W) //if global parameter was not found, look for local
   {
-	  nh.param<double>("distance_center_to_wheel",differential._wheel_dist,0.755);
+	  nh.param<double>("distance_center_to_wheel",W,0.755);
 	  ROS_WARN("%s: Global parameter 'diff_steer_wheel_distance' was not found - using local instead",ros::this_node::getName().c_str());
   }
   else // if global parameter was found, convert to the distance from center to wheel.
   { 
-	  differential._wheel_dist = differential._wheel_dist/2.0;
+	W = W/2.0;
   }
 
   hl_subscriber = nh.subscribe<geometry_msgs::TwistStamped> (hl_subscriber_topic.c_str(), 1, &callbackHandlerHlSubscriber); //seneste msg ligger klar i topic'en til fremtidige sucscribers
