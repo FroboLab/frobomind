@@ -67,21 +67,21 @@ void combineToGrid( boost::shared_ptr<nav_msgs::OccupancyGrid>& targetGrid, cons
 nav_msgs::OccupancyGrid::Ptr zeroCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids, double resolution);
 nav_msgs::OccupancyGrid::Ptr zeroCombineGrids(const std::vector<nav_msgs::OccupancyGrid::ConstPtr>& grids);
 void floatingCombineToEmptyGrid(
-				boost::shared_ptr<nav_msgs::OccupancyGrid>& combined_grid, 
-				boost::shared_ptr<nav_msgs::OccupancyGrid>& overlap_grid, 
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& combined_grid,
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& overlap_grid,
 				const nav_msgs::OccupancyGrid::ConstPtr& combine_from
 				);
 
 void binaryCombineToEmptyGrid(
-				boost::shared_ptr<nav_msgs::OccupancyGrid>& combined_grid, 
-				boost::shared_ptr<nav_msgs::OccupancyGrid>& overlap_grid, 
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& combined_grid,
+				boost::shared_ptr<nav_msgs::OccupancyGrid>& overlap_grid,
 				const nav_msgs::OccupancyGrid::ConstPtr& combine_from
 				);
 
 boost::shared_ptr<nav_msgs::OccupancyGrid> informationCombineAlignedGrids
   (
-   const nav_msgs::OccupancyGrid::ConstPtr& primary, 
-   const nav_msgs::OccupancyGrid::ConstPtr& primary_overlap, 
+   const nav_msgs::OccupancyGrid::ConstPtr& primary,
+   const nav_msgs::OccupancyGrid::ConstPtr& primary_overlap,
    const nav_msgs::OccupancyGrid::ConstPtr& secondary,
    const nav_msgs::OccupancyGrid::ConstPtr& secondary_overlap,
    const double gain_divide_enter_area_increase,

@@ -267,7 +267,7 @@ nm::MapMetaData getMaxGridInfo(const nm::MapMetaData info1, const nm::MapMetaDat
   ROS_ASSERT(info1.resolution == info2.resolution);
   const double roundoff_fix = 0.0001;
   nm::MapMetaData info;
-  
+
   info.resolution = info1.resolution;
 
   double max_x = max( maxX(info1) , maxX(info2));
@@ -295,7 +295,7 @@ nm::MapMetaData getMaxGridInfo(const nm::MapMetaData info1, const nm::MapMetaDat
   info.origin.orientation.y = 0;
   info.origin.orientation.z = 1;
   info.origin.orientation.w = 0;
-  
+
   return info;
 }
 
@@ -371,9 +371,9 @@ void resizeToAligedGrid(GridPtr& targetGrid, const nav_msgs::OccupancyGrid::Cons
   max_y = targetGrid->info.resolution * cells_max_y;
   min_x = targetGrid->info.resolution * cells_min_x;
   min_y = targetGrid->info.resolution * cells_min_y;
-  
+
   //ROS_INFO("Fittet map size %f, %f, %f, %f", min_x, max_x, min_y, max_y);
-  
+
   // Create new grid with new dimmension
   GridPtr resizedGrid(new nm::OccupancyGrid());
   resizedGrid->header.frame_id = targetGrid->header.frame_id;
@@ -399,7 +399,7 @@ void resizeToAligedGrid(GridPtr& targetGrid, const nav_msgs::OccupancyGrid::Cons
 
 
   // Copy old information to new grid
-  
+
   for (int x = 0; x < targetGrid->info.width; x++)
     {
       for (int y = 0; y < targetGrid->info.height; y++)
@@ -417,7 +417,7 @@ Cell aligenedGridOffset(const nm::MapMetaData main_info, const nm::MapMetaData s
   const double roundoff_fix = 0.0001;
   Cell offset;
   //offset.x = floor((main_info.origin.position.x - secondary_info.origin.position.x) / main_info.resolution);
-  //offset.y = floor((main_info.origin.position.y - secondary_info.origin.position.y) / main_info.resolution); 
+  //offset.y = floor((main_info.origin.position.y - secondary_info.origin.position.y) / main_info.resolution);
 
   double max_x = main_info.origin.position.x;
   double max_y = main_info.origin.position.y;
@@ -531,17 +531,17 @@ GridPtr minCombineGrids (const vector<GridConstPtr>& grids)
 void combineToGrid( GridPtr& targetGrid, const nav_msgs::OccupancyGrid::ConstPtr& applyGrid )
 {
   resizeToAligedGrid(targetGrid, applyGrid);
-  
+
   // Place input map on main map
   for (coord_t x=0; x<(int)applyGrid->info.width; x++) {
     for (coord_t y=0; y<(int)applyGrid->info.height; y++) {
       const Cell cell(x, y);
       const signed char value=applyGrid->data[cellIndex(applyGrid->info, cell)];
       // Only proceed if the value is not unknown
-      if ((value>=0) && (value<=100)) 
+      if ((value>=0) && (value<=100))
 	{
 	  BOOST_FOREACH (const Cell& intersecting_cell,
-			 intersectingCells(targetGrid->info, applyGrid->info, cell)) 
+			 intersectingCells(targetGrid->info, applyGrid->info, cell))
 	    {
 	      const index_t ind = cellIndex(targetGrid->info, intersecting_cell);
 	      int newvalue = targetGrid->data[ind];
@@ -551,13 +551,13 @@ void combineToGrid( GridPtr& targetGrid, const nav_msgs::OccupancyGrid::ConstPtr
             	newvalue = 50;
 
 	      //targetGrid->data[ind] = value;
-	      
-	      
+
+
 	      if(value > 50)
             	newvalue += (value - 50); ///20;
 	      else
             	newvalue -= (50 - value); ///20;
-	      
+
 
 	      if(newvalue > 100)
 		{
@@ -603,7 +603,7 @@ void combineToGrid( GridPtr& targetGrid, const nav_msgs::OccupancyGrid::ConstPtr
 
       // Recursice call to copy data to new grid.
       //combineToGrid(newGrid, targetGrid);
-      
+
 
       targetGrid = newGrid;
     }
@@ -667,8 +667,8 @@ GridPtr zeroCombineGrids (const vector<GridConstPtr>& grids)
 void binaryOverlapInformation(
 			      double& overlap_area, // Due to compatibility with overlapInformation method
 			      double& combined_value,
-			      const nav_msgs::OccupancyGrid::ConstPtr& main_grid, 
-			      const Cell& main_grid_cell, 
+			      const nav_msgs::OccupancyGrid::ConstPtr& main_grid,
+			      const Cell& main_grid_cell,
 			      const nav_msgs::OccupancyGrid::ConstPtr& overlap_grid
 			)
 {
@@ -678,7 +678,7 @@ void binaryOverlapInformation(
   // Reset values
   overlap_area = 0;
   combined_value = 0;
-      
+
   // Find a corrospoding cell on the overlap grid
   Cell init_cell;
   init_cell = pointCell (overlap_grid->info, centerpoint);
@@ -695,9 +695,9 @@ void binaryOverlapInformation(
   if (max_x >= overlap_grid->info.width) max_x = overlap_grid->info.width -1;
   if (max_y >= overlap_grid->info.height) max_y = overlap_grid->info.height -1;
 
-  for (coord_t cx=min_x; cx <= max_x; cx++) 
+  for (coord_t cx=min_x; cx <= max_x; cx++)
     {
-      for (coord_t cy=min_y; cy <= max_y; cy++) 
+      for (coord_t cy=min_y; cy <= max_y; cy++)
 	{
 	  Cell intersecting_cell = Cell(cx, cy);
 	  const index_t local_ind = cellIndex(overlap_grid->info, intersecting_cell);
@@ -705,7 +705,7 @@ void binaryOverlapInformation(
 	  // Only find overlap if cell contains data
 	  if (overlap_grid->data[local_ind] != -1)
 	    {
-	      
+
 	      // Collect intersection information
 	      if (cellsIntersect (main_grid->info, main_grid_cell, overlap_grid->info, intersecting_cell))
 		{
@@ -715,7 +715,7 @@ void binaryOverlapInformation(
 	    }
 	}
     }
-  
+
   // Normalize return values
   if (overlap_area > 1)
     {
@@ -728,9 +728,9 @@ void binaryOverlapInformation(
 void binaryCombineToEmptyGrid(GridPtr& combined_grid, GridPtr& overlap_grid, const nav_msgs::OccupancyGrid::ConstPtr& combine_from)
 {
   // Assuming there will be space on the new grid..
-  for (coord_t x=0; x<(int)combined_grid->info.width; x++) 
+  for (coord_t x=0; x<(int)combined_grid->info.width; x++)
     {
-      for (coord_t y=0; y<(int)combined_grid->info.height; y++) 
+      for (coord_t y=0; y<(int)combined_grid->info.height; y++)
 	{
 	  const Cell cell(x, y); // Coordinate in new grid
 	  const index_t combined_ind = cellIndex(combined_grid->info, cell);
@@ -739,7 +739,7 @@ void binaryCombineToEmptyGrid(GridPtr& combined_grid, GridPtr& overlap_grid, con
 
 	  // Get overlapping information
 	  binaryOverlapInformation(overlap_area,cell_value, combined_grid, cell, combine_from);
-	  
+
 	  overlap_grid->data[combined_ind] = overlap_area * 100;
 	  combined_grid->data[combined_ind] = cell_value;
 	}
@@ -749,8 +749,8 @@ void binaryCombineToEmptyGrid(GridPtr& combined_grid, GridPtr& overlap_grid, con
 
 GridPtr informationCombineAlignedGrids
 (
- const nav_msgs::OccupancyGrid::ConstPtr& primary, 
- const nav_msgs::OccupancyGrid::ConstPtr& primary_overlap, 
+ const nav_msgs::OccupancyGrid::ConstPtr& primary,
+ const nav_msgs::OccupancyGrid::ConstPtr& primary_overlap,
  const nav_msgs::OccupancyGrid::ConstPtr& secondary,
  const nav_msgs::OccupancyGrid::ConstPtr& secondary_overlap,
  const double gain_divide_enter_area_increase,
@@ -767,7 +767,7 @@ GridPtr informationCombineAlignedGrids
   combined_grid->header.frame_id = "/odom";
   combined_grid->data.resize(combined_grid->info.width*combined_grid->info.height);
   fill(combined_grid->data.begin(), combined_grid->data.end(), -1);
-  
+
   // Find offset on primary
   Cell primary_offset = aligenedGridOffset(combined_grid->info, primary->info);
   Cell primary_endpoint;
@@ -785,7 +785,7 @@ GridPtr informationCombineAlignedGrids
   int primary_max_value;
   {
     const index_t primary_ind= cellIndex(
-					  primary->info, 
+					  primary->info,
 					  Cell(
 					       primary->info.width / 2,
 					       primary->info.height / 2
@@ -793,13 +793,13 @@ GridPtr informationCombineAlignedGrids
 					  );
     primary_max_value = primary->data[primary_ind];
   }
-  
+
   // Find secondary value
   // Assume max value at midpoint of grid
   int secondary_max_value;
   {
     const index_t secondary_ind= cellIndex(
-					  secondary->info, 
+					  secondary->info,
 					  Cell(
 					       secondary->info.width / 2,
 					       secondary->info.height / 2
@@ -846,7 +846,7 @@ GridPtr informationCombineAlignedGrids
 
 	  int overlap_high = 60;
 	  int overlap_low = 20;
-	  
+
 	  if (primary_overlaps < 5 && secondary_overlaps < 5) // No information about cell
 	    combined_grid->data[combined_ind] = -1; // -1
 	  /*
@@ -856,7 +856,7 @@ GridPtr informationCombineAlignedGrids
 	    }
 	  */
 	  else if (
-		(primary_overlaps > 60) && 
+		(primary_overlaps > 60) &&
 		(secondary_overlaps < 20)
 		) // Area entered
 	    {
@@ -865,7 +865,7 @@ GridPtr informationCombineAlignedGrids
 		//combined_grid->data[combined_ind] = 50 + (primary_value - secondary_value)/2; //value_change;
 		combined_grid->data[combined_ind] = 50 + (primary_value - 50)/gain_divide_enter_area_increase; //value_change;
 	      else // Decreasing value
-		combined_grid->data[combined_ind] = 50 + (primary_value - 50)/gain_divide_enter_area_decrease; // 
+		combined_grid->data[combined_ind] = 50 + (primary_value - 50)/gain_divide_enter_area_decrease; //
 	      */
 	      if (value_change > 0) // Increasing value
 		{
@@ -970,10 +970,10 @@ GridPtr averagePassGrid (const nav_msgs::OccupancyGrid::ConstPtr& grid, int kern
 		    }
 		}
 	    }
-	  
+
 	  if (gain_sum != 0)
 	    filtered->data[grid_ind] = 50 + (value_sum / gain_sum);
-	  
+
 	  //filtered->data[grid_ind] = gain_sum;
 	}
     }
@@ -981,9 +981,3 @@ GridPtr averagePassGrid (const nav_msgs::OccupancyGrid::ConstPtr& grid, int kern
 }
 
 } // namespace occupancy_grid_utils
-
-
-
-
-
-
