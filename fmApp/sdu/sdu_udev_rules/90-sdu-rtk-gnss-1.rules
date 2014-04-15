@@ -1,0 +1,6 @@
+# SDU Trimble BX982 GNSS
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AH01E1VU", GROUP="dialout",MODE="0666", NAME:="gps"
+#
+# To activate copy this file to: /etc/udev/rules.d/
+# Example on how to retrieve the FTDI serial from a device:
+#   udevadm info -a -n /dev/ttyUSB0 | grep 'serial'

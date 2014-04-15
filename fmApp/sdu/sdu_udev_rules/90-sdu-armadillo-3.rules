@@ -1,0 +1,6 @@
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTV9DVWT", GROUP="dialout", MODE="0666", NAME:="armadillo3_left"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTV902Z5", GROUP="dialout", MODE="0666", NAME:="armadillo3_right"
+#
+# To activate copy this file to: /etc/udev/rules.d/
+# Example on how to retrieve the FTDI serial from a device:
+#   udevadm info -a -n /dev/ttyUSB0 | grep 'serial'
