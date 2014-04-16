@@ -1,0 +1,344 @@
+#!/usr/bin/env python
+#*****************************************************************************
+# Pose 2D Estimator - robot drive simulation
+# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name FroboMind nor the
+#      names of its contributors may be used to endorse or promote products
+#      derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#*****************************************************************************
+"""
+This file contains a Python script to test the Pose 2D Estimator using system
+feedback and sensor data from FroboMind rosbags
+
+Revision
+2013-05-10 KJ First alpha release
+2013-05-15 KJ Added AHRS support
+2013-06-05 KJ Improved pre-processing algorithms 
+"""
+
+# imports
+import signal
+from math import sqrt, pi
+from pose_2d_estimator import pose_2d_preprocessor, pose_2d_ekf, yaw_ekf
+from sim_import import odometry_data, imu_data, gnss_data, gnss_tranmerc_data
+from track_map import track_map
+
+# parameters
+ekf_easting_init = 588784.0   # set these EKF initial guess coordinates close
+ekf_northing_init = 6137262.0 # to actual transverse mercator coordinates.
+plot_pose = True
+plot_gnss = True
+plot_odometry = True
+plot_yaw = True
+plot_pose_yaw = False # used only in this simulation to determine which values to append
+plot_gnss_yaw = True # used only in this simulation to determine which values to append
+plot_ahrs_yaw =  False # used only in this simulation to determine which values to append
+plot_odo_yaw = True # used only in this simulation to determine which values to append
+plot_relative_coordinates = True
+odo_file = 'sim_odometry.txt'
+odo_skip_lines =  0
+odo_max_lines = 0 # 0 = read to the end
+imu_file = 'sim_imu.txt'
+imu_skip_lines = 0
+imu_max_lines = 0
+gnss_file = 'sim_gnss.txt'
+gnss_skip_lines = 33
+gnss_max_lines = 0 
+ref_gnss_file = 'sim_ref_gnss.txt'
+ref_gnss_skip_lines = 0
+ref_gnss_max_lines = 0
+sim_step_interval = 0.01 # 100 Hz
+steps_btw_plot_updates = 1000
+steps_btw_yaw_plot_points = 10
+min_gnss_fix_msg_before_pose_plot = 5 # used to avoid the high initial variance causes odd plots
+var_dist = 0.00001**2 # per meter
+var_angle = (0.003*2*pi)**2 # per 2*pi
+var_yaw = 0.1
+pi2 = 2.0*pi
+trip_threshold = 0.1 # [m]
+
+gnss_trip = 0.0
+gnss_latest = False
+
+ref_gnss_trip = 0.0
+ref_gnss_latest = False
+
+
+# return dist between two positions
+def pt_dist (p1, p2):
+	return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
+
+# return angle within [0;2pi[
+def angle_limit (angle):
+	while angle < 0:
+		angle += pi2
+	while angle >= pi2:
+		angle -= pi2
+	return angle
+
+# return signed difference between new and old angle
+def angle_diff (angle_new, angle_old):
+	diff = angle_new - angle_old
+	while diff < -1.5*pi:
+		diff += 2*pi
+	while diff > 1.5*pi:
+		diff -= 2*pi
+	return diff
+
+# main
+print 'Simulation of robot motion'
+print 'Press CTRL-C to cancel'
+
+# define and install ctrl-c handler
+ctrl_c = 0
+def signal_handler(signal, frame):
+    global ctrl_c
+    ctrl_c = 1
+    print 'Ctrl-C pressed'
+    print 'Quit'
+signal.signal(signal.SIGINT, signal_handler)
+
+# setup plotting
+if plot_relative_coordinates == False: # define absolute or relative plotting coordinates
+	plot_easting_offset = 0.0
+	plot_northing_offset = 0.0
+else:
+	plot_easting_offset = -ekf_easting_init 
+	plot_northing_offset = -ekf_northing_init
+plot = track_map(plot_pose, plot_gnss, plot_odometry, plot_yaw, \
+	"Robot track", 5.0, plot_easting_offset, plot_northing_offset)
+latest_pose_yaw = 0.0
+latest_absolute_yaw = 0.0
+latest_ahrs_yaw = 0.0
+latest_odo_yaw = 0.0
+gnss_fix_msg_count = 0 
+
+# import simulation data
+odo_sim = odometry_data(odo_file, odo_skip_lines, odo_max_lines)
+imu_sim = imu_data(imu_file, imu_skip_lines, imu_max_lines)
+gnss_sim = gnss_tranmerc_data(gnss_file, gnss_skip_lines, gnss_max_lines)
+ref_gnss_sim = gnss_tranmerc_data(ref_gnss_file, gnss_skip_lines, gnss_max_lines)
+
+ref_latest_pos = False
+gps_diff = []
+pose_diff = []
+
+# define simulation time based on gnss data
+sim_offset = gnss_sim.data[0][0]
+sim_len = gnss_sim.data[-1][0] - sim_offset
+sim_steps = sim_len/sim_step_interval
+sim_time = 0
+print ('Simulation')
+print ('  Step interval: %.2fs' % sim_step_interval)
+print ('  Total: %.2fs (%.0f steps)' % (sim_len, sim_steps))
+
+# initialize estimator (preprocessing)
+robot_max_speed = 3.0 # [m/s]
+pp = pose_2d_preprocessor (robot_max_speed)
+
+# initialize estimator (EKF)
+prev_odometry = [0.0, 0.0, 0.0, 0.0] # [time,X,Y,theta]
+ekf = pose_2d_ekf()
+ekf.set_initial_guess([ekf_easting_init, ekf_northing_init, 0])
+yawekf = yaw_ekf() # !!! TEMPORARY HACK
+
+# run simulation
+for step in xrange ((int(sim_steps)+1)):
+
+	# simulation time housekeeping
+	log_time = sim_time + sim_offset
+	sim_time += sim_step_interval
+
+    # update odometry position
+	(odo_updates, odometry) = odo_sim.get_latest(log_time) 
+	if odo_updates > 0:
+		# odometry data preprocessing
+		time_recv = odometry[0]
+		delta_dist =  sqrt((odometry[1]-prev_odometry[1])**2 + (odometry[2]-prev_odometry[2])**2)
+		delta_angle = angle_diff (odometry[3], prev_odometry[3])
+		prev_odometry = odometry
+		forward = odometry[4] >= 0
+		pp.odometry_new_feedback (time_recv, delta_dist, delta_angle, forward)
+		
+		# EKF system update (odometry)
+		pose = ekf.system_update (delta_dist, var_dist, delta_angle, var_angle)
+		pose[2] = yawekf.system_update (delta_angle, var_angle) # !!! TEMPORARY HACK
+
+		# odometry plot update
+		latest_odo_yaw += delta_angle
+		latest_odo_yaw = angle_limit(latest_odo_yaw)
+		plot.append_odometry_position(odometry[1], odometry[2])
+
+		# pose plot update
+		if gnss_fix_msg_count >= min_gnss_fix_msg_before_pose_plot:
+			plot.append_pose_position (pose[0], pose[1])
+		latest_pose_yaw = angle_limit(pose[2])
+
+    # update IMU data
+	(imu_updates, imu_data) = imu_sim.get_latest(log_time) 
+	if imu_updates > 0:		
+		# EKF measurement update (IMU)
+		time_recv = imu_data[0]
+		rate_yaw = imu_data[1]
+		orientation_yaw = angle_limit(imu_data[2])
+		pos = pp.imu_new_measurement (time_recv, rate_yaw, orientation_yaw)
+	
+		# plot update
+		latest_ahrs_yaw = orientation_yaw
+
+    # update reference GNSS data
+	(gnss_updates, ref_gnss_data) = ref_gnss_sim.get_latest(log_time)
+	if gnss_updates > 0: # if new data available
+		solution = ref_gnss_data[5]
+		if solution > 0: # if the new data has a satellite fix
+			ref_easting = ref_gnss_data[3] 
+			ref_northing = ref_gnss_data[4]
+			plot.append_ref_gnss_position(ref_easting, ref_northing)
+			ref_latest_pos = [ref_easting, ref_northing]
+
+			# trip update
+			pos = ref_latest_pos
+			if ref_gnss_latest != False:
+				d = pt_dist (pos, ref_gnss_latest)
+				if d > trip_threshold:
+					ref_gnss_latest = pos
+					ref_gnss_trip += d
+			else:
+				ref_gnss_latest = pos
+
+
+    # update GNSS data
+	(gnss_updates, gnss_data) = gnss_sim.get_latest(log_time)
+	if gnss_updates > 0: # if new data available
+		solution = gnss_data[5]
+		if solution > 0: # if the new data has a satellite fix
+			gnss_fix_msg_count += 1
+			time_recv = gnss_data[0]
+			easting = gnss_data[3] 
+			northing = gnss_data[4]
+			satellites = gnss_data[6]
+			hdop = gnss_data[7]
+			# GNSS data preprocessing
+			valid = pp.gnss_new_measurement (time_recv, easting, northing, solution, satellites, hdop)
+			if valid == True: # if position is validated
+				var_pos = pp.gnss_estimate_variance_pos() # estimate the position variance
+				pose = ekf.measurement_update_pos ([easting, northing], var_pos) # EKF measurement update
+
+				(valid, yaw) = pp.estimate_absolute_orientation()
+				if valid == True:
+					latest_absolute_yaw = yaw
+					# pose = ekf.measurement_update_yaw (yaw, 5)
+					yaw = yawekf.measurement_update (yaw, var_yaw) # !!! TEMPORARY HACK
+
+				# trip update
+				if gnss_latest != False:
+					d = pt_dist ([easting, northing], gnss_latest)
+					if d > trip_threshold:
+						gnss_latest = [easting, northing]
+						gnss_trip += d
+				else:
+					gnss_latest = [easting, northing]
+
+				# plot update
+				plot.append_gnss_position(easting, northing)
+
+				if ref_latest_pos != False:
+					gps_diff.append(sqrt((ref_latest_pos[0]-easting)**2 + (ref_latest_pos[1]-northing)**2))
+					pose_diff.append(sqrt((ref_latest_pos[0]-pose[0])**2 + (ref_latest_pos[1]-pose[1])**2))
+
+
+	# output to screen
+	#if step % 2000 == 0: # each 20 seconds, needs to be calculated!!!
+	#	print ('Step %d time %.2f log time %.2f' % (step+1, sim_time, (sim_time+sim_offset)))
+	if step % steps_btw_yaw_plot_points == 0:
+		if plot_pose_yaw:
+			plot.append_pose_yaw (latest_pose_yaw)
+		if plot_gnss_yaw:
+			plot.append_gnss_yaw (latest_absolute_yaw)
+		if plot_ahrs_yaw:
+			plot.append_ahrs_yaw (latest_ahrs_yaw)
+		if plot_odo_yaw:
+			plot.append_odo_yaw (latest_odo_yaw)
+
+	if step % steps_btw_plot_updates == 0:
+		plot.update()
+
+    # exit if CTRL-C pressed
+	if ctrl_c:
+		break
+
+import matplotlib.pyplot as plt
+from pylab import ion, plot, axis, grid, title, xlabel, ylabel, draw
+import numpy as np
+from numpy import *
+plt.figure(num=5, facecolor='w', edgecolor='w')
+#plt.figure(num=2, figsize=(6, 6), dpi=160, facecolor='w', edgecolor='w')
+title ('GNSS position difference')
+xlabel('Distance [m]')
+ylabel('Samples')
+hist,bins=np.histogram(gps_diff,bins=100)
+width=1*(bins[1]-bins[0])
+center=(bins[:-1]+bins[1:])/2
+plt.bar(center,hist,align='center',width=width)
+plt.savefig('simulation_hist.png')
+
+print 'GNSS trip counter: %.6f' % gnss_trip
+print 'Reference GNSS trip counter: %.6f' % ref_gnss_trip
+
+diff_avg = 0.0
+for i in xrange(len(gps_diff)):
+	diff_avg += gps_diff[i]
+diff_avg = diff_avg / len(gps_diff)
+print 'GNSS average difference: %.4f' % diff_avg
+
+diff_pose_avg = 0.0
+for i in xrange(len(pose_diff)):
+	diff_pose_avg += pose_diff[i]
+diff_pose_avg = diff_pose_avg / len(pose_diff)
+print 'Pose average difference: %.4f' % diff_pose_avg
+
+
+diff_stddev = 0.0
+for i in xrange(len(gps_diff)):
+	diff_stddev += (gps_diff[i]-diff_avg)**2
+diff_stddev = sqrt(diff_stddev / (len(gps_diff)))
+print 'Population standard deviation: %.6f' % diff_stddev
+
+import numpy as np
+from numpy import *
+#for i in xrange(len(gps_diff)):
+#	gps_diff[i] -= diff_avg
+percentile95 = np.percentile (array(gps_diff), 95.)
+print ('GNSS 95 %% percentile: %.4f' % (percentile95))
+
+percentile95 = np.percentile (array(pose_diff), 95.)
+print ('Pose 95 %% percentile: %.4f' % (percentile95))
+
+
+
+# quit the simulation
+if ctrl_c == False:
+	print 'Simulation completed, press Enter to quit'
+	raw_input() # wait for enter keypress 
+	plot.save('simulation')
+
