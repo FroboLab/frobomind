@@ -149,7 +149,7 @@
 			<param name="deadmanbutton_topic" value="/fmCommand/deadman" />
 		</node>
 
-		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_left" respawn="true">
+		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="armadillo3_left" respawn="true">
 			<param name="pid_topic" value="/fmInformation/pid_left" />
 			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
 			<param name="serial_rx_topic" value="/fmData/left_belt_rx" />
@@ -176,7 +176,7 @@
 			<param name="velocity_tolerance" value="0.05"/>  
 		</node>
 
-		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_right" respawn="true">
+		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="armadillo3_right" respawn="true">
 			<param name="pid_topic" value="/fmInformation/pid_right" />
 			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_right"/>
 			<param name="serial_rx_topic" value="/fmData/right_belt_rx" />
