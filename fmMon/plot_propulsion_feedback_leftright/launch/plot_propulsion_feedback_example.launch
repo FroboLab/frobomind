@@ -7,6 +7,7 @@
  			<param name="propulsion_feedback_right_sub" value="/fmInformation/wheel_feedback_right" />
  			<param name="update_frequency" value="50" />
 			<param name="plot_title" value="Wheel feedback" />
+			<param name="samples" value="250" />
 			<param name="maximum_velocity" value="1.0" />
 			<param name="maximum_thrust" value="1023" />
 		</node>

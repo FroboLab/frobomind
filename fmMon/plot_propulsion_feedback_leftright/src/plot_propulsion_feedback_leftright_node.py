@@ -42,24 +42,24 @@ from pylab import *
 
 class propulsion_feedback_node():
 	def __init__(self):
-		self.measurements = 250
 		self.feedback_zero_max = 10
 
 		# Get parameters
 		self.update_frequency = rospy.get_param("~update_frequency", 10.0)
 		self.title = rospy.get_param("~plot_title", "Feedback")
+		self.samples = rospy.get_param("~samples", 250)
 		self.max_vel = rospy.get_param("~maximum_velocity",3.0) # [m/s]
  		self.max_thrust = rospy.get_param("~maximum_thrust",1024)
 
 		# setup plot
-		self.plot_vel_left = [0]*self.measurements
-		self.plot_vel_set_left = [0]*self.measurements
-		self.plot_thrust_left = [0]*self.measurements
+		self.plot_vel_left = [0]*self.samples
+		self.plot_vel_set_left = [0]*self.samples
+		self.plot_thrust_left = [0]*self.samples
 		self.feedback_zero_cnt_left = 0
 
-		self.plot_vel_right = [0]*self.measurements
-		self.plot_vel_set_right = [0]*self.measurements
-		self.plot_thrust_right = [0]*self.measurements
+		self.plot_vel_right = [0]*self.samples
+		self.plot_vel_set_right = [0]*self.samples
+		self.plot_thrust_right = [0]*self.samples
 		self.feedback_zero_cnt_right = 0
 
 		ion()
