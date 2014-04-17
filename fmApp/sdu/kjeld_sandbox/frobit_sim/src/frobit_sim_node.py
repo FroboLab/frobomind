@@ -62,11 +62,11 @@ class ROSnode():
 
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 1.8) # [rad/s^2]
-		self.wheel_speed_variance = 0.01
-		self.wheel_speed_delay = 0.1 # [s]
+		self.wheel_speed_variance = 0.001
+		self.wheel_speed_delay = 0.05 # [s]
 		self.wheel_speed_delay_variance = 0.05
-		self.wheel_speed_error = 0.25 # [m/s]
-		self.wheel_speed_minimum = 0.07 
+		self.wheel_speed_error = 0.05 # [m/s]
+		self.wheel_speed_minimum = 0.03 
 
 		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
 		if pub_fb_rate != 0:
