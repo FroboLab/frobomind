@@ -1,10 +1,12 @@
 <!-- FroboScout launch file -->
 
 <launch>
-	<!-- FroboScout parameters --> 
-	<param name="diff_steer_wheel_distance" value="0.5"/>
-	<param name="ticks_per_meter_left" value="2627" />
-	<param name="ticks_per_meter_right" value="2627" />
+	<!-- frobit parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.215"/>
+	<param name="ticks_per_meter_left" value="562" />
+	<param name="ticks_per_meter_right" value="562" />
+
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
 
 	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
 

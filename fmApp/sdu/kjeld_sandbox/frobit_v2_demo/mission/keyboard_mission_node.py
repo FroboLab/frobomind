@@ -158,9 +158,9 @@ class mission_node():
 						if self.vel_ang < -self.vel_ang_max:
 							self.vel_ang = -self.vel_ang_max
 					if self.deadman_state == True:
-						rospy.loginfo(rospy.get_name() + ": Velocity: %.1f m/s %.1f rad/s" % (self.vel_lin, self.vel_ang))
+						rospy.loginfo(rospy.get_name() + ": Velocity: %.2f m/s %.2f rad/s" % (self.vel_lin, self.vel_ang))
 					else:
-						rospy.loginfo(rospy.get_name() + ": Velocity (disabled): %.1f m/s %.1f rad/s" % (self.vel_lin, self.vel_ang))
+						rospy.loginfo(rospy.get_name() + ": Velocity (disabled): %.2f m/s %.2f rad/s" % (self.vel_lin, self.vel_ang))
 					if abs (self.vel_lin) < 0.0001: # make sure zero is zero!
 						self.vel_lin = 0.0
 					if abs (self.vel_ang) < 0.0001:

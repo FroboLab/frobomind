@@ -3,16 +3,39 @@
 <launch>
 	<!-- frobit parameters --> 
 	<param name="diff_steer_wheel_distance" value="0.215"/>
-	<param name="ticks_per_meter_left" value="-562" />
-	<param name="ticks_per_meter_right" value="-562" />
+	<param name="ticks_per_meter_left" value="562" />
+	<param name="ticks_per_meter_right" value="562" />
 
 	<param name="robot_max_velocity" value="1.0"/>
 	<param name="diff_steer_wheel_radius" value="0.051"/>
 	<param name="diff_steer_wheel_ticks_per_rev" value="180"/>
 
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+
+		<node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
+ 			<param name="propulsion_feedback_left_sub" value="/fmInformation/wheel_feedback_left" />
+ 			<param name="propulsion_feedback_right_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="50" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="samples" value="50" />
+			<param name="maximum_velocity" value="0.6" />
+			<param name="maximum_thrust" value="255" />
+		</node>
+
+		<node pkg="plot_pid" name="wheel_left_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/wheel_pid_left" />
+ 			<param name="update_rate" value="50" />
+			<param name="plot_title" value="Left wheel PID" />
+			<param name="samples" value="50" />
+			<param name="max_error" value="50" />
+			<param name="max_output" value="200" />
+			<param name="max_pid" value="200" />
+			<param name="plot_feed_forward" value="false" />
+		</node>
+
 	<group ns="fmSensors">
 		<!-- extract data from messages transmitted by the SparkFun Razor IMU -->
-		<node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+		<!--node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
 			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
 			<param name="imu_pub" value="/fmInformation/imu"/>
 			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
@@ -20,6 +43,17 @@
 			<param name="publish_magnetometer" value="false"/>
 			<param name="use_enu" value="true"/>
 			<param name="frame_id" value="imu_link"/>
+		 </node -->
+
+		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen"  respawn="true">
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
 		 </node>
 	</group>
 
@@ -47,9 +81,9 @@
 			<param name="automode_pub" value="/fmDecision/automode" />
     		<param name="deadman_pub" value="/fmCommand/deadman" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
-            <param name="max_linear_velocity" value="0.7"/>
-            <param name="max_angular_velocity" value="0.5"/>
-            <param name="linear_velocity_step" value="0.1"/>
+            <param name="max_linear_velocity" value="50.7"/>
+            <param name="max_angular_velocity" value="50.5"/>
+            <param name="linear_velocity_step" value="0.05"/>
             <param name="angular_velocity_step" value="0.25"/>
 		</node>
 	</group>
@@ -100,11 +134,11 @@
 	</group>
 
 	<group ns="fmControllers">
-		<node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
+		<!--node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
 			<param name="hl_subscriber_topic" value="/fmCommand/cmd_vel"/>
 			<param name="ll_publisher_topic_left" value="/fmSignal/cmd_vel_left"/>
 			<param name="ll_publisher_topic_right" value="/fmSignal/cmd_vel_right"/>
-		</node>	     
+		</node-->	     
 	</group>
 
 	<group ns="fmLib">
@@ -112,8 +146,39 @@
 			<param name="keyboard_pub" value="/fmHMI/keyboard" />
 		</node>
 
+		<!-- Frobit interface node -->
+		<node pkg="sdu_frobit_v2" name="frobit" type="frobit_interface_node.py" output="screen" >
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_status_left_pub" value="/fmInformation/wheel_status_left" />
+			<param name="wheel_status_right_pub" value="/fmInformation/wheel_status_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
+			<param name="wheel_pid_left_pub" value="/fmInformation/wheel_pid_left" />
+			<param name="wheel_pid_right_pub" value="/fmInformation/wheel_pid_right" />
+			<param name="nmea_from_frobit_sub" value="/fmSignal/nmea_from_frobit" />	 
+			<param name="nmea_to_frobit_pub" value="/fmSignal/nmea_to_frobit" />	 
+			<param name="publish_wheel_status_rate" value="50" />
+			<param name="publish_wheel_feedback_rate" value="50" />
+			<param name="publish_wheel_pid_rate" value="50" />
+			<param name="castor_front" value="true"/>
+            <param name="max_linear_acceleration" value="16.2"/>
+            <param name="max_angular_acceleration" value="16.0"/>
+			<param name="wheel_feed_forward" value="15" /> 
+			<param name="wheel_kp" value="2" /> 
+			<param name="wheel_ki" value="8" /> 
+			<param name="wheel_kd" value="6" /> 
+			<param name="wheel_max_integral_output" value="300" /> 
+			<param name="min_supply_voltage" value="12.1" /> 
+			<param name="show_voltage_interval" value="300" /> 
+		</node>
+
+
+
 		<!-- frobit interface node -->
-		<node pkg="sdu_frobit" name="frobit_node" type="frobit_node">
+		<!--node pkg="sdu_frobit" name="frobit_node" type="frobit_node">
 			<param name="cmd_vel_left_sub" value="/fmSignal/cmd_vel_left"/>
 			<param name="cmd_vel_right_sub" value="/fmSignal/cmd_vel_right"/>
 			<param name="deadman_sub" value="/fmCommand/deadman"/>
@@ -121,13 +186,13 @@
 			<param name="nmea_pub" value="/fmSignal/nmea_to_frobit"/>
 			<param name="encoder_left_pub" value="/fmInformation/encoder_left"/>
 			<param name="encoder_right_pub" value="/fmInformation/encoder_right"/>	
-			<param name="castor_front" value="false"/>
+			<param name="castor_front" value="true"/>
 			<param name="nmea_to_frobit_interval" value="0.05"/>          
 			<param name="cmd_vel_timeout" value="1"/>          
-        </node>
+        </node-->
 
 		<!-- frobit serial device and protocol interface -->
-		<node pkg="serial_nmea" name="frobit_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+		<node pkg="serial_nmea" name="frobit_nmea" type="serial_nmea_node" respawn="true" output="screen">
 			<param name="nmea_from_device_pub" value="/fmSignal/nmea_from_frobit"/>
 			<param name="nmea_to_device_sub" value="/fmSignal/nmea_to_frobit"/>
 			<param name="serial_device" value="/dev/frobit"/>
@@ -135,13 +200,14 @@
 			<param name="use_nmea_checksum" value="true"/>
         </node>
 
-		<node pkg="serial_nmea" name="imu_nmea" type="serial_nmea_node" respawn="true" output="screen" >
-			<param name="nmea_from_device_pub" value="/fmData/nmea_from_imu"/>
-			<param name="nmea_to_device_sub" value="/fmData/nmea_to_imu"/>
-			<param name="serial_device" value="/dev/imu_razor"/>
-			<param name="serial_baudrate" value="57600"/>
-			<param name="use_nmea_checksum" value="true"/>
-        </node>
+		<!-- serial communication with the IMU -->
+		<node pkg="serial_string" name="imu_serial" type="serial_string_node" respawn="true" output="screen">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
 	</group>
 </launch>
 
