@@ -209,7 +209,7 @@ class FroboScoutInterfaceNode():
 		# calculate coresponding left and right wheel speed [m/s]
 		(self.ref_vel_left, self.ref_vel_right) = self.dk.inverse(self.vel_lin, self.vel_ang)
 
-		# convert to [ticks/update_interval]
+		# convert to [ticks/s]
 		self.ref_ticks_left = self.ref_vel_left*self.ticks_per_meter_left;
 		self.ref_ticks_right = self.ref_vel_right*self.ticks_per_meter_right;
 
