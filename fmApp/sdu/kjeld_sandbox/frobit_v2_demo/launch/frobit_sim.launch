@@ -51,11 +51,11 @@
 			<param name="plot_pose_yaw" value="false" />
 			<param name="map_trackpoint_threshold" value="0.02" />
 			<param name="map_max_trackpoints" value="500" />
-			<param name="map_minimum_size" value="4.0" />
+			<param name="map_minimum_size" value="3.0" />
 			<param name="map_easting_offset" value="0.0" />
 			<param name="map_northing_offset" value="0.0" />
 			<param name="map_update_frequency" value="10.0" />
-			<param name="map_title" value="FroboScout track" />
+			<param name="map_title" value="Frobit track" />
 			<param name="map_window_size" value="5.0" />
 			<param name="avatar_extension_front" value="0.195" />
 			<param name="avatar_extension_rear" value="0.505" />
