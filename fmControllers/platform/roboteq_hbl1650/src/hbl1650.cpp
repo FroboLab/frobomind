@@ -87,21 +87,21 @@ hbl1650::hbl1650( )
 	local_node_handler.param<bool>("closed_loop_operation", closed_loop_operation, false);
 
 	// Setup publishers
-	propulsion_module_status_publisher = local_node_handler.advertise<msgs::PropulsionModuleStatus>( propulsion_module_status_topic,10 );
-	setSerialPub( local_node_handler.advertise<msgs::serial>( serial_tx_topic,10 ));
-	setEncoderCh1Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch1_topic, 10));
-	setPowerCh1Pub( local_node_handler.advertise<msgs::IntStamped>( power_ch1_topic, 10));
-	setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
-	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, 10));
-	ch1.setVelPub(local_node_handler.advertise<std_msgs::Float64>( velocity_topic, 10));
-	ch1.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_topic, 10));
-	ch1.setPidPub( local_node_handler.advertise<msgs::FloatArrayStamped>( pid_topic, 10));
-	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, 10));
+	propulsion_module_status_publisher = local_node_handler.advertise<msgs::PropulsionModuleStatus>( propulsion_module_status_topic,DEFAULT_BUFFER_SIZE );
+	setSerialPub( local_node_handler.advertise<msgs::serial>( serial_tx_topic,DEFAULT_BUFFER_SIZE ));
+	setEncoderCh1Pub( local_node_handler.advertise<msgs::IntStamped>( encoder_ch1_topic, DEFAULT_BUFFER_SIZE));
+	setPowerCh1Pub( local_node_handler.advertise<msgs::IntStamped>( power_ch1_topic, DEFAULT_BUFFER_SIZE));
+	setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, DEFAULT_BUFFER_SIZE));
+	ch1.setStatusPub( local_node_handler.advertise<msgs::StringStamped>( status_topic, DEFAULT_BUFFER_SIZE));
+	ch1.setVelPub(local_node_handler.advertise<std_msgs::Float64>( velocity_topic, DEFAULT_BUFFER_SIZE));
+	ch1.setPropulsionFeedbackPub( local_node_handler.advertise<msgs::PropulsionModuleFeedback>( propulsion_module_feedback_topic, DEFAULT_BUFFER_SIZE));
+	ch1.setPidPub( local_node_handler.advertise<msgs::FloatArrayStamped>( pid_topic, DEFAULT_BUFFER_SIZE));
+	setTemperaturePub( local_node_handler.advertise<msgs::StringStamped>( temperature_topic, DEFAULT_BUFFER_SIZE));
 
 	// Set up subscribers
-	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,10,&hbl1650::onSerial,this);
-	ch1.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,10,&Channel::onCmdVel,&ch1);
-	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,10,&hbl1650::onDeadman,this);
+	serial_sub = local_node_handler.subscribe<msgs::serial>(serial_rx_topic,DEFAULT_BUFFER_SIZE,&hbl1650::onSerial,this);
+	ch1.cmd_vel_sub = local_node_handler.subscribe<geometry_msgs::TwistStamped>(cmd_vel_ch1_topic,DEFAULT_BUFFER_SIZE,&Channel::onCmdVel,&ch1);
+	deadman_sub = local_node_handler.subscribe<std_msgs::Bool>(deadman_topic,DEFAULT_BUFFER_SIZE,&hbl1650::onDeadman,this);
 }
 
 void hbl1650::spin(void)

@@ -56,7 +56,7 @@ void RoboTeQ::serialCallback(const msgs::serial::ConstPtr& msg)
 	status.online = true;
 
 	std::stringstream ss;
-	char dummy[25];
+	char dummy[msg->data.size()];
 
 	try {
 

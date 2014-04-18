@@ -1,0 +1,57 @@
+<launch>
+	<group ns="fmLib">
+		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_left" respawn="true" output="screen">
+			<param name="pid_topic" value="/fmInformation/pid_left" />
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_left"/>
+			<param name="serial_rx_topic" value="/fmData/left_belt_rx" />
+			<param name="serial_tx_topic" value="/fmData/left_belt_tx" />
+			<param name="deadman_topic" value="/fmCommand/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_left"/>
+			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
+			<param name="propulsion_module_feedback_topic" value="/fmInformation/propulsion_module_feedback_left"/>
+			<param name="power_ch1_topic" value="/fmData/power_left"/>
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="ticks_per_meter" value="740" />
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="800" />
+			<param name="p_gain" value="1.0"/>
+			<param name="i_gain" value="3.0"/>
+			<param name="d_gain" value="0.1"/>
+			<param name="feed_forward" value="1.5"/>
+			<param name="i_max" value="0.1"/>
+			<param name="closed_loop_operation" value="true"/>
+			<param name="position_control" value="false"/>
+			<param name="robot_max_acceleration" value="0.5"/>
+			<param name="robot_max_jerk" value="0.5"/>
+			<param name="brake_zeroband" value="0.2"/>  
+			<param name="velocity_tolerance" value="0.05"/>  
+		</node>
+
+		<node pkg="sdu_armadillo3" type="sdu_armadillo3_node" name="roboteq_right" respawn="true" output="screen">
+			<param name="pid_topic" value="/fmInformation/pid_right" />
+			<param name="cmd_vel_ch1_topic" value="/fmSignals/cmd_vel_right"/>
+			<param name="serial_rx_topic" value="/fmData/right_belt_rx" />
+			<param name="serial_tx_topic" value="/fmData/right_belt_tx" />
+			<param name="deadman_topic" value="/fmCommand/deadman"/>
+			<param name="encoder_ch1_topic" value="/fmInformation/encoder_right"/>
+			<param name="propulsion_module_status_topic" value="/fmInformation/propulsion_module_status"/>
+			<param name="propulsion_module_feedback_topic" value="/fmInformation/propulsion_module_feedback_right"/>
+			<param name="power_ch1_topic" value="/fmData/power_right"/>
+			<param name="status_topic" value="/fmData/status"/>
+			<param name="ticks_per_meter" value="740" />
+			<param name="mps_to_thrust" value="500"/>
+			<param name="max_controller_command" value="800" />
+			<param name="p_gain" value="1.0"/>
+			<param name="i_gain" value="3.0"/>
+			<param name="d_gain" value="0.1"/>
+			<param name="feed_forward" value="1.5"/>
+			<param name="i_max" value="0.1"/>
+			<param name="closed_loop_operation" value="true"/>  
+			<param name="position_control" value="false"/>
+			<param name="robot_max_acceleration" value="0.5"/>0
+			<param name="robot_max_jerk" value="0.5"/>
+			<param name="brake_zeroband" value="0.2"/>  
+			<param name="velocity_tolerance" value="0.05"/>     
+		</node>
+	</group>
+</launch>
