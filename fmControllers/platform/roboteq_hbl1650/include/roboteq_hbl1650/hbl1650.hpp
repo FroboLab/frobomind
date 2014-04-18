@@ -36,6 +36,7 @@
 #define HBL1650_HPP_
 
 #define TIME_BETWEEN_COMMANDS 0.2 //Time between commands sent to the controller during initialisation
+#define DEFAULT_BUFFER_SIZE 10
 
 #include <ros/ros.h>
 #include <geometry_msgs/TwistStamped.h>
