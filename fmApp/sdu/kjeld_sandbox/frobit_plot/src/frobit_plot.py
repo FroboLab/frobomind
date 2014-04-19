@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -32,6 +32,7 @@ Revision
 2013-09-23 KJ Corrected a bug wen only plotting the pose position
 2013-11-22 KJ Added support for drawing robot avatars
 2014-02-19 KJ Migrated to a frobit_plot component
+2014-04-19 KJ Added support for reversing the avatar
 """
 # imports
 import matplotlib.pyplot as plt
@@ -40,7 +41,7 @@ from math import pi, sqrt, sin, cos
 import csv
 
 class frobit_plot():
-	def __init__(self, plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral):
+	def __init__(self, plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, avatar_reverse):
 		self.rad_to_deg = 180.0/pi
 		self.deg_to_rad = pi/180.0
 		self.save_time_lapse_images = False
@@ -61,6 +62,7 @@ class frobit_plot():
 		self.avatar_extension_front = avatar_extension_front
 		self.avatar_extension_rear = avatar_extension_rear
 		self.avatar_extension_lateral = avatar_extension_lateral
+		self.avatar_reverse = avatar_reverse
      
 		# Initialize map
 		self.map_image_cnt = 0
@@ -81,7 +83,11 @@ class frobit_plot():
 		ar = -avatar_extension_rear		
 		al = avatar_extension_lateral		
 		ac = (af+(-ar)) * 0.2
-		self.avatar = [[af,al],[af,-al],[ar+ac,-al],[ar,-al+ac],[ar,al-ac],[ar+ac,al],[af,al]] # Frobit
+	
+		if self.avatar_reverse == False:
+			self.avatar = [[af-ac,al],[af,al-ac],[af,-al+ac],[af-ac,-al],[ar,-al],[ar,al],[af-ac,al]] # Frobit
+		else:
+			self.avatar = [[af,al],[af,-al],[ar+ac,-al],[ar,-al+ac],[ar,al-ac],[ar+ac,al],[af,al]] # Frobit reversed
 
 		ion() # turn interaction mode on
 		if self.plot_gnss_track or self.plot_pose_track:

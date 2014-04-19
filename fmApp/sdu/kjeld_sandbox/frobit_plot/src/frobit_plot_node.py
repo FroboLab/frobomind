@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -34,6 +34,7 @@ map details.
 Revision
 2013-05-09 KJ First version
 2014-02-19 KJ Migrated to a frobit_plot component
+2014-04-19 KJ Added support for reversing the avatar
 """
 
 # ROS imports
@@ -65,12 +66,13 @@ class ROSnode():
 		map_update_frequency = rospy.get_param("~map_update_frequency", 1.0)
 		map_title = rospy.get_param("~map_title", "Frobit track")
 		map_window_size = rospy.get_param("~map_window_size",5.0) # [inches]
-		avatar_extension_front = rospy.get_param("~avatar_extension_front",0.06) # [m] from geometric center
-		avatar_extension_rear = rospy.get_param("~avatar_extension_rear",0.29) # [m] from geometric center
+		avatar_extension_front = rospy.get_param("~avatar_extension_front",0.29) # [m] from geometric center
+		avatar_extension_rear = rospy.get_param("~avatar_extension_rear",0.06) # [m] from geometric center
 		avatar_extension_lateral = rospy.get_param("~avatar_extension_lateral",0.13) # [m] from geometric center
+		avatar_reverse = rospy.get_param("~avatar_reverse", False) # front/rear reverse
  
 		# setup map plot
-		self.plot = frobit_plot(plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral)
+		self.plot = frobit_plot(plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, avatar_reverse)
 
 		# Get topic names
 		pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')

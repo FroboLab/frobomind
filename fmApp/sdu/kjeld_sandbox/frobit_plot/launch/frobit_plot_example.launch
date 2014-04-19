@@ -19,9 +19,10 @@
 			<param name="map_update_frequency" value="5" />
 			<param name="map_title" value="Frobit track" />
 			<param name="map_window_size" value="5.0" />
-			<param name="avatar_extension_front" value="0.06" />
-			<param name="avatar_extension_rear" value="0.29" />
+			<param name="avatar_extension_front" value="0.29" />
+			<param name="avatar_extension_rear" value="0.06" />
 			<param name="avatar_extension_lateral" value="0.13" />
+			<param name="avatar_reverse" value="false" />
 		</node>
 	</group>
 </launch>
