@@ -1,0 +1,17 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmProcessors">
+		<node pkg="odometry_gnss_pose_estimator" name="pose_estimator" type="pose_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="publish_relative_pose" type="boolean" value="false" />
+			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
+			<param name="odometry_angular_variance" value="0.000001" /> <!-- [rad/update] -->
+			<param name="odometry_angular_variance" value="0.0001" /> <!-- [rad/update] -->
+		</node>
+	</group>
+</launch>
+
