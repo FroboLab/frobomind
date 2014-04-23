@@ -42,8 +42,8 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion
 from msgs.msg import gpgga_tranmerc
-from math import pi, sqrt, atan2
-from pose_estimator import pose_preprocessor, pose_ekf
+from math import pi, sqrt, atan2, asin
+from pose_estimator import odometry_gnss_pose_preprocessor, odometry_pose_ekf
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class PoseEstimatorNode():
@@ -89,10 +89,12 @@ class PoseEstimatorNode():
 		self.br = tf.TransformBroadcaster()
 
 		# initialize estimator (preprocessing)
-		self.pp = pose_preprocessor (robot_max_velocity)
+		self.pp = odometry_gnss_pose_preprocessor (robot_max_velocity)
+		self.acc_roll = 0.0
+		self.acc_pitch = 0.0
 
 		# initialize EKF
-		self.ekf = pose_ekf()
+		self.ekf = odometry_pose_ekf()
 		self.pose = [0.0, 0.0, 0.0]
 		self.ekf.initial_guess (self.pose, self.odometry_var_dist, self.odometry_var_yaw)
 
@@ -135,11 +137,14 @@ class PoseEstimatorNode():
 	def on_imu_topic(self, msg):
 		self.time = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
 		self.pp.imu_new_data (self.time, msg.angular_velocity.z)
-		#self.quaternion[0] = msg.orientation.x
-		#self.quaternion[1] = msg.orientation.y
-		#self.quaternion[2] = msg.orientation.z
-		#self.quaternion[3] = msg.orientation.w
-		#(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
+
+		# determine pitch and roll based on the accelerometers
+		ax = msg.linear_acceleration.x
+		ay = msg.linear_acceleration.y
+		az = msg.linear_acceleration.z
+		g = sqrt(ax*ax + ay*ay + az*az)
+		self.acc_pitch = asin(ay/-g)
+		self.acc_roll = atan2(ax, az)
 
 	def on_gga_topic(self, msg):
 		if msg.fix > 0: # if satellite fix
@@ -148,6 +153,7 @@ class PoseEstimatorNode():
 			pos_valid = self.pp.gnss_new_data (self.time, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
 			if pos_valid == True: # if we have a valid position 
 				if self.first_absolute_pos_update == False:
+					self.ekf.initial_guess ([msg.easting, msg.northing, self.pose[2]], self.odometry_var_dist, pi)
 					self.first_absolute_pos_update = True
 
 				# orientation update
@@ -172,7 +178,7 @@ class PoseEstimatorNode():
 			self.pose_msg.pose.pose.position.x = self.pose[0]
 			self.pose_msg.pose.pose.position.y = self.pose[1]
 			self.pose_msg.pose.pose.position.z = 0
-			q = quaternion_from_euler (0, 0, self.pose[2])
+			q = quaternion_from_euler (self.acc_roll, self.acc_pitch, self.pose[2])
 			#print self.pose[2]*180.0/3.14
 			self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
 			self.pose_pub.publish(self.pose_msg); # publish the pose message

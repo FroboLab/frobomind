@@ -60,20 +60,20 @@ but during development and test everything will be written in Python.
 Revision
 2013-04-25 KJ First version
 2014-03-18 KJ Various bug fixes and computation optimizations
-2014-04-21 KJ Fixed EKF problems.
+2014-04-23 KJ Fixed EKF problems and updated preprocessor parameters.
 """
 # imports
 import numpy as np
 from math import sqrt, pi, sin, cos, atan2, fabs
 from numpy import matrix, array, linalg, mat
 
-class pose_preprocessor():
+class odometry_gnss_pose_preprocessor():
 	def __init__(self, max_speed):
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
 		self.pi2 = 2.0*pi
 		self.max_speed = max_speed
-		self.buffer_period = 2.0 # [s] PARAMETER
+		self.buffer_period = 1.0 # [s] PARAMETER
 		self.buf_init_size = 25
 		self.gnss = []
 		self.gnss_interval = 0.0 # [s]
@@ -131,13 +131,13 @@ class pose_preprocessor():
 		std_dev = self.gnss_std_dev_max
 		if len(self.gnss) > 0:
 			if self.gnss[-1][3] == 4: # rtk fixed solution
-				std_dev = 0.005 * self.gnss[-1][5]
+				std_dev = 0.02 * self.gnss[-1][5]
 			elif self.gnss[-1][3] == 5: # rtk float solution
 				std_dev = 2.0
 				std_dev = 2.0 * self.gnss[-1][5]
 			elif self.gnss[-1][3] == 2: # dgps solution
-				std_dev = 8.0
-				std_dev = 8.0 * self.gnss[-1][5]
+				std_dev = 5.0
+				std_dev = 5.0 * self.gnss[-1][5]
 			elif self.gnss[-1][3] == 1: # sps solution
 				std_dev = 15.0 * self.gnss[-1][5]
 		return std_dev**2
@@ -221,7 +221,7 @@ class pose_preprocessor():
 			diff -= self.pi2
 		return diff
 
-class pose_ekf():
+class odometry_pose_ekf():
 	def __init__(self):
 		self.pi2 = 2.0*pi
 		self.Q = np.zeros((3,3))
@@ -239,9 +239,11 @@ class pose_ekf():
 		# predicted (A priori) state estimate: X-[t] = X[t-1] + u[t]
 		priX = self.f(self.X, u)
 
+		# linearize the system model around X
+		F = self.F(self.X, u)
+
 		# predicted (A priori) error covariance estimate: P-[t] = P[t-1] + Q
 		self.Q = self.Q + np.matrix([[var_dist, 0.0, 0.0],[0.0, var_dist, 0.0],[0.0, 0.0, var_angle]])
-		F = self.F(self.X, u)
 		priP = F*self.P*F.T + self.Q 
 
 		# housekeeping
@@ -255,8 +257,8 @@ class pose_ekf():
 		K = self.P*self.H.T*linalg.inv(self.H*self.P*self.H.T + R)
 
 		# updated (A posteriori) estimate with measurement z[t]: X[t] = X-[t] + K[t]*(z[t] - X-[t])
-		y = np.matrix(pose).T - self.X.T # measurement residual (z[t] - X-[t])
-		postX = self.X + (K*y).T # updated state estimate
+		mr = np.matrix(pose).T - self.X.T # measurement residual (z[t] - X-[t])
+		postX = self.X + (K*mr).T # updated state estimate
 
 		# updated (A posteriori) error covariance: P[t] = (1 - K[t])*P-[t]
 		postP = (np.identity(3)-K*self.H)*self.P
@@ -278,7 +280,7 @@ class pose_ekf():
 		dTheta = u[1]
 		return np.matrix([X[0]+u[0]*cos(theta+dTheta/2.0),X[1]+u[0]*sin(theta+dTheta/2.0),theta+dTheta])
 
-	def F (self, X, u): # system error covariance matrix
+	def F (self, X, u): # Linear approximation of the system model around X (Jacobian matrix)
 		# X is the state vector at timestep k: [x, y, theta].T
 		# u is the system input vector at timestep k: [delta_dist, delta_angle].T
 		X = array(X)[0]
