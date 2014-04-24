@@ -72,8 +72,12 @@
 			<param name="automode_pub" value="/fmDecision/automode" />
     		<param name="deadman_pub" value="/fmCommand/deadman" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
-            <param name="max_linear_velocity" value="0.9"/>
-            <param name="max_angular_velocity" value="0.5"/>
+            <param name="linear_velocity_default" value="0.2"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_default" value="0.2"/>
+            <param name="angular_velocity_step" value="0.1"/>
+            <param name="max_linear_velocity" value="0.3"/>
+            <param name="max_angular_velocity" value="0.2"/>
             <param name="max_linear_acceleration" value="0.15"/>
             <param name="max_angular_acceleration" value="0.3"/>
             <param name="max_linear_deceleration" value="0.8"/>

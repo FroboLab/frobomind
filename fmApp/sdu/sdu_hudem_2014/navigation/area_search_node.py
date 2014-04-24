@@ -42,7 +42,7 @@ from std_msgs.msg import Bool, Float64
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
-from msgs.msg import FloatStamped, FloatArrayStamped, waypoint_navigation_status
+from msgs.msg import FloatStamped, FloatArrayStamped, waypoint_navigation_status, nmea
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -165,9 +165,9 @@ class WptNavNode():
 		self.wriggle = Wriggle(turn_angle_left, turn_angle_right, self.wpt_def_turn_vel, speed_gain, sensor_penalty_distance)
 
 		# Configure wads sensor
-		self.wads_topic = rospy.get_param("~wads_sub",'/fmInformation/wads')
-		self.wads_threshold = rospy.get_param("~wads_threshold", 3)
-		rospy.Subscriber(self.wads_topic, Float64, self.on_wads_sensor_msg)
+		self.wads_topic = rospy.get_param("~wads_sub",'/fmData/nmea_from_wads')
+		self.wads_threshold = rospy.get_param("~wads_threshold", 300)
+		rospy.Subscriber(self.wads_topic, nmea, self.on_wads_sensor_msg)
 
 		self.wads_value = [0.0]*10 # buffer length 10
 		self.wads_value_updated = False
@@ -269,9 +269,10 @@ class WptNavNode():
 			self.wii_right_changed = True
 
 	def on_wads_sensor_msg(self, msg):
-		self.wads_value.append (msg.data)
-		del self.wads_value[0]
-		self.wads_value_updated = True
+		if msg.type == "EBUPX" and msg.valid == True:
+			self.wads_value.append (int(msg.data[0]))
+			del self.wads_value[0]
+			self.wads_value_updated = True
 
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
@@ -358,7 +359,7 @@ class WptNavNode():
 				# Start wriggle?
 				if self.wads_value[-1] >= self.wads_threshold and not self.wriggle.has_sensor_penalty():
 					self.wriggle.start_wriggle()
-					print "Starting wriggle"
+					print "Starting wriggle: %d" % self.wads_value[-1]
 				
 				# If wriggle is currently active, carry on
 				if not self.wriggle.is_done():
