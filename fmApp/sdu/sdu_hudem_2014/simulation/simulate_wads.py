@@ -3,27 +3,28 @@
 ## PARAMETERS ################################################################
 PoseLogFile = 'sim_pose.txt'
 PoseLogSkipLines = 0
-PoseLogMaxLines = 800000 # maximum number of lines to read from the log file
+PoseLogMaxLines = 8000000 # maximum number of lines to read from the log file
 GPSLogFile = 'sim_gnss.txt'
 GPSLogSkipLines = 0
 GPSLogMaxLines = 800000 # maximum number of lines to read from the log file
 HDOPThreshold = 10. # GPS fix above this HDOP value will be ignored
 OrigoE = 588772 # subtract from all Easting coordinates
 OrigoN = 6137285 # subtract from all Northing coordinates
-TrackMinDist = 0.01 # [m] minimum distance between consequtive track points
+TrackMinDist = 0.02 # [m] minimum distance between consequtive track points
 HeadingMinDist = 0.25 # [m] minimum distance between track points when calculating heading
 
 wads_cdist = 1.66 # distance from GPS antenna to center of implement
 
 UPEXLogFile = 'sim_wads.txt'
-UPEXLines = 5000000
-UPEXSampleDist = 0.02
+UPEXLines = 50000000
+UPEXSampleDist = 0.04
 
 figure_size = 6
+grid_size = 300
 
 simStepInt = 0.02 # simulation step interval [s]
 
-simPlotUpdate = 5000 # number of steps between updating the plots
+simPlotUpdate = 4000 # number of steps between updating the plots
 mapPlotBnd = 5.0 # border around map plots [m] 
 
 ## INITIALIZATION ############################################################
@@ -106,6 +107,7 @@ polyT = zip (*poly)
 
 # ground truth target list
 gtt = [[588778.9326,6137291.6141],[588773.3388,6137293.7092],[588776.2196,6137299.5903],[588775.1004,6137303.9440],[588778.7879,6137303.6453],[588779.7928,6137296.2574]]
+
 for i in range(len(gtt)):
 	gtt[i][0] -= OrigoE
 	gtt[i][1] -= OrigoN
@@ -261,8 +263,9 @@ for i in xrange(len(upexLog)):
 	if upexLog[i][1] > maxupex:
 		maxupex = upexLog[i][1]
 print minupex, maxupex
-for i in xrange(len(upexLog)):
-	upexLog[i][1] -= minupex
+
+#for i in xrange(len(upexLog)):
+#	upexLog[i][1] -= minupex
 
 print 'Total samples:',len(upexLog)
 upexLogT = zip (*upexLog)
@@ -368,7 +371,7 @@ for step in range ((int(simSteps)+1)):
 			wads_n = robot_n + wads_offset[1]
 			wadsSim.append ([wads_e, wads_n])
 		
-		if wads_yaw_err == False:# and ptInPoly (wads_e,wads_n,poly): # only consider data obtained inside the site polygon
+		if wads_yaw_err == False and ptInPoly (wads_e,wads_n,poly): # only consider data obtained inside the site polygon
 			upexAveraging.append(upexLog[upexIndex])
 			if True: # len(upexSim) == 0 or sqrt((wads_e-upexSim[-1][UPEX_E])**2+(wads_n-upexSim[-1][UPEX_N])**2) >= UPEXSampleDist: #if time to average and save
 				upex = []
@@ -424,7 +427,7 @@ for step in range ((int(simSteps)+1)):
 		xlim([minE,maxE])
 		ylim([minN,maxN])
 		wadsSimT = zip (*wadsSim)
-		wadstrack_plt = plot(wadsSimT[0],wadsSimT[1],'r')
+		#wadstrack_plt = plot(wadsSimT[0],wadsSimT[1],'r')
 		polyPlt = plot(polyT[0], polyT[1],'g')
 		#robotplt = plot(robot_e, robot_n,'rx')
 
@@ -470,8 +473,8 @@ for step in range ((int(simSteps)+1)):
 			z = list(upexSimT[UPEX_ADC])
 
 			# define grid.
-			xi = np.linspace(minE,maxE,500)
-			yi = np.linspace(minN,maxN,500)
+			xi = np.linspace(minE,maxE,grid_size)
+			yi = np.linspace(minN,maxN,grid_size)
 			zi = griddata((x, y), z, (xi[None,:], yi[:,None]), method='linear')
 			# nearest eturn the value at the data point closest to the point of interpolation. See NearestNDInterpolator for more details.
 			# linear esselate the input point set to n-dimensional simplices, and interpolate linearly on each simplex. See LinearNDInterpolator for more details.
@@ -480,10 +483,10 @@ for step in range ((int(simSteps)+1)):
 			# contour the gridded data, plotting dots at the randomly spaced data points.
 
 			# plot kanten
-#			CS = plt.contour(xi,yi,zi,15,linewidths=0.5,colors=('0.5','0.4','0.3'))
+			#CS = plt.contour(xi,yi,zi,10,linewidths=0.5,colors=('0.5','0.4','0.3'))
 
 #			CS = plt.contour(xi,yi,zi,15,linewidths=0.5,colors='k')
-			CS = plt.contourf(xi,yi,zi,10,cmap=plt.cm.YlOrRd)
+			CS = plt.contourf(xi,yi,zi,10, cmap=plt.cm.YlOrRd)
 			plt.colorbar() # draw colorbar
 			plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5)
 
@@ -492,6 +495,7 @@ for step in range ((int(simSteps)+1)):
 		wadsplt = plot(wplotT[0], wplotT[1],'b')
 		plot_targets_cnt += 1
 		plt.savefig('plot_targets/img%05d.jpg' % plot_targets_cnt)
+		plt.savefig('plot_search_map.png')
 
 		draw() # redraw plots
 	
@@ -511,7 +515,7 @@ plt.figure(3)
 plt.savefig('plot_search_map.png')
 
 
-plt.figure(num=4, figsize=(8,8), dpi=80, facecolor='w', edgecolor='w')
+plt.figure(num=4, figsize=(figure_size,figure_size), dpi=80, facecolor='w', edgecolor='w')
 grid (False)
 plt.clf() # clear figure
 ax = gca()
@@ -535,27 +539,6 @@ polyPlt = plot(polyT[0], polyT[1],'g')
 wadsSimT = zip (*wadsSim)
 wadstrack_plt = plot(wadsSimT[0],wadsSimT[1],'r')
 #wadsplt = plot(wplotT[0], wplotT[1],'b')
-
-if False: # len(upexSim) > 0 and step > 4000:
-	# extract columns
-	upexSimT = zip (*upexSim)
-	x = list(upexSimT[UPEX_E])
-	y = list(upexSimT[UPEX_N])
-	z = list(upexSimT[UPEX_ADC])
-
-	# define grid.
-	xi = np.linspace(minE,maxE,1200)
-	yi = np.linspace(minN,maxN,1200)
-	zi = griddata((x, y), z, (xi[None,:], yi[:,None]), method='cubic')
-
-	# contour the gridded data, plotting dots at the randomly spaced data points.
-	#CS = plt.contour(xi,yi,zi,15,linewidths=0.5,colors=('0.5','0.4','0.3'))
-	#CS = plt.contourf(xi,yi,zi,15,cmap=plt.cm.YlOrRd)
-#			plt.colorbar() # draw colorbar
-	plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5)
-	draw() # redraw plots
-	plt.savefig ('plot_targets.png')
-
 
 
 #plt.figure(num=5, figsize=(8, 8), dpi=80, facecolor='w', edgecolor='w')

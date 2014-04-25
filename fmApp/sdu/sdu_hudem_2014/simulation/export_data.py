@@ -94,6 +94,13 @@ for topic, msg, t in bag.read_messages(topics=['/fmData/nmea_from_wads']):
 	f.write ('%s,%s\n' % (time_stamp(msg.header.stamp), msg.data[0]))
 f.close()
 
+# extract WADS data
+f = open ('sim_wads_old.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmInformation/wads']):
+	f.write ('%s,%.0f\n' % (time_stamp(msg.header.stamp), msg.data))
+f.close()
+
+
 bag.close()
 
 

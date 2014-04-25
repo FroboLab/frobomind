@@ -54,20 +54,35 @@
 			<param name="imu_angular_velocity_yaw_axis" value="z" />
 		</node>
 
-		<!-- estimate robot 2d pose -->
-		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" respawn="true">
+		<node pkg="odometry_gnss_pose_estimator" name="pose_estimator" type="pose_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="pose_status_pub" value="/fmKnowledge/pose_status" />
+			<param name="odometry_timeout" value="0.5" /> 
+			<param name="gnss_timeout" value="2.0" /> 
+			<param name="imu_timeout" value="0.5" />
+			<param name="absolute_orientation_timeout" value="30" />
+			<param name="odometry_distance_variance" value="0.000001" />
+			<param name="odometry_angular_variance" value="0.000001" /> 
+			<param name="gnss_angular_variance" value="0.0001" />
+			<param name="solution_required" value="4" />
+		</node>
+
+		<!--node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" respawn="true">
 			<param name="odom_sub" value="/fmKnowledge/odometry" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
 			<param name="publish_relative_pose" type="boolean" value="false" />
-			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
-			<param name="odometry_angular_variance" value="0.000035" /> <!-- [rad/update] -->
-		</node>
+			<param name="odometry_distance_variance" value="0.000001" />
+			<param name="odometry_angular_variance" value="0.000035" />
+		</node-->
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="sdu_hudem_2014" name="mission" type="wiimote_mission_node.py" output="screen">
+		<node pkg="sdu_hudem_2014" name="mission" type="wiimote_mission_node_rtk_fixed.py" output="screen">
 			<param name="wiimote_sub" value="/fmLib/joy" />
 			<param name="automode_pub" value="/fmDecision/automode" />
     		<param name="deadman_pub" value="/fmCommand/deadman" />
@@ -76,7 +91,7 @@
             <param name="linear_velocity_step" value="0.1"/>
             <param name="angular_velocity_default" value="0.2"/>
             <param name="angular_velocity_step" value="0.1"/>
-            <param name="max_linear_velocity" value="0.3"/>
+            <param name="max_linear_velocity" value="0.4"/>
             <param name="max_angular_velocity" value="0.2"/>
             <param name="max_linear_acceleration" value="0.15"/>
             <param name="max_angular_acceleration" value="0.3"/>
@@ -249,6 +264,15 @@
 			<param name="serial_baudrate" value="115200"/>
 			<param name="use_nmea_checksum" value="true"/>
         </node>
+
+		<!-- serial device and NMEA protocol handler for the WADS sensor -->
+		<node pkg="serial_nmea" name="wads_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_wads"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_wads"/>
+			<param name="serial_device" value="/dev/wads" />	
+			<param name="serial_baudrate" value="115200" />
+			<param name="use_nmea_checksum" value="true"/>
+		</node>
 
 		<!--node pkg="real_time_analyze" name="rt_node" type="real_time_analyze_node.py" output="screen" >
 			<param name="timing_pub" value="/fmInformation/rt_timing"/>

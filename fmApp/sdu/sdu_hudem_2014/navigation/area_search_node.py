@@ -192,12 +192,6 @@ class WptNavNode():
 		self.wpt = False 
 		rospy.loginfo(rospy.get_name() + ": %d waypoints loaded" % numwpt)
 
-	def update_implement_value (self):
-		if self.wpt[self.wptnav.W_IMPLEMENT] != self.IMPLEMENT_INVALID:
-			self.implement.data = self.wpt[self.wptnav.W_IMPLEMENT]
-		else:
-			self.implement.data = self.wpt_def_implement
-
 	def goto_next_wpt (self):
 		(pos) = self.casmo.goto_next()
 		self.goto_pos(pos)
@@ -282,6 +276,7 @@ class WptNavNode():
 
 	def publish_implement_message(self):
 		self.implement.header.stamp = rospy.Time.now()
+		self.implement.data = self.wriggle.is_done()
 		self.implement_pub.publish (self.implement)
 
 	def publish_status_message(self):
