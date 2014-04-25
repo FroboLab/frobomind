@@ -41,18 +41,35 @@ import numpy as np
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion
-from msgs.msg import gpgga_tranmerc
+from msgs.msg import gpgga_tranmerc, IntArrayStamped
 from math import pi, sqrt, atan2, asin
 from pose_estimator import odometry_gnss_pose_preprocessor, odometry_pose_ekf
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 class PoseEstimatorNode():
 	def __init__(self):
+		# defines
+		self.pi2 = 2.0*pi
+
+		self.SOL_ODO = 0
+		self.SOL_SPS = 1
+		self.SOL_DGPS = 2
+		self.SOL_FLOAT = 3
+		self.SOL_RTK = 4
+
+		self.ERR_NONE = 0
+		self.ERR_ODO_TOUT = -1
+		self.ERR_IMU_TOUT = -2 
+		self.ERR_GNSS_TOUT = -3
+		self.ERR_ORIENTATION_TOUT = -4
+
 		# initialization
 		rospy.loginfo(rospy.get_name() + ": Start")
-		self.pi2 = 2.0*pi
 		self.update_rate = 5
 		self.pose_msg = Odometry()
+		self.pose_status_msg = IntArrayStamped()
+		self.pose_status_msg.data.append (self.SOL_ODO)
+		self.pose_status_msg.data.append (self.ERR_NONE)
 		self.quaternion = np.empty((4, ), dtype=np.float64) 
 		self.first_odom_topic_received = False
 		self.odometry_x_prev = 0.0
@@ -61,23 +78,38 @@ class PoseEstimatorNode():
 		self.estimate_orientation_now = False
 		self.first_absolute_pos_update = False
 		self.first_absolute_yaw_update = False
-		self.time = 0.0
+
+		self.latest_odo_update = 0.0
+		self.latest_gnss_update = 0.0
+		self.latest_imu_update = 0.0
+		self.latest_orientation_update = 0.0
+	
+		self.solution = self.SOL_ODO
+		self.error = self.ERR_NONE
+
 		# Get parameters
 		self.pose_msg.header.frame_id = rospy.get_param("~frame_id", "base_link")
 		self.pose_msg.child_frame_id = rospy.get_param("~child_frame_id", "odom")
 
 		robot_max_velocity = float(rospy.get_param("~/robot_max_velocity", 1.0)) # Robot maximum velocity [m/s]
-		self.publish_rel_pose = rospy.get_param("~publish_relative_pose", True)
+		self.solution_required = rospy.get_param("~solution_required", self.SOL_ODO)
 
 		self.odometry_var_dist = rospy.get_param("~odometry_distance_variance", 0.000001)
 		self.odometry_var_yaw = rospy.get_param("~odometry_angular_variance", 0.000001)
 		self.gnss_var_yaw = rospy.get_param("~gnss_angular_variance", 0.0001)
+
+
+		self.odo_timeout = rospy.get_param("~odometry_timeout", 0.5)
+		self.gnss_timeout = rospy.get_param("~gnss_timeout", 2.0)
+		self.imu_timeout = rospy.get_param("~imu_timeout", 0.5)
+		self.absolute_orientation_timeout = rospy.get_param("~absolute_orientation_timeout", 30.0)
 
 		# Get topic names
 		self.odom_topic = rospy.get_param("~odom_sub",'/fmKnowledge/odometry')
 		self.imu_topic = rospy.get_param("~imu_sub",'/fmInformation/imu')
 		self.gga_topic = rospy.get_param("~gga_sub",'/fmInformation/gpgga_tranmerc')
 		self.pose_topic = rospy.get_param("~pose_pub",'/fmKnowledge/pose')
+		self.pose_status_topic = rospy.get_param("~pose_status_pub",'/fmKnowledge/pose_status')
 
 		# Setup subscription topic callbacks
 		rospy.Subscriber(self.odom_topic, Odometry, self.on_odom_topic)
@@ -87,6 +119,7 @@ class PoseEstimatorNode():
 		# setup publish topics
 		self.pose_pub = rospy.Publisher(self.pose_topic, Odometry)
 		self.br = tf.TransformBroadcaster()
+		self.pose_status_pub = rospy.Publisher(self.pose_status_topic, IntArrayStamped)
 
 		# initialize estimator (preprocessing)
 		self.pp = odometry_gnss_pose_preprocessor (robot_max_velocity)
@@ -103,6 +136,7 @@ class PoseEstimatorNode():
 		self.updater()
 
 	def on_odom_topic(self, msg):
+		self.latest_odo_update = rospy.get_time()
 		x = msg.pose.pose.position.x
 		y = msg.pose.pose.position.y
 		self.quaternion[0] = msg.pose.pose.orientation.x
@@ -119,10 +153,9 @@ class PoseEstimatorNode():
 
 		if self.first_odom_topic_received == True: # if we have received a first odom message
 			# EKF system update (odometry)
-			self.time = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
 			delta_dist =  sqrt((x-self.odometry_x_prev)**2 + (y-self.odometry_y_prev)**2)
 			delta_angle = self.angle_diff (yaw, self.odometry_yaw_prev)
-			self.pp.odometry_new_data (self.time, delta_dist, delta_angle, forward)
+			self.pp.odometry_new_data (self.latest_odo_update, delta_dist, delta_angle, forward)
 			self.pose = self.ekf.system_update (delta_dist, self.odometry_var_dist, delta_angle, self.odometry_var_yaw)
 
 			# publish the estimated pose	
@@ -135,8 +168,8 @@ class PoseEstimatorNode():
 		self.odometry_yaw_prev = yaw
 
 	def on_imu_topic(self, msg):
-		self.time = msg.header.stamp.secs + msg.header.stamp.nsecs*1e-9
-		self.pp.imu_new_data (self.time, msg.angular_velocity.z)
+		self.latest_imu_update = rospy.get_time()
+		self.pp.imu_new_data (self.latest_imu_update, msg.angular_velocity.z)
 
 		# determine pitch and roll based on the accelerometers
 		ax = msg.linear_acceleration.x
@@ -147,10 +180,28 @@ class PoseEstimatorNode():
 		self.acc_roll = atan2(ax, az)
 
 	def on_gga_topic(self, msg):
-		if msg.fix > 0: # if satellite fix
+		self.latest_gnss_update = rospy.get_time()
+		
+		# evaluate the satellite solution
+		if msg.fix == 0:
+			sol = self.SOL_ODO
+		elif msg.fix == 1:
+			sol = self.SOL_SPS
+		elif msg.fix == 2:
+			sol  = self.SOL_DGPS
+		elif msg.fix == 5:
+			sol = self.SOL_FLOAT
+		elif msg.fix == 4:
+			sol = self.SOL_RTK
+
+		if sol >= self.SOL_SPS and sol >= self.solution_required:
+			self.solution = sol
+		else:
+			self.solution = self.SOL_ODO
+
+		if self.solution >= self.SOL_SPS:
 			# GNSS data preprocessing
-			self.time = msg.time_recv.secs + msg.time_recv.nsecs*1e-9
-			pos_valid = self.pp.gnss_new_data (self.time, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
+			pos_valid = self.pp.gnss_new_data (self.latest_gnss_update, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop)
 			if pos_valid == True: # if we have a valid position 
 				if self.first_absolute_pos_update == False:
 					self.ekf.initial_guess ([msg.easting, msg.northing, self.pose[2]], self.odometry_var_dist, pi)
@@ -162,6 +213,7 @@ class PoseEstimatorNode():
 					self.estimate_orientation_now = False
 					(yaw_valid, yaw_test) = self.pp.estimate_absolute_orientation()
 					if yaw_valid == True:
+						self.latest_orientation_update = self.latest_gnss_update
 						yaw = yaw_test
 						if self.first_absolute_yaw_update == False:
 							self.ekf.initial_guess ([msg.easting, msg.northing, yaw], self.odometry_var_dist, self.odometry_var_yaw)
@@ -170,27 +222,48 @@ class PoseEstimatorNode():
 
 				# update EKF
 				var_pos = self.pp.gnss_estimate_variance_pos()
-				self.pose = self.ekf.measurement_update ([msg.easting, msg.northing, yaw], var_pos, self.gnss_var_yaw)
+				yaw_diff = self.angle_diff (yaw, self.pose[2])
+				self.pose = self.ekf.measurement_update ([msg.easting, msg.northing, self.pose[2]+yaw_diff], var_pos, self.gnss_var_yaw)
 
 	def publish_pose(self):
-		if self.publish_rel_pose == True or (self.first_absolute_pos_update == True and self.first_absolute_yaw_update == True):
+		if self.solution_required == self.SOL_ODO or (self.solution >= self.solution_required and self.first_absolute_yaw_update == True):
 			self.pose_msg.header.stamp = rospy.Time.now()
 			self.pose_msg.pose.pose.position.x = self.pose[0]
 			self.pose_msg.pose.pose.position.y = self.pose[1]
 			self.pose_msg.pose.pose.position.z = 0
 			q = quaternion_from_euler (self.acc_roll, self.acc_pitch, self.pose[2])
-			#print self.pose[2]*180.0/3.14
 			self.pose_msg.pose.pose.orientation = Quaternion(q[0], q[1], q[2], q[3])
 			self.pose_pub.publish(self.pose_msg); # publish the pose message
 			self.br.sendTransform((self.pose[0],self.pose[1],0), q, rospy.Time.now(), \
 				self.pose_msg.header.frame_id, self.pose_msg.child_frame_id) # publish the transform message
 
+	def publish_pose_status(self):
+		self.pose_status_msg.header.stamp = rospy.Time.now()
+
+		# update solution status
+		self.pose_status_msg.data[0] = self.solution
+
+		# update error status
+		time_now = rospy.get_time()
+		err = self.ERR_NONE
+		if self.latest_odo_update + self.odo_timeout < time_now:
+			err = self.ERR_ODO_TOUT 
+		elif self.latest_imu_update + self.imu_timeout < time_now:
+			err = self.ERR_IMU_TOUT
+		elif self.latest_gnss_update + self.gnss_timeout < time_now and self.solution_required > self.SOL_ODO:
+			err = self.ERR_GNSS_TOUT
+		elif self.latest_orientation_update + self.absolute_orientation_timeout < time_now  and self.solution_required > self.SOL_ODO:
+			err = self.ERR_ORIENTATION_TOUT
+		self.pose_status_msg.data[1] = err
+
+		# publish the status
+		self.pose_status_pub.publish (self.pose_status_msg)
+
 	def updater(self):
 		while not rospy.is_shutdown(): # updated at the rate defined by self.update_rate
-
 			if self.first_odom_topic_received == False: # publish pose from here until odometry is received.
 				self.publish_pose()
-
+			self.publish_pose_status() # publish the current pose status
 			self.estimate_orientation_now = True # request a new orientation update
 
 			# go back to sleep

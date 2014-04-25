@@ -73,7 +73,7 @@ class odometry_gnss_pose_preprocessor():
 		self.rad_to_deg = 180.0/pi
 		self.pi2 = 2.0*pi
 		self.max_speed = max_speed
-		self.buffer_period = 1.0 # [s] PARAMETER
+		self.buffer_period = 2.0 # [s] PARAMETER
 		self.buf_init_size = 25
 		self.gnss = []
 		self.gnss_interval = 0.0 # [s]

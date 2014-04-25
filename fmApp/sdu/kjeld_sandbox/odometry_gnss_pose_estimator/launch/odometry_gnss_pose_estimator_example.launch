@@ -7,10 +7,15 @@
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
-			<param name="publish_relative_pose" type="boolean" value="false" />
+			<param name="pose_status_pub" value="/fmKnowledge/pose_status" />
+			<param name="odometry_timeout" value="0.5" /> <!-- [s] -->
+			<param name="gnss_timeout" value="2.0" /> <!-- [s] -->
+			<param name="imu_timeout" value="0.5" /> <!-- [s] -->
+			<param name="absolute_orientation_timeout" value="30" /> <!-- [s] -->
 			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
 			<param name="odometry_angular_variance" value="0.000001" /> <!-- [rad/update] -->
-			<param name="odometry_angular_variance" value="0.0001" /> <!-- [rad/update] -->
+			<param name="gnss_angular_variance" value="0.0001" /> <!-- [rad/update] -->
+			<param name="solution_required" value="4" /> <!-- 0:odometry, 1:sps, 2:dgps, 3:rtk float, 4:rtk fixed -->
 		</node>
 	</group>
 </launch>
