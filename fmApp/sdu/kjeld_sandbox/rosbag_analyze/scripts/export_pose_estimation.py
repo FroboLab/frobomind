@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# export_simulation_data
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# export rosbag data
+# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,53 +52,33 @@ def time_stamp (stamp):
 	return '%d.%03d' % (secs, msecs)
 
 # extract pose data
-f = open ('data_pose_sim.txt', 'w')
-for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/pose_sim']):
-	secs = msg.header.stamp.secs
-	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	if msecs == 1000:
-		secs += 1 
-		msecs = 0		
+f = open ('data_pose.txt', 'w')
+for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/pose']):
 	(roll,pitch,yaw) = euler_from_quaternion([msg.pose.pose.orientation.x, \
 		msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-	f.write ('%d.%03d,%.3f,%.3f,%.6f\n' % (secs, msecs, msg.pose.pose.position.x, msg.pose.pose.position.y, yaw))
+	f.write ('%s,%.3f,%.3f,%.6f\n' % (time_stamp(msg.header.stamp), msg.pose.pose.position.x, msg.pose.pose.position.y, yaw))
 f.close()
 
 # extract odometry data
-f = open ('data_odometry_sim.txt', 'w')
+f = open ('data_odometry.txt', 'w')
 for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/odometry']):
-	secs = msg.header.stamp.secs
-	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	if msecs == 1000:
-		secs += 1 
-		msecs = 0		
 	(roll,pitch,yaw) = euler_from_quaternion([msg.pose.pose.orientation.x, \
 		msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-	f.write ('%d.%03d,%.3f,%.3f,%.6f,%.3f\n' % (secs, msecs, msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x))
+	f.write ('%s,%.3f,%.3f,%.6f,%.3f\n' % (time_stamp(msg.header.stamp), msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x))
 f.close()
 
 # extract IMU data
-f = open ('data_imu_sim.txt', 'w')
+f = open ('data_imu.txt', 'w')
 for topic, msg, t in bag.read_messages(topics=['/fmInformation/imu']):
-	secs = msg.header.stamp.secs
-	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	if msecs == 1000:
-		secs += 1 
-		msecs = 0		
 	(roll,pitch,yaw) = euler_from_quaternion([msg.orientation.x, \
 		msg.orientation.y, msg.orientation.z, msg.orientation.w])
-	f.write ('%d.%03d,%.9f,%.9f\n' % (secs, msecs, msg.angular_velocity.z, yaw))
+	f.write ('%s,%.9f,%.9f,%.9f,%.9f\n' % (time_stamp(msg.header.stamp), msg.angular_velocity.z, yaw, pitch, roll))
 f.close()
 
 # extract GPGGA data
-f = open ('data_gnss_sim.txt', 'w')
+f = open ('data_gnss.txt', 'w')
 for topic, msg, t in bag.read_messages(topics=['/fmInformation/gpgga_tranmerc']):
-	secs = msg.header.stamp.secs
-	msecs = int(msg.header.stamp.nsecs/1000000.0+0.5)
-	if msecs == 1000:
-		secs += 1 
-		msecs = 0		
-	f.write ('%d.%03d,%s,%.10f,%.10f,%.4f,%.4f,%d,%d,%.2f\n' % (secs, msecs, msg.time, msg.lat, msg.lon, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop))
+	f.write ('%s,%s,%.10f,%.10f,%.4f,%.4f,%d,%d,%.2f\n' % (time_stamp(msg.header.stamp), msg.time, msg.lat, msg.lon, msg.easting, msg.northing, msg.fix, msg.sat, msg.hdop))
 
 bag.close()
 
