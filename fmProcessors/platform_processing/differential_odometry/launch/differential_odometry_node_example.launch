@@ -46,7 +46,7 @@ imu_angular_velocity_yaw_axis options:
 			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
 			<param name="imu_sub" value="/fmInformation/imu" />
 			<param name="odom_reset_sub" value="/fmInformation/odom_reset" />
-			<param name="odom_pub" value="/fmKnowledge/odom" />
+			<param name="odom_pub" value="/fmKnowledge/odometry" />
 			<param name="encoder_output" value="relative"></param>  
 			<param name="ticks_per_meter_left" value="-620"></param>  
 			<param name="ticks_per_meter_right" value="-620"></param>  
