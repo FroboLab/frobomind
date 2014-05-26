@@ -102,8 +102,8 @@ class track_map():
 			self.fig3 = plt.figure(num=3, figsize=(map_window_size, \
 				map_window_size), dpi=80, facecolor='w', edgecolor='w')
 			title (map_title + ' - Orientation (yaw)')
-			xlabel('time')
-			ylabel('[deg]')
+			xlabel('Time')
+			ylabel('Orientation [deg]')
 			grid (True)
 
 	def append_pose_position (self, easting, northing):

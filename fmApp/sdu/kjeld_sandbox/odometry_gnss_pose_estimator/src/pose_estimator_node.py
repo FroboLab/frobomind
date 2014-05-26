@@ -175,8 +175,7 @@ class PoseEstimatorNode():
 		ax = msg.linear_acceleration.x
 		ay = msg.linear_acceleration.y
 		az = msg.linear_acceleration.z
-		g = sqrt(ax*ax + ay*ay + az*az)
-		self.acc_pitch = asin(ay/-g)
+		self.acc_pitch = atan2(-ay, sqrt(ax**2 + az**2))
 		self.acc_roll = atan2(ax, az)
 
 	def on_gga_topic(self, msg):
