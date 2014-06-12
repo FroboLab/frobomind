@@ -78,8 +78,9 @@ def on_imu_topic(msg):
 	ay = msg.linear_acceleration.y
 	az = msg.linear_acceleration.z
 	g = sqrt(ax*ax + ay*ay + az*az)
-	acc_pitch = asin(ay/-g)
+	acc_pitch = atan2(-ay, sqrt(ax**2 + az**2))
 	acc_roll = atan2(ax, az)
+
 
 	# extract yaw, pitch and roll from the quaternion
 	qx = msg.orientation.x
