@@ -30,6 +30,8 @@
 2013-10-01 KJ First version
 2013-11-18 KJ Added support for publish wheel status
 2014-04-17 KJ Migrated from Cetus FroboScout to SDU Frobit V2 Interface
+2014-05-04 KJ Added seperate PID parameters for driving and turning about own
+              center.
 """
 
 # imports
@@ -54,6 +56,9 @@ class FrobitInterfaceNode():
 		self.STATE_ERR_LOWBAT = 5
 		self.STATE_ERR = 3
 		self.count = 0
+		self.MOTION_DRIVE = 0
+		self.MOTION_TURN = 1
+		self.motion = self.MOTION_DRIVE
 
 		# locally defined parameters
 		self.deadman_tout_duration = 0.2 # [s]
@@ -77,11 +82,16 @@ class FrobitInterfaceNode():
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 0.1) # [rad/s^2]
 		self.acc_lin_max_step = acc_lin_max/(self.update_rate * 1.0)		
 		self.acc_ang_max_step = acc_ang_max/(self.update_rate * 1.0)		
-		self.w_ff = rospy.get_param("~wheel_feed_forward", 1.0)
-		self.w_kp = rospy.get_param("~wheel_kp", 1.0)
-		self.w_ki = rospy.get_param("~wheel_ki", 0.0)
-		self.w_kd = rospy.get_param("~wheel_kd", 0.0)
-		self.w_max_integral_output = rospy.get_param("~wheel_max_integral_output", 0.0)
+		self.w_drive_ff = rospy.get_param("~wheel_drive_feed_forward", 1.0)
+		self.w_drive_kp = rospy.get_param("~wheel_drive_kp", 1.0)
+		self.w_drive_ki = rospy.get_param("~wheel_drive_ki", 0.0)
+		self.w_drive_kd = rospy.get_param("~wheel_drive_kd", 0.0)
+		self.w_drive_max_int_output = rospy.get_param("~wheel_drive_max_integral_output", 0.0)
+		self.w_turn_ff = rospy.get_param("~wheel_turn_feed_forward", 1.0)
+		self.w_turn_kp = rospy.get_param("~wheel_turn_kp", 1.0)
+		self.w_turn_ki = rospy.get_param("~wheel_turn_ki", 0.0)
+		self.w_turn_kd = rospy.get_param("~wheel_turn_kd", 0.0)
+		self.w_turn_max_int_output = rospy.get_param("~wheel_turn_max_integral_output", 0.0)
 		self.min_supply_voltage = rospy.get_param("~min_supply_voltage", 12.0)
 
 		pub_status_rate = rospy.get_param("~publish_wheel_status_rate", 5)
@@ -185,6 +195,17 @@ class FrobitInterfaceNode():
 			self.w_pid_left_pub = rospy.Publisher(self.w_pid_left_pub_topic, FloatArrayStamped)
 			self.w_pid_right_pub = rospy.Publisher(self.w_pid_right_pub_topic, FloatArrayStamped)
 			self.w_pid = FloatArrayStamped()
+			self.nmea_pid = nmea()
+			self.nmea_pid.type = 'PFBWP'
+			self.nmea_pid.length = 7
+			self.nmea_pid.valid = True
+			self.nmea_pid.data.append('1') # enable closed loop PID
+			self.nmea_pid.data.append(str(self.pid_update_interval)) 
+			self.nmea_pid.data.append('0') 
+			self.nmea_pid.data.append('0') 
+			self.nmea_pid.data.append('0') 
+			self.nmea_pid.data.append('0') 
+			self.nmea_pid.data.append('0') 
 
 		# setup subscription topic callbacks
 		self.deadman_tout = 0
@@ -357,6 +378,17 @@ class FrobitInterfaceNode():
 		self.w_pid_right_pub.publish (self.w_pid)
 
 	def publish_wheel_ctrl_messages(self):
+		if (self.ref_ticks_left < 0 and self.ref_ticks_right > 0) \
+			or (self.ref_ticks_left > 0 and self.ref_ticks_right < 0):
+			if self.motion == self.MOTION_DRIVE:
+				self.publish_pid_turn_param_message()
+				self.motion = self.MOTION_TURN
+		if (self.ref_ticks_left < 0 and self.ref_ticks_right < 0) \
+			or (self.ref_ticks_left > 0 and self.ref_ticks_right > 0):
+			if self.motion == self.MOTION_TURN:
+				self.publish_pid_drive_param_message()
+				self.motion = self.MOTION_DRIVE
+
 		self.nmea_pfbct.header.stamp = rospy.Time.now()
 		if self.deadman_tout > rospy.get_time() and self.frobit_tout_active == False:
 			self.nmea_pfbct.data[0] = ('%d' % (self.ref_ticks_left))
@@ -377,23 +409,26 @@ class FrobitInterfaceNode():
 			nmea_sys_par.length = 1
 			nmea_sys_par.data.append('%d' % (self.min_supply_voltage/self.frobit_voltage_conv + 0.5)) 
 			self.frobit_pub.publish (nmea_sys_par)
-
-			# configure PID parameters
-			nmea_pid = nmea()
-			nmea_pid.header.stamp = rospy.Time.now()
-			nmea_pid.type = 'PFBWP'
-			nmea_pid.length = 7
-			nmea_pid.valid = True
-			nmea_pid.data.append('1') # enable closed loop PID
-			nmea_pid.data.append('%d' % self.pid_update_interval) 
-			nmea_pid.data.append('%d' % self.w_ff) # feed forward
-			nmea_pid.data.append('%d' % self.w_kp) # Kp
-			nmea_pid.data.append('%d' % self.w_ki) # Ki
-			nmea_pid.data.append('%d' % self.w_kd) # Kd
-			nmea_pid.data.append('%d' % self.w_max_integral_output) # prevent integrator anti-windup
-			self.frobit_pub.publish (nmea_pid)
+			self.publish_pid_drive_param_message()
 			rospy.loginfo (rospy.get_name() + ': Sending configuration to Frobit')
 
+	def publish_pid_drive_param_message(self):
+			self.nmea_pid.header.stamp = rospy.Time.now()
+			self.nmea_pid.data[2] = str(self.w_drive_ff) # feed forward
+			self.nmea_pid.data[3] = str(self.w_drive_kp) # Kp
+			self.nmea_pid.data[4] = str(self.w_drive_ki) # Ki
+			self.nmea_pid.data[5] = str(self.w_drive_kd) # Kd
+			self.nmea_pid.data[6] = str(self.w_drive_max_int_output) # anti-windup
+			self.frobit_pub.publish (self.nmea_pid)
+
+	def publish_pid_turn_param_message(self):
+			self.nmea_pid.header.stamp = rospy.Time.now()
+			self.nmea_pid.data[2] = str(self.w_turn_ff) # feed forward
+			self.nmea_pid.data[3] = str(self.w_turn_kp) # Kp
+			self.nmea_pid.data[4] = str(self.w_turn_ki) # Ki
+			self.nmea_pid.data[5] = str(self.w_turn_kd) # Kd
+			self.nmea_pid.data[6] = str(self.w_turn_max_int_output) # anti-windup
+			self.frobit_pub.publish (self.nmea_pid)
 
 	def publish_wheel_parameter_open_loop_message(self):
 		nmea_pid = nmea()
