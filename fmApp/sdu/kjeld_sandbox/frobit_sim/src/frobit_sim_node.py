@@ -65,8 +65,8 @@ class ROSnode():
 		self.wheel_speed_variance = 0.001
 		self.wheel_speed_delay = 0.05 # [s]
 		self.wheel_speed_delay_variance = 0.05
-		self.wheel_speed_error = 0.05 # [m/s]
-		self.wheel_speed_minimum = 0.03 
+		self.wheel_speed_error = 0.03 # [m/s]
+		self.wheel_speed_minimum = 0.02 
 
 		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
 		if pub_fb_rate != 0:
@@ -177,7 +177,7 @@ class ROSnode():
 		if self.ref_vel_right > 0.0 and self.ref_vel_right < self.wheel_speed_minimum:
 			self.ref_vel_right = 0.0
 		elif self.ref_vel_right < 0.0 and self.ref_vel_right > -self.wheel_speed_minimum:
-			self.ref_vel_righjt = 0.0
+			self.ref_vel_right = 0.0
 
 		if self.ref_vel_left != 0 or self.ref_vel_right != 0:
 			#self.sim_vel_left = self.ref_vel_left + np.random.randn()* self.wheel_speed_variance
