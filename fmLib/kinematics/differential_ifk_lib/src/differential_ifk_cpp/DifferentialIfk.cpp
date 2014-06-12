@@ -33,8 +33,8 @@ DifferentialIfk::twist_t DifferentialIfk::forward(double vel_left, double vel_ri
 DifferentialIfk::wheel_t DifferentialIfk::inverse(double vel_lin, double vel_ang)
 {
 	DifferentialIfk::wheel_t out;
-	out.left  = vel_lin - _wheel_dist*vel_ang;
-	out.right = vel_lin + _wheel_dist*vel_ang;
+	out.left  = vel_lin - _wheel_dist*vel_ang/2.0;
+	out.right = vel_lin + _wheel_dist*vel_ang/2.0;
 	return out;
 }
 

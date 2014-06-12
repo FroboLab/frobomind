@@ -1,6 +1,6 @@
 /****************************************************************************
  # FroboMind
- # Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
+ # Copyright (c) 2011-2014, author Leon Bonde Larsen <leon@bondelarsen.dk>
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -10,9 +10,9 @@
  #	* Redistributions in binary form must reproduce the above copyright
  #  	notice, this list of conditions and the following disclaimer in the
  #  	documentation and/or other materials provided with the distribution.
- #	* Neither the name FroboMind nor the
- #  	names of its contributors may be used to endorse or promote products
- #  	derived from this software without specific prior written permission.
+ #    * Neither the name of the copyright holder nor the names of its
+ #      contributors may be used to endorse or promote products derived from
+ #      this software without specific prior written permission.
  #
  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -27,6 +27,7 @@
  ****************************************************************************
  # 2013-10-05 Kjeld Jensen: First version
  # 2014-04-06 Leon Bonde Larsen: Translated library to C++
+ # 2014-05-03 Kjeld Jensen: Corrected an annoying bug in the function inverse()
  #
  ****************************************************************************
  # This library contains functions for forward and inverse kinematics of a

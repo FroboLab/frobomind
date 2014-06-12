@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -39,6 +39,7 @@ The inverse kinematic model describes how the speed of the wheels
 (vel_lin) and an angular speed (vel_ang).
 
 2013-10-05 Kjeld Jensen: First version
+2014-05-03 Kjeld Jensen: Corrected an annoying bug in the function inverse()
 """
 
 # imports
@@ -46,6 +47,7 @@ The inverse kinematic model describes how the speed of the wheels
 class differential_kinematics():
 	def __init__(self, wheel_distance):
 		self.wheel_dist = wheel_distance
+		self.wheel_dist_half = wheel_distance/2.0
 		self.vel_lin = 0.0 
 		self.vel_ang = 0.0 
 		self.vel_left = 0.0 
@@ -57,8 +59,8 @@ class differential_kinematics():
 		return (self.vel_lin, self.vel_ang)
 
 	def inverse (self, vel_lin, vel_ang):
-		self.vel_left  = vel_lin - self.wheel_dist*vel_ang # [m/s]
-		self.vel_right = vel_lin + self.wheel_dist*vel_ang # [m/s]
+		self.vel_left  = vel_lin - self.wheel_dist_half*vel_ang # [m/s]
+		self.vel_right = vel_lin + self.wheel_dist_half*vel_ang # [m/s]
 		return (self.vel_left, self.vel_right) 
 
 		
