@@ -1,0 +1,199 @@
+<!-- FroboScout launch file -->
+
+<launch>
+	<!-- FroboScout parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.5"/>
+	<param name="ticks_per_meter_left" value="2627" />
+	<param name="ticks_per_meter_right" value="2627" />
+
+	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen">
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
+		 </node>
+
+		<!-- extract data from $GPGGA NMEA messages transmitted by the GPS -->
+		<node pkg="nmea_to_tranmerc" name="nmea_to_tranmerc" type="nmea_to_tranmerc_node" output="screen">
+			<param name="nmea_sub" value="/fmData/nmea_from_gps" />
+			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="transverse_mercator_a" value="6378137.0" />
+			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+			<param name="transverse_mercator_false_easting" value="500000.0" />
+			<param name="transverse_mercator_scale_factor" value="0.9996" />
+			<param name="transverse_mercator_origin_latitude" value="0.0" />
+			<param name="transverse_mercator_central_meridian" value="9.0" />
+			<param name="transverse_mercator_false_northing" value="0.0" />
+		</node>
+	</group>
+
+	<group ns="fmProcessors">
+		<!-- calculate odometry based on encoders and IMU yaw axis orientation -->
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_reset_sub" value="/fmInformation/odometry_reset" />
+			<param name="odom_pub" value="/fmKnowledge/odometry" />
+			<param name="odom_estimate_frame" value="/odom" />
+			<param name="vehicle_frame" value="base_footprint" />
+			<param name="encoder_output" value="absolute" />
+			<param name="max_ticks_per_update" value="200" />
+			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="imu_angular_velocity_yaw_axis" value="z" />
+		</node>
+
+		<!-- estimate robot 2d pose -->
+		<node pkg="pose_2d_estimator" name="pose_estimator" type="pose_2d_estimator_node.py" output="screen" >
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="publish_relative_pose" type="boolean" value="false" />
+			<param name="odometry_distance_variance" value="0.000001" /> <!-- [m/update] -->
+			<param name="odometry_angular_variance" value="0.000035" /> <!-- [rad/update] -->
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_surveying_2014" name="mission" type="wiimote_mission_node.py" output="screen">
+			<param name="wiimote_sub" value="/fmLib/joy" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="1.1"/>
+            <param name="max_angular_velocity" value="0.5"/>
+            <param name="max_linear_acceleration" value="0.2"/>
+            <param name="max_angular_acceleration" value="0.3"/>
+            <param name="max_linear_deceleration" value="0.8"/>
+            <param name="max_angular_deceleration" value="2.0"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="sdu_surveying_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
+			<param name="status_pub" value="/fmInformation/wptnav_status" />
+			<param name="pid_pub" value="/fmInformation/wptnav_pid" />
+			<param name="status_publish_interval" value="1" />
+			<param name="pid_publish_interval" value="1" />
+			<param name="print_debug_information" value="false" />
+
+            <param name="max_linear_velocity" value="1.2"/>
+            <param name="max_angular_velocity" value="0.70"/>
+
+            <param name="drive_kp" value="0.90"/>
+            <param name="drive_ki" value="0.20"/>
+            <param name="drive_kd" value="0.25"/>
+            <param name="drive_feed_forward" value="0.00"/>
+            <param name="drive_max_output" value="0.40"/>
+
+            <param name="turn_kp" value="0.6"/>
+            <param name="turn_ki" value="0.4"/>
+            <param name="turn_kd" value="0.1"/>
+            <param name="turn_feed_forward" value="0.0"/>
+            <param name="turn_max_output" value="1.0"/>
+
+			<param name="wpt_default_mode" value="MCTE" />
+			<param name="wpt_default_tolerance" value="0.10" />
+			<param name="wpt_default_drive_velocity" value="0.9" />
+			<param name="wpt_default_turn_velocity" value="0.6" />
+			<param name="wpt_default_wait_after_arrival" value="6.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="turn_start_at_heading_err" value="55.0" />
+			<param name="turn_stop_at_heading_err" value="2.0" />
+			<param name="ramp_drive_velocity_at_distance" value="2.2" />
+			<param name="ramp_min_drive_velocity" value="0.15" />
+			<param name="ramp_turn_velocity_at_angle" value="25.0" />
+			<param name="ramp_min_turn_velocity" value="0.13" />
+			<param name="stop_navigating_at_distance" value="0.01" />
+		</node>		
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- FroboScout interface node -->
+		<node pkg="cetus_froboscout" name="froboscout" type="froboscout_interface_node.py" output="screen" >
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_status_left_pub" value="/fmInformation/wheel_status_left" />
+			<param name="wheel_status_right_pub" value="/fmInformation/wheel_status_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
+			<param name="wheel_left_sub" value="/fmSignal/nmea_from_wheel_left" />	 
+			<param name="wheel_left_pub" value="/fmSignal/nmea_to_wheel_left" /> 
+			<param name="wheel_right_sub" value="/fmSignal/nmea_from_wheel_right" />	 
+			<param name="wheel_right_pub" value="/fmSignal/nmea_to_wheel_right" /> 
+			<param name="publish_wheel_status_rate" value="10" />
+			<param name="publish_wheel_feedback_rate" value="50" />
+            <param name="max_linear_acceleration" value="1.2"/>
+            <param name="max_angular_acceleration" value="2.0"/>
+			<param name="wheel_left_kp" value="9" /> 
+			<param name="wheel_left_ki" value="15" /> 
+			<param name="wheel_left_kd" value="2" /> 
+			<param name="wheel_left_max_integral_output" value="50.0" /> 
+			<param name="wheel_right_kp" value="9" /> 
+			<param name="wheel_right_ki" value="15" /> 
+			<param name="wheel_right_kd" value="2" /> 
+			<param name="wheel_right_max_integral_output" value="50.0" /> 
+			<param name="min_supply_voltage" value="12.1" /> 
+			<param name="show_voltage_interval" value="30" /> 
+		</node>
+
+		<!-- Wiimote interface -->
+		<node pkg="wiimote" type="wiimote_node.py" name="wiimote" output="screen" respawn="true">
+			<param name="fixed_wiimote_address" value="00:1E:35:03:B8:81"/> 
+		</node>		
+
+		<!-- serial device and NMEA protocol handler for the FroboScout left wheel module -->
+		<node pkg="serial_nmea" name="wheel_left_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmSignal/nmea_from_wheel_left"/>
+			<param name="nmea_to_device_sub" value="/fmSignal/nmea_to_wheel_left"/>
+			<param name="serial_device" value="/dev/wheel_left"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+
+		<!--serial device and NMEA protocol handler for the FroboScout rightwheel module -->
+		<node pkg="serial_nmea" name="wheel_right_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmSignal/nmea_from_wheel_right"/>
+			<param name="nmea_to_device_sub" value="/fmSignal/nmea_to_wheel_right"/>
+			<param name="serial_device" value="/dev/wheel_right"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+
+		<!-- serial communication with the IMU -->
+		<node pkg="serial_string" name="imu_serial" type="serial_string_node" output="screen" respawn="true">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node> 	
+
+		<!-- serial device and NMEA protocol handler for the RTK-GNSS -->
+		<node pkg="serial_nmea" name="gps_nmea" type="serial_nmea_node" respawn="true" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_gps"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_gps"/>
+			<param name="serial_device" value="/dev/gps"/>
+			<param name="serial_baudrate" value="115200"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+	</group>
+</launch>
+
