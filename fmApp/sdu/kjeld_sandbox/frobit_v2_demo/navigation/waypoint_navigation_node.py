@@ -137,6 +137,7 @@ class WptNavNode():
 		self.wpt_def_wait_after_arrival = rospy.get_param("~wpt_default_wait_after_arrival", 0.0)
 		self.wpt_def_implement = rospy.get_param("~wpt_default_implement_command", 0.0)
 
+		target_ahead = rospy.get_param("~target_ahead", 1.0)
 		turn_start_at_heading_err = rospy.get_param("~turn_start_at_heading_err", 20.0)
 		turn_stop_at_heading_err = rospy.get_param("~turn_stop_at_heading_err", 2.0)
 		ramp_drive_vel_at_dist = rospy.get_param("~ramp_drive_velocity_at_distance", 1.0)
@@ -145,7 +146,7 @@ class WptNavNode():
 		ramp_min_turn_vel = rospy.get_param("~ramp_min_turn_velocity", 0.05)
 		stop_nav_at_dist = rospy.get_param("~stop_navigating_at_distance", 0.1)
 
-		self.wptnav = waypoint_navigation(self.update_rate, self.w_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, self.wpt_def_tolerance, self.wpt_def_drive_vel, self.wpt_def_turn_vel, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, self.debug)
+		self.wptnav = waypoint_navigation(self.update_rate, self.w_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, self.wpt_def_tolerance, self.wpt_def_drive_vel, self.wpt_def_turn_vel, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, self.debug)
 
 		self.wptlist = waypoint_list()
 		self.wptlist_loaded = False
@@ -328,6 +329,10 @@ class WptNavNode():
 						self.wait_after_arrival = self.wpt_def_wait_after_arrival
 
 					if self.wait_after_arrival > 0.01:
+						self.linear_vel = 0.0
+						self.angular_vel = 0.0
+						self.publish_cmd_vel_message()
+						self.publish_implement_message()
 						rospy.loginfo(rospy.get_name() + ": Waiting %.1f seconds" % (self.wait_after_arrival))
 						self.state = self.STATE_WAIT
 						self.wait_timeout = rospy.get_time() + self.wait_after_arrival

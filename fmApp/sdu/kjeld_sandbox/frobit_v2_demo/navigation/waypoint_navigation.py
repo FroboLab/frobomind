@@ -48,7 +48,7 @@ from differential_ifk_py.differential_kinematics import differential_kinematics
 from pid_controller import pid_controller
 
 class waypoint_navigation():
-	def __init__(self, update_rate, wheel_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tol_default, wpt_def_drive_vel, wpt_def_turn_vel, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, debug):
+	def __init__(self, update_rate, wheel_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tol_default, wpt_def_drive_vel, wpt_def_turn_vel, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, debug):
 
 		# constants
 		self.UPDATE_NONE = 0
@@ -90,6 +90,7 @@ class waypoint_navigation():
 		self.wpt_def_drive_vel = wpt_def_drive_vel # [m/s]
 		self.wpt_def_turn_vel = wpt_def_turn_vel # [m/s]
 
+		self.target_ahead = target_ahead
 		self.turn_start_at_heading_err = turn_start_at_heading_err*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot9
 		self.turn_acceptable_heading_err = turn_stop_at_heading_err*self.deg_to_rad # [radians]
 		self.ramp_drive_vel_at_dist_default = ramp_drive_vel_at_dist # [m]
@@ -338,7 +339,7 @@ class waypoint_navigation():
 	def arrived_at_waypoint(self):
 		arrived = False
 		if self.dist <= self.wpt_tolerance: # if we are inside the acceptable tolerance perimeter
-			if self.dist < 0.01: # if we are VERY close.
+			if self.dist < 0.02: #self.linear_vel*self.update_interval: # if we are very close
 				arrived = True
 			elif self.dist > self.dist_minimum: # if we are moving away so we won't get any closer without turning.
 				arrived = True
@@ -368,6 +369,7 @@ class waypoint_navigation():
 			self.target = self.b # set b as target point	
 			self.target_bearing = self.bearing
 			self.target_dist = self.dist
+
 			'''elif d < 0: # the pose lies before the beginning of the ab line so the closest point is in fact a
 			#self.target = [self.a[self.W_E], self.a[self.W_E]]
 			#self.target_bearing = self.angle_limit(atan2 (self.target[self.W_N]-self.pose[self.W_N], self.target[self.W_E]-self.pose[self.W_E])) #  target bearing (angle with easting axis)			
@@ -377,6 +379,20 @@ class waypoint_navigation():
 			self.target_bearing = self.bearing
 			self.target_dist = self.dist 
 			'''
+
+		else: # the closest point is defined by A + d(B-A)
+			dist_pt_to_b = sqrt((self.b[self.W_E]-pt[self.W_E])**2 + (self.b[self.W_N]-pt[self.W_N])**2)  # calc distance from closest point to b
+			self.target_percent = 0.5
+			dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
+			if dist_pt_to_target > self.target_ahead:
+				dist_pt_to_target = self.target_ahead
+			self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
+
+			# now navigate to the target point...
+			self.target_dist = sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2) # dist to target
+			self.target_bearing = self.angle_limit(atan2 (self.target[1]-self.pose[1], self.target[0]-self.pose[0])) #  target bearing (angle with easting axis)
+
+		'''
 		else: # the closest point is between A and B
 			if self.ab_dist_to_pose < 0.001:
 				self.target = self.b # set b as target point	
@@ -407,7 +423,8 @@ class waypoint_navigation():
 					self.target_bearing = self.bearing
 				dist_pt_to_target = sqrt (self.target_dist**2 - self.ab_dist_to_pose**2)
 				self.target = [pt[self.W_E] + dist_pt_to_target*self.ab_norm[0], pt[self.W_N] + dist_pt_to_target*self.ab_norm[1]]
-	
+		'''	
+
 		#self.target = self.b # set b as target point	
 		#self.target_dist = self.dist
 		#self.target_bearing = self.bearing

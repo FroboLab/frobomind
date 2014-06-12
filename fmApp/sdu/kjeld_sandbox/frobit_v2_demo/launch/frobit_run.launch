@@ -112,8 +112,8 @@
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
             <param name="max_linear_velocity" value="50.7"/>
             <param name="max_angular_velocity" value="50.5"/>
-            <param name="linear_velocity_step" value="0.05"/>
-            <param name="angular_velocity_step" value="0.25"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.2"/>
 		</node>
 	</group>
 
@@ -135,31 +135,31 @@
 
             <param name="drive_kp" value="10.0"/> 
             <param name="drive_ki" value="3.35"/>
-            <param name="drive_kd" value="8.0"/>
+            <param name="drive_kd" value="10.0"/>
             <param name="drive_feed_forward" value="0.00"/>
             <param name="drive_max_output" value="0.40"/>
 
-            <param name="turn_kp" value="175.4"/>
-            <param name="turn_ki" value="5.0"/>
-            <param name="turn_kd" value="1.1"/>
+            <param name="turn_kp" value="150.0"/>
+            <param name="turn_ki" value="350.0"/>
+            <param name="turn_kd" value="0.0"/>
             <param name="turn_feed_forward" value="0.0"/>
-            <param name="turn_max_output" value="0.6"/>
+            <param name="turn_max_output" value="1.0"/>
 
-			<param name="wpt_default_mode" value="MCTE" />
-			<param name="wpt_default_tolerance" value="0.5" />
-			<param name="wpt_default_drive_velocity" value="0.2" />
-			<param name="wpt_default_turn_velocity" value="0.25" />
-			<param name="wpt_default_wait_after_arrival" value="0.5" />
+			<param name="wpt_default_mode" value="MCTE" /> 
+			<param name="wpt_default_tolerance" value="0.1" />
+			<param name="wpt_default_drive_velocity" value="0.25" />
+			<param name="wpt_default_turn_velocity" value="0.6" />
+			<param name="wpt_default_wait_after_arrival" value="1.0" />
 			<param name="wpt_default_implement_command" value="0.0" />
 
-			<param name="target_distance" value="0.3" />
+			<param name="target_ahead" value="0.6" />
 			<param name="turn_start_at_heading_err" value="30.0" />
-			<param name="turn_stop_at_heading_err" value="2.5" />
+			<param name="turn_stop_at_heading_err" value="1.5" />
 	 		<param name="ramp_drive_velocity_at_distance" value="0.3" />
-			<param name="ramp_min_drive_velocity" value="0.09" />
-			<param name="ramp_turn_velocity_at_angle" value="20.0" />
-			<param name="ramp_min_turn_velocity" value="0.05" />
-		</node>		
+			<param name="ramp_min_drive_velocity" value="0.07" />
+			<param name="ramp_turn_velocity_at_angle" value="30.0" />
+			<param name="ramp_min_turn_velocity" value="0.2" />
+		</node>		n 
 	</group>
 
 	<group ns="fmControllers">
@@ -195,11 +195,16 @@
 			<param name="castor_front" value="true"/>
             <param name="max_linear_acceleration" value="16.2"/>
             <param name="max_angular_acceleration" value="16.0"/>
-			<param name="wheel_feed_forward" value="120" /> 
-			<param name="wheel_kp" value="4" /> 
-			<param name="wheel_ki" value="9" /> 
-			<param name="wheel_kd" value="7" /> 
-			<param name="wheel_max_integral_output" value="300" /> 
+			<param name="wheel_drive_feed_forward" value="85" /> 
+			<param name="wheel_drive_kp" value="5" /> 
+			<param name="wheel_drive_ki" value="10" /> 
+			<param name="wheel_drive_kd" value="5" /> 
+			<param name="wheel_drive_max_integral_output" value="300" /> 
+			<param name="wheel_turn_feed_forward" value="110" /> 
+			<param name="wheel_turn_kp" value="10" /> 
+			<param name="wheel_turn_ki" value="20" /> 
+			<param name="wheel_turn_kd" value="3" /> 
+			<param name="wheel_turn_max_integral_output" value="300" /> 
 			<param name="min_supply_voltage" value="12.1" /> 
 			<param name="show_voltage_interval" value="300" /> 
 		</node>

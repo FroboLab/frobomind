@@ -13,28 +13,8 @@
 			<param name="samples" value="100" />
 		</node-->
 
-		<!--node pkg="plot_pid" name="wheel_right_pid" type="plot_pid_node.py" output="screen" >
- 			<param name="pid_sub" value="/fmInformation/wheel_pid_right" />
- 			<param name="update_rate" value="50" />
-			<param name="plot_title" value="Right wheel PID" />
-			<param name="samples" value="50" />
-			<param name="max_error" value="50" />
-			<param name="max_output" value="200" />
-			<param name="max_pid" value="200" />
-			<param name="plot_feed_forward" value="false" />
-		</node-->
 
-		<!--node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
- 			<param name="propulsion_feedback_left_sub" value="/fmInformation/wheel_feedback_left" />
- 			<param name="propulsion_feedback_right_sub" value="/fmInformation/wheel_feedback_right" />
- 			<param name="update_frequency" value="20" />
-			<param name="plot_title" value="Wheel feedback" />
-			<param name="samples" value="50" />
-			<param name="maximum_velocity" value="0.4" />
-			<param name="maximum_thrust" value="275" />
-		</node-->
-
-		<!--node pkg="sdu_surveying_2014" name="pose" type="show_pose_node.py" output="screen" >
+		<!--node pkg="frobit_v2_demo" name="survey" type="survey_log_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="update_interval" value="0.05" />
 		</node-->
@@ -64,17 +44,20 @@
 			<param name="avatar_reverse" value="false" />
 		</node>
 
-		<!--node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
- 			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
- 			<param name="update_rate" value="5" />
-			<param name="plot_title" value="Navigation PID status" />
-			<param name="samples" value="50" />
-			<param name="max_error" value="1.5" />
-			<param name="max_output" value="1.0" />
-			<param name="max_pid" value="2.0" />
-			<param name="plot_feed_forward" value="true" />
-		</node-->
+		<node pkg="frobit_v2_demo" name="survey_log" type="survey_log_node.py" output="screen" >
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gpgga_tranmerc_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="lidar_sub" value="/fmSensors/laser_msg" />
+		</node>
 	</group>
+
+		<node pkg="rosbag" name="frobit" type="play" args="--start=0 --rate=1 --clock test.bag">
+			<remap from="/rosbag/clock" to="/clock"/>
+		</node>
+
 </launch>
 
 
