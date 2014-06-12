@@ -59,12 +59,28 @@ for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/pose']):
 	f.write ('%s,%.3f,%.3f,%.6f\n' % (time_stamp(msg.header.stamp), msg.pose.pose.position.x, msg.pose.pose.position.y, yaw))
 f.close()
 
+odo_count = 0
 # extract odometry data
 f = open ('data_odometry.txt', 'w')
 for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/odometry']):
+	odo_count += 1
 	(roll,pitch,yaw) = euler_from_quaternion([msg.pose.pose.orientation.x, \
 		msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
 	f.write ('%s,%.3f,%.3f,%.6f,%.3f\n' % (time_stamp(msg.header.stamp), msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x))
+
+if odo_count == 0:
+	for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/odom']):
+		odo_count += 1
+		(roll,pitch,yaw) = euler_from_quaternion([msg.pose.pose.orientation.x, \
+			msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
+		f.write ('%s,%.3f,%.3f,%.6f,%.3f\n' % (time_stamp(msg.header.stamp), msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x))
+
+if odo_count == 0:
+	for topic, msg, t in bag.read_messages(topics=['/fmKnowledge/encoder_odom']):
+		odo_count += 1
+		(roll,pitch,yaw) = euler_from_quaternion([msg.pose.pose.orientation.x, \
+			msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
+		f.write ('%s,%.3f,%.3f,%.6f,%.3f\n' % (time_stamp(msg.header.stamp), msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x))
 f.close()
 
 # extract IMU data

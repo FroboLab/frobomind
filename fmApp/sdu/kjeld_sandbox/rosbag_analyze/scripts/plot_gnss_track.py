@@ -36,16 +36,15 @@ Revision
 """
 # imports
 from sys import argv
-import matplotlib.pyplot as plt
 from pylab import plot, subplot, axis, grid, title, xlabel, ylabel, xlim, ylim, draw, show, ion
 
 # general parameters
-plot_canvas = 3.0
-pose_skip_lines = 0
-pose_max_lines = 100000000000000000
+plot_canvas = 2.0
+skip_lines = 0
+max_lines = 1000000000
 
-def load_from_pose_data (filename, skip_lines, max_lines):
-	print 'Loading pose track from: %s' % filename
+def load_from_pose_data (filename):
+	print 'Loading GNSS track from: %s' % filename
 	trk = []
 	lines = [line.rstrip('\n') for line in open(filename)] # read the file and strip \n
 	line_num = 0
@@ -58,50 +57,24 @@ def load_from_pose_data (filename, skip_lines, max_lines):
 				if len(data) >= 4 and data[0] != '' and data[1] != '':
 					pose_num += 1
 					sec = float (data[0])
-					e = float (data[1])
-					n = float (data[2])
-					yaw = float (data[3])
-
-					trk.append([sec, e, n, yaw])
-				else:
-					print '  Erroneous pose line: %s' % lines[i]
-	print '  Total %d pose lines loaded.' % pose_num
-	return trk
-
-def load_from_gnss_data (filename, begin_time, end_time):
-	print 'Loading pose track from: %s' % filename
-	trk = []
-	lines = [line.rstrip('\n') for line in open(filename)] # read the file and strip \n
-	line_num = 0
-	gnss_num = 0
-	for i in xrange(len(lines)): # for all lines
-		if len(lines[i]) > 0 and lines[i][0] != '#': # if not a comment or empty line
-			line_num += 1
-			data = lines[i].split (',') # split into comma separated list
-			if len(data) >= 4 and data[0] != '' and data[1] != '':
-				sec = float (data[0])
-				if sec >= begin_time and sec <= end_time:
-					gnss_num += 1
 					e = float (data[4])
 					n = float (data[5])
-					trk.append([sec, e, n])
-			else:
-				print '  Erroneous pose line: %s' % lines[i]
-	print '  Total %d GNSS lines loaded.' % gnss_num
-	return trk
 
+					trk.append([sec, e, n])
+				else:
+					print '  Erroneous GNSS line: %s' % lines[i]
+	print '  Total %d GNSS lines loaded.' % pose_num
+	return trk
 
 
 argc = len(argv)
-if argc != 3:
-	print 'Usage: plot_pose_track.py pose_file gnss_file'
+if argc != 2:
+	print 'Usage: plot_gnss_track.py infile'
 else:
-	pose_file_name =  argv[1:][0]
-	gnss_file_name =  argv[2:][0]
+	inf =  argv[1:][0]
 
-	p = load_from_pose_data(pose_file_name, pose_skip_lines, pose_max_lines)
-	g = load_from_gnss_data(gnss_file_name, p[0][0], p[-1][0])
-
+	p = load_from_pose_data(inf)
+	
 	if len(p) > 0:
 		offset_e = p[0][1]
 		offset_n = p[0][2]
@@ -125,21 +98,12 @@ else:
 			max_n = rel_n		
 		relp.append([rel_e, rel_n])
 
-	relg = []
-	for i in xrange(len(g)):
-		rel_e = g[i][1]-offset_e
-		rel_n = g[i][2]-offset_n
-		relg.append([rel_e, rel_n])
-
 	pT = zip(*relp)
-	gT = zip(*relg)
-
+	print max_n  + plot_canvas
 	print 'Generating plot'	
 	ion()
-	plt.figure(num=1, figsize=(8, 8), dpi=80, facecolor='w', edgecolor='w')
-	#pp, = plot(pT[0], pT[1], "r.", markersize=7.5)
-	pt, = plot(pT[0], pT[1], "r")
-	#gp, = plot(gT[0], gT[1], "bo", markersize=6.0)
+	#pp, = plot(pT[0], pT[1], "ro")
+	pp, = plot(pT[0], pT[1], "r")
 	xlim([min_e - plot_canvas, max_e + plot_canvas])
 	ylim([min_n - plot_canvas, max_n + plot_canvas])
 	axis ('equal')					
@@ -147,7 +111,6 @@ else:
 	ylabel('Northing')
 	grid (True)
 	title ('Track')
-	plt.savefig ('pose_gnss_track.png')
 	show()	
 	print 'Offset: E%.0f, N%.0f' % (offset_e, offset_n) 
 	print 'Press Enter to quit'

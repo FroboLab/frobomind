@@ -103,7 +103,7 @@ else:
 	print max_n  + plot_canvas
 	print 'Generating plot'	
 	ion()
-	pp, = plot(pT[0], pT[1], "ro")
+	#pp, = plot(pT[0], pT[1], "ro")
 	pp, = plot(pT[0], pT[1], "r")
 	xlim([min_e - plot_canvas, max_e + plot_canvas])
 	ylim([min_n - plot_canvas, max_n + plot_canvas])
