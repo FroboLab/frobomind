@@ -4,28 +4,31 @@
 PoseLogFile = 'sim_pose.txt'
 PoseLogSkipLines = 0
 PoseLogMaxLines = 8000000 # maximum number of lines to read from the log file
-GPSLogFile = 'sim_gnss.txt'
-GPSLogSkipLines = 0
-GPSLogMaxLines = 800000 # maximum number of lines to read from the log file
+#GPSLogFile = 'sim_gnss.txt'
+#GPSLogSkipLines = 0
+#GPSLogMaxLines = 800000 # maximum number of lines to read from the log file
 HDOPThreshold = 10. # GPS fix above this HDOP value will be ignored
 OrigoE = 588772 # subtract from all Easting coordinates
 OrigoN = 6137285 # subtract from all Northing coordinates
 TrackMinDist = 0.02 # [m] minimum distance between consequtive track points
-HeadingMinDist = 0.25 # [m] minimum distance between track points when calculating heading
+#HeadingMinDist = 0.25 # [m] minimum distance between track points when calculating heading
 
 wads_cdist = 1.66 # distance from GPS antenna to center of implement
 
 UPEXLogFile = 'sim_wads.txt'
 UPEXLines = 50000000
-UPEXSampleDist = 0.04
+UPEXSampleDist = 0.02
 
-figure_size = 6
-grid_size = 300
+figure_size = 8
+grid_size = 2000
 
 simStepInt = 0.02 # simulation step interval [s]
 
-simPlotUpdate = 4000 # number of steps between updating the plots
-mapPlotBnd = 5.0 # border around map plots [m] 
+simPlotUpdate = 2000000 # number of steps between updating the plots
+mapPlotBnd = 3.0 # border around map plots [m] 
+
+SaveMovieImgs = False
+
 
 ## INITIALIZATION ############################################################
 # load modules
@@ -90,6 +93,21 @@ def angle_diff (angle_new, angle_old):
 		diff -= pi2
 	return diff
 
+def mapBoundaries(e, n):
+	minE = float(1e1000)
+	minN = float(1e1000)
+	maxE = -float(1e1000)
+	maxN = -float(1e1000)
+	for i in range(len(e)):
+		if minE > e[i]:
+			minE = e[i]
+		elif maxE < e[i]:
+			maxE = e[i]
+		if minN > n[i]:
+			minN = n[i]
+		elif maxN < n[i]:
+			maxN = n[i]
+	return (minE-mapPlotBnd, maxE+mapPlotBnd, minN-mapPlotBnd, maxN+mapPlotBnd)
 
 ## SIMULATION REFERENCE DATA #################################################
 
@@ -104,6 +122,7 @@ for i in range(len(poly)):
 	poly[i][0] -= OrigoE
 	poly[i][1] -= OrigoN
 polyT = zip (*poly)
+(minE, maxE, minN, maxN) = mapBoundaries(polyT[0], polyT[1])
 
 # ground truth target list
 gtt = [[588778.9326,6137291.6141],[588773.3388,6137293.7092],[588776.2196,6137299.5903],[588775.1004,6137303.9440],[588778.7879,6137303.6453],[588779.7928,6137296.2574]]
@@ -113,6 +132,7 @@ for i in range(len(gtt)):
 	gtt[i][1] -= OrigoN
 gttT = zip (*gtt)
 
+minE, maxE, minN, maxN
 ## Pose #######################################################################
 def importPoseLog (filename, skip_lines, max_lines):
 	file = open(filename, 'rb')
@@ -163,21 +183,6 @@ def importGPSLog (filename, hdop_threshold, skip_lines, max_lines):
 	file.close()
 	return (l,samples_nofix, samples_above_hdop)
 
-def gpsBoundaries(gpsData):
-	minE = float(1e1000)
-	minN = float(1e1000)
-	maxE = -float(1e1000)
-	maxN = -float(1e1000)
-	for i in range(len(gpsData)):
-		if minE > gpsData[i][GPS_E]:
-			minE = gpsData[i][GPS_E]
-		elif maxE < gpsData[i][GPS_E]:
-			maxE = gpsData[i][GPS_E]
-		if minN > gpsData[i][GPS_N]:
-			minN = gpsData[i][GPS_N]
-		elif maxN < gpsData[i][GPS_N]:
-			maxN = gpsData[i][GPS_N]
-	return (minE-mapPlotBnd, maxE+mapPlotBnd, minN-mapPlotBnd, maxN+mapPlotBnd)
 
 def ptInPoly(e,n,p):
 # http://www.ariel.com.au/a/python-point-int-poly.html
@@ -226,6 +231,66 @@ def movingAverageFilter (data, window):
 			filtered.append(data[i])
 	return (filtered)
 
+##############################################################################
+def plot_search_map (search_log):
+	figure(num=6, figsize=(figure_size,figure_size), dpi=80, facecolor='w', edgecolor='w')
+	plt.clf() # clear figure
+	plt.title ('Search map')
+	xlabel('Easting [m]')
+	ylabel('Northing [m]')
+	axis('equal')
+	grid (True)
+	xlim([minE,maxE])
+	ylim([minN,maxN])
+		# extract columns
+	slT = zip (*search_log)
+	x = list(slT[UPEX_E])
+	y = list(slT[UPEX_N])
+	z = list(slT[UPEX_ADC])
+
+	# define grid.
+	xi = np.linspace(minE,maxE,grid_size)
+	yi = np.linspace(minN,maxN,grid_size)
+	zi = griddata((x, y), z, (xi[None,:], yi[:,None]), method='linear')
+	# nearest eturn the value at the data point closest to the point of interpolation. See NearestNDInterpolator for more details.
+	# linear esselate the input point set to n-dimensional simplices, and interpolate linearly on each simplex. See LinearNDInterpolator for more details.
+	# cubic return the value determined from a piecewise cubic, continuously differentiable (C1), and approximately curvature-minimizing polynomial surface. See CloughTocher2DInterpolator for more details.
+
+
+	# plot kanten
+	#CS = plt.contour(xi,yi,zi,10,linewidths=0.5,colors=('0.5','0.4','0.3'))
+
+#			CS = plt.contour(xi,yi,zi,15,linewidths=0.5,colors='k')
+	CS = plt.contourf(xi,yi,zi,100, cmap=plt.cm.YlOrRd)
+	#plt.colorbar() # draw colorbar
+	polyPlt = plot(polyT[0], polyT[1],'g') # draw ploygon
+	plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5) # draw target's known place
+
+##############################################################################
+def plot_track_wads (poly, wads_log):
+	plt.figure(num=7, figsize=(figure_size,figure_size), dpi=80, facecolor='w', edgecolor='w')
+	plt.clf() # clear figure
+	plt.title ('WADS track')
+	xlabel('Easting [m]')
+	ylabel('Northing [m]')
+	axis('equal')
+	grid (True)
+	plt.xlim([minE,maxE])
+	plt.ylim([minN,maxN])
+
+	#ax = gca()
+	#ax.set_frame_on(False)
+	#ax.axes.get_xaxis().set_visible(False)
+	#ax.axes.get_yaxis().set_visible(False)
+
+	#targetPlt = plot(gttT[0], gttT[1],'bx')
+	wadsSimT = zip (*wads_log)
+	wadstrack_plt = plot(wadsSimT[0],wadsSimT[1],'r')
+	#wadsplt = plot(wplotT[0], wplotT[1],'b')
+	polyPlt = plot(polyT[0], polyT[1],'g') # draw ploygon
+	plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5) # draw target's known place
+
+
 ## RUN SIMULATION ############################################################
 print 'Simulation of mine detection experiment 2012-04-13\n'
 print 'Press CTRL-C to cancel\n'
@@ -234,15 +299,16 @@ print 'Press CTRL-C to cancel\n'
 print 'Importing Pose data...'
 (poseLog) = importPoseLog(PoseLogFile, PoseLogSkipLines, PoseLogMaxLines)
 print 'Total samples:',(len(poseLog))
-(minE, maxE, minN, maxN) = gpsBoundaries(poseLog)
+pT = zip(*poseLog)
+(minE, maxE, minN, maxN) = mapBoundaries(pT[1], pT[2])
 
 # import GPS log
-print 'Importing GPS data...'
-(gpsLog, gpsNoFixCnt, gpsAboveHDOPCnt) = importGPSLog(GPSLogFile, HDOPThreshold, GPSLogSkipLines, GPSLogMaxLines)
-print 'Total samples:',(len(gpsLog) + gpsNoFixCnt + gpsAboveHDOPCnt)
-print 'Accepted samples:',(len(gpsLog))
-print 'Samples with no satellite fix:',gpsNoFixCnt
-print 'Samples above HDOP threshold:',gpsAboveHDOPCnt
+#print 'Importing GPS data...'
+#(gpsLog, gpsNoFixCnt, gpsAboveHDOPCnt) = importGPSLog(GPSLogFile, HDOPThreshold, GPSLogSkipLines, GPSLogMaxLines)
+#print 'Total samples:',(len(gpsLog) + gpsNoFixCnt + gpsAboveHDOPCnt)
+#print 'Accepted samples:',(len(gpsLog))
+#print 'Samples with no satellite fix:',gpsNoFixCnt
+#print 'Samples above HDOP threshold:',gpsAboveHDOPCnt
 
 # define simulation time based on GPS log
 simOffset = poseLog[0][GPS_TIME]
@@ -264,8 +330,8 @@ for i in xrange(len(upexLog)):
 		maxupex = upexLog[i][1]
 print minupex, maxupex
 
-#for i in xrange(len(upexLog)):
-#	upexLog[i][1] -= minupex
+for i in xrange(len(upexLog)):
+	upexLog[i][1] -= minupex
 
 print 'Total samples:',len(upexLog)
 upexLogT = zip (*upexLog)
@@ -277,27 +343,6 @@ upexFiltered = movingAverageFilter (upexLogT[UPEX_ADC], 2)
 
 # setup MathPlotLib plots
 ion() # turn interaction mode on
-plt.figure(num=1, figsize=(6, 6), dpi=80, facecolor='w', edgecolor='w')
-targetPlt = plot(gttT[0], gttT[1],'bx')
-plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5)
-#title ('Robot Track')
-#xlabel('Easting [m]')
-#ylabel('Northing [m]')
-axis('equal')
-grid (False)
-ax = gca()
-ax.set_frame_on(False)
-ax.axes.get_xaxis().set_visible(False)
-ax.axes.get_yaxis().set_visible(False)
-
-#plt.figure(2)
-#title ('UPEX 740M')
-#xlabel('measurements')
-#ylabel('Voltage [V]')
-#xlim([1,400])
-#ylim([-3,4])
-#upexplt, = plot([],'r')
-#draw()
 
 plot_track_cnt = 0
 plot_targets_cnt = 0
@@ -340,15 +385,15 @@ for step in range ((int(simSteps)+1)):
 		poseIndex += 1
 
 	# retrieve new GPS
-	while gpsIndex < len(gpsLog) and gpsLog[gpsIndex][GPS_TIME] <= logTime:
-		trkPt = gpsLog[gpsIndex]
-		e = trkPt[GPS_E]
-		n = trkPt[GPS_N]
-		if gpsIndex==0 or sqrt((e-gpsSim[-1][GPS_E])**2+(n-gpsSim[-1][GPS_N])**2) >= TrackMinDist:
-			gpsSim.append (trkPt)
-		else:
-			gpsFiltered += 1
-		gpsIndex += 1
+	#while gpsIndex < len(gpsLog) and gpsLog[gpsIndex][GPS_TIME] <= logTime:
+	#	trkPt = gpsLog[gpsIndex]
+	#	e = trkPt[GPS_E]
+	#	n = trkPt[GPS_N]
+	#	if gpsIndex==0 or sqrt((e-gpsSim[-1][GPS_E])**2+(n-gpsSim[-1][GPS_N])**2) >= TrackMinDist:
+	#		gpsSim.append (trkPt)
+	#	else:
+	#		gpsFiltered += 1
+	#	gpsIndex += 1
 
 	# retrieve new measurements from the UPEX 740M metal detector
 	while upexIndex < len(upexLog) and upexLog[upexIndex][UPEX_TIME] <= logTime:
@@ -358,12 +403,12 @@ for step in range ((int(simSteps)+1)):
 		wads_yaw_err = (fabs(angle_diff (wads_yaw,  poseSim[-1][POSE_YAW])) > pi/8.0) \
 			and poseSim[-1][POSE_TIME] - wads_yaw_time < 0.3
 		
-		gps_fix_err = len(gpsLog) > 0 and gpsLog[-1][GPS_FIX] != 4
+		#gps_fix_err = len(gpsLog) > 0 and gpsLog[-1][GPS_FIX] != 4
 
 		if wads_yaw_err:
 			print poseSim[-1][POSE_TIME], fabs(angle_diff (wads_yaw,  poseSim[-1][POSE_YAW]))*180/pi,wads_yaw*180/pi, poseSim[-1][POSE_YAW]*180/pi
 
-		if wads_yaw_err == False and gps_fix_err == False:
+		if wads_yaw_err == False: # and gps_fix_err == False:
 			wads_yaw= poseSim[-1][POSE_YAW] # get robot course
 			wads_yaw_time  = poseSim[-1][POSE_TIME]
 			wads_offset = vec2d_rot ([wads_cdist, 0],wads_yaw)
@@ -394,7 +439,7 @@ for step in range ((int(simSteps)+1)):
 		upexIndex += 1
 
 	# update plots
-	if step % simPlotUpdate == 0:
+	if False: #step % simPlotUpdate == 0:
 		plt.figure(num=1, figsize=(figure_size,figure_size), dpi=80, facecolor='w', edgecolor='w')
 		clf()
 		xlabel('[m]')
@@ -413,10 +458,13 @@ for step in range ((int(simSteps)+1)):
 			c = vec2d_rot (wframe[i],wads_yaw+pi/2.0)
 			wplot.append([c[0]+wads_e,c[1]+wads_n])
 		wplotT = zip(*wplot)
+
 		wadsplt = plot(wplotT[0], wplotT[1],'b')
+		
 		plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5)
-		plot_track_cnt += 1
-		plt.savefig('plot_track/img%05d.jpg' % plot_track_cnt)
+		if SaveMovieImgs == True:
+			plot_track_cnt += 1
+			plt.savefig('plot_track/img%05d.jpg' % plot_track_cnt)
 
 		plt.figure(num=2, figsize=(figure_size,figure_size), dpi=80, facecolor='w', edgecolor='w')
 		clf()
@@ -438,8 +486,9 @@ for step in range ((int(simSteps)+1)):
 		wplotT = zip(*wplot)
 		wadsplt = plot(wplotT[0], wplotT[1],'b')
 		plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5)
-		plot_track_cnt += 1
-		plt.savefig('plot_track/img%05d.jpg' % plot_track_cnt)
+		if SaveMovieImgs == True:
+			plot_track_cnt += 1
+			plt.savefig('plot_track/img%05d.jpg' % plot_track_cnt)
 
 
 
@@ -465,36 +514,16 @@ for step in range ((int(simSteps)+1)):
 		grid (True)
 		polyPlt = plot(polyT[0], polyT[1],'g')
 		#targetPlt = plot(gttT[0], gttT[1],'bx')
-		if len(upexSim) > 0 and step > 4000:
-			# extract columns
-			upexSimT = zip (*upexSim)
-			x = list(upexSimT[UPEX_E])
-			y = list(upexSimT[UPEX_N])
-			z = list(upexSimT[UPEX_ADC])
+		#if len(upexSim) > 0 and step > 4000:
+		#	plot_search_map (upexSim)
 
-			# define grid.
-			xi = np.linspace(minE,maxE,grid_size)
-			yi = np.linspace(minN,maxN,grid_size)
-			zi = griddata((x, y), z, (xi[None,:], yi[:,None]), method='linear')
-			# nearest eturn the value at the data point closest to the point of interpolation. See NearestNDInterpolator for more details.
-			# linear esselate the input point set to n-dimensional simplices, and interpolate linearly on each simplex. See LinearNDInterpolator for more details.
-			# cubic return the value determined from a piecewise cubic, continuously differentiable (C1), and approximately curvature-minimizing polynomial surface. See CloughTocher2DInterpolator for more details.
-
-			# contour the gridded data, plotting dots at the randomly spaced data points.
-
-			# plot kanten
-			#CS = plt.contour(xi,yi,zi,10,linewidths=0.5,colors=('0.5','0.4','0.3'))
-
-#			CS = plt.contour(xi,yi,zi,15,linewidths=0.5,colors='k')
-			CS = plt.contourf(xi,yi,zi,10, cmap=plt.cm.YlOrRd)
-			plt.colorbar() # draw colorbar
-			plt.scatter(gttT[0],gttT[1],marker='x',c='b',s=35, lw = 1.5)
 
 		wadsSimT = zip (*wadsSim)
 		#wadstrack_plt = plot(wadsSimT[0],wadsSimT[1],'b')
 		wadsplt = plot(wplotT[0], wplotT[1],'b')
-		plot_targets_cnt += 1
-		plt.savefig('plot_targets/img%05d.jpg' % plot_targets_cnt)
+		if SaveMovieImgs == True:
+			plot_targets_cnt += 1
+			plt.savefig('plot_targets/img%05d.jpg' % plot_targets_cnt)
 		plt.savefig('plot_search_map.png')
 
 		draw() # redraw plots
@@ -507,48 +536,15 @@ for step in range ((int(simSteps)+1)):
 
 	simTime += simStepInt
 
-plt.figure(1)
-plt.savefig('plot_track_robot.png')
-plt.figure(2)
-plt.savefig('plot_track_wads.png')
-plt.figure(3)
+
+plot_search_map (upexSim)
 plt.savefig('plot_search_map.png')
 
-
-plt.figure(num=4, figsize=(figure_size,figure_size), dpi=80, facecolor='w', edgecolor='w')
-grid (False)
-plt.clf() # clear figure
-ax = gca()
-ax.set_frame_on(False)
-ax.axes.get_xaxis().set_visible(False)
-ax.axes.get_yaxis().set_visible(False)
-#	   title ('Targets')
-#xlabel('Easting [m]')
-#ylabel('Northing [m]')
-mapPlotBnd = 0.7
-GPS_E = 0
-GPS_N = 1
-(minE, maxE, minN, maxN) = gpsBoundaries(poly)
-xlim([minE,maxE])
-ylim([minN,maxN])
-axis('equal')
-#grid (True)
-polyPlt = plot(polyT[0], polyT[1],'g')
-#targetPlt = plot(gttT[0], gttT[1],'bx')
-
-wadsSimT = zip (*wadsSim)
-wadstrack_plt = plot(wadsSimT[0],wadsSimT[1],'r')
-#wadsplt = plot(wplotT[0], wplotT[1],'b')
-
-
-#plt.figure(num=5, figsize=(8, 8), dpi=80, facecolor='w', edgecolor='w')
-
-#plt.hexbin(x,y, gridsize=100, cmap=plt.cm.YlOrRd_r)
-#plt.axis([minE, maxE, minN, maxN])
-
+plot_track_wads (poly, wadsSim)
+plt.savefig('plot_track_wads.png')
 
 print 'Simulation completed'
-print 'GPS positions filtered:',gpsFiltered
+#print 'GPS positions filtered:',gpsFiltered
 print 'UPEX 740M measurements filtered:',upexFiltered
 
 if Ctrl_C == 0:
