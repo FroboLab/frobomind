@@ -74,6 +74,12 @@ class ROSnode():
 		# setup map plot
 		self.plot = frobit_plot(plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, avatar_reverse)
 
+		# setup yaw plot
+		self.plot_gnss_yaw = False
+		self.plot_odo_yaw = True
+		self.latest_absolute_yaw = 0.0
+		self.latest_odo_yaw = 0.0
+
 		# Get topic names
 		pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		gnss_topic = rospy.get_param("~gnss_sub",'/fmInformation/gpgga_tranmerc')
@@ -116,6 +122,11 @@ class ROSnode():
 	# handle incoming odometry messages
 	def on_odom_topic(self, msg):
 		self.plot.append_odometry_position(msg.pose.pose.position.x, msg.pose.pose.position.y)
+		qx = msg.pose.pose.orientation.x
+		qy = msg.pose.pose.orientation.y
+		qz = msg.pose.pose.orientation.z
+		qw = msg.pose.pose.orientation.w
+		self.latest_odo_yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
 
 	# handle incoming waypoint navigation status messages
 	def on_wptnav_status_topic(self, msg):
@@ -126,6 +137,13 @@ class ROSnode():
 		while not rospy.is_shutdown():
 			# Update map
 			self.plot.append_pose_yaw(self.yaw)
+
+			if self.plot_gnss_yaw:
+				self.plot.append_gnss_yaw (self.latest_absolute_yaw)
+			if self.plot_odo_yaw:
+				self.plot.append_odo_yaw (self.latest_odo_yaw)
+
+
 			self.plot.update()
 			self.r.sleep()
 
