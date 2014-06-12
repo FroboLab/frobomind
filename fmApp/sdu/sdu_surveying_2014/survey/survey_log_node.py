@@ -61,7 +61,7 @@ class log_node():
 		self.rad_to_deg = 180.0/pi
 
 		# static parameters
-		self.debug = True
+		self.debug = False
 		self.update_rate = 20 # [Hz]
 		self.wait_before_log = 2.0 # [s]
 		self.wait_timeout = 0.0
@@ -163,6 +163,8 @@ class log_node():
 		sqz = qz**2
 		sqw = qw**2
 		self.robot_yaw = atan2(2*(qx*qy + qw*qz), sqw + sqx - sqy - sqz)
+		if self.state == self.STATE_LOG:
+			self.pose.append([msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z])
 
 	def on_gnss_topic(self, msg):
 		if self.state == self.STATE_LOG:
@@ -186,6 +188,7 @@ class log_node():
 	
 	def begin_log (self):
 		self.gnss = []
+		self.pose = []
 		self.imu =[]
 		self.laser = []
 		self.robot_yaw_survey = self.robot_yaw # save orientation now, it probably won't be better during the standstill
@@ -265,6 +268,7 @@ class log_node():
 			dist_from_wpt =  self.calc_2d_dist ([gnss_e, gnss_n], self.b)
 		else:
 			error = True
+			dist_from_wpt = self.calc_2d_dist ([self.pose[-1][0], self.pose[-1][1]], self.b) # to avoid crash when printing
 
 		if len(self.imu) > 0:
 			#(imu_pitch, imu_roll, imu_yaw) = self.average_imu()

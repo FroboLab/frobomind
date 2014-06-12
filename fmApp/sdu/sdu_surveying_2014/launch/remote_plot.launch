@@ -32,7 +32,7 @@
 		<node pkg="frobit_plot" name="froboscout_plot" type="frobit_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
 			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
 			<param name="plot_pose_track" value="true" />
 			<param name="plot_gnss_track" value="false" />
@@ -51,7 +51,7 @@
 			<param name="avatar_extension_lateral" value="0.30" />
 		</node>
 
-		<node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+		<!--node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
  			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
  			<param name="update_rate" value="5" />
 			<param name="plot_title" value="Navigation PID status" />
@@ -60,7 +60,7 @@
 			<param name="max_output" value="0.5" />
 			<param name="max_pid" value="0.8" />
 			<param name="plot_feed_forward" value="true" />
-		</node>
+		</node-->
 	</group>
 </launch>
 

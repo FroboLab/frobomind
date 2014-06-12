@@ -161,11 +161,11 @@
             <param name="max_linear_velocity" value="1.2"/>
             <param name="max_angular_velocity" value="0.70"/>
 
-            <param name="drive_kp" value="1.60"/>
-            <param name="drive_ki" value="0.40"/>
-            <param name="drive_kd" value="0.40"/>
+            <param name="drive_kp" value="0.80"/>
+            <param name="drive_ki" value="0.20"/>
+            <param name="drive_kd" value="0.20"/>
             <param name="drive_feed_forward" value="0.00"/>
-            <param name="drive_max_output" value="0.80"/>
+            <param name="drive_max_output" value="0.40"/>
 
             <param name="turn_kp" value="0.6"/>
             <param name="turn_ki" value="0.4"/>
