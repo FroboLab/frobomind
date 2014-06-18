@@ -19,7 +19,7 @@
 	</group>
 
 	<group ns="fmLib">
-		<node pkg="sdu_grassbots_trial_2014" name="routed" type="route_socketd.py" output="screen" respawn="true" >
+		<node pkg="sdu_grassbots_2014" name="routed" type="route_socketd.py" output="screen" respawn="true" >
 			<param name="routept_pub" value="/fmPlan/routept" />
 			<param name="socket_address" value="10.10.0.100" />
 			<param name="socket_port" value="8080" />

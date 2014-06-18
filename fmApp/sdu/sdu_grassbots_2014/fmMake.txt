@@ -3,6 +3,7 @@
 /fmApp/sdu/kjeld_sandbox/frobit_plot
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
+/fmSensors/platform_feedback/computer_load_monitor
 /fmProcessors/platform_processing/differential_odometry
 /fmProcessors/localization_mapping/pose_2d_estimator
 /fmLib/msgs

@@ -27,43 +27,78 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-2013-06-07 KJ First version
-
 Notice that the waypoint list must be in ROS_HOME which by default is ~/.ros
 
 Supported waypoint list format:
-	easting,northing,,id,mode,tolerance,speed,
+	easting, northing, yaw, wptid, mode, tolerance, lin_spd, ang_spd, task, wait
 Reference: https://docs.google.com/document/d/1nXmZ2Yz4_EzWaQ4GabGi4fah6phSRXDoe_4mvrjz-kA/edit#
+
+2013-06-07 KJ First version
+2013-11-14 KJ Changed the waypoint list format to:
+			  [easting, northing, yaw, wptid, modestr, tolerance, lin_spd, ang_spd, wait, implement]
+              Added support for flexible waypoint csv length
 
 """
 
 # imports
-import csv
+#import csv
 
 class waypoint_list():
 	def __init__(self):
+		self.IMPLEMENT_INVALID = -10000000.0
 		self.wpts = []
 		self.next = 0
 
 	def load_from_csv_ne_format(self, filename):
 		self.wpts = []
-		file = open(filename, 'rb')
-		lines = csv.reader(file, delimiter=',')
-		#for easting, northing, yaw, wptid, modestr, tolerance, speed, task in lines:
-		modestr = 'MCTE'
-		tolerance = 0.0
-		speed = 0.0
-		for easting, northing, a, wptid, b, c, d, e in lines:
-			if modestr == 'STWP': # 'straight to waypoint'
-				mode = 0
-			elif modestr == 'MCTE': # 'minimize cross track error'
-				mode = 1			
-			self.wpts.append([float(easting), float(northing), wptid, mode, float(tolerance), float(speed)])
-		file.close()
+		lines = [line.rstrip('\n') for line in open(filename)] # read the file and strip \n
+		wpt_num = 0
+		for i in xrange(len(lines)): # for all lines
+			if len(lines[i]) > 0 and lines[i][0] != '#': # if not a comment or empty line
+				data = lines[i].split (',') # split into comma separated list
+				if len(data) >= 2 and data[0] != '' and data[1] != '':
+					wpt_num += 1
+					e = float (data[0])
+					n = float (data[1])
+					if len(data) >= 3 and data[2] != '':
+						yaw = float(data[2])
+					else:
+						yaw = -1
+					mode = 1 # default is 'minimize cross track error'
+					if len(data) >= 4 and data[3] != '':
+						name = data[3]
+					else:
+						name = 'Wpt%d' % (wpt_num)
+					if  len(data) >= 5 and data[4] == 'STWP': # 'straight to waypoint' 
+						mode = 0 
+					if len(data) >= 6 and data[5] != '':  # waypoint reach tolerance
+						tol = float(data[5])
+					else:
+						tol = 0.0 
+					if  len(data) >= 7 and data[6] != '': # linear speed
+						lin_spd = float(data[6])
+					else:
+						lin_spd = 0.0 
+					if  len(data) >= 8 and data[7] != '': # angular speed
+						ang_spd = float(data[7])
+					else:
+						ang_spd = 0.0
+					if  len(data) >= 9 and data[8] != '': # wait after reaching wpt
+						wait = float(data[8])
+					else:
+						wait = -1.0
+					if  len(data) >= 10 and data[9] != '': # implement command
+						implement = float(data[9])
+					else:
+						implement = self.IMPLEMENT_INVALID
+
+					self.wpts.append([e, n, yaw, name, mode, tol, lin_spd, ang_spd, wait, implement])
+				else:
+					print 'Erroneous waypoint'
 		self.next = 0
 
-	def add (self, easting, northing, wptid, mode, tolerance, speed): 
-		self.wpts.append([easting, northing, wptid, mode, tolerance, speed])
+	#def add (self, easting, northing, yaw, wptid, mode, tolerance, lin_spd, ang_spd, implement, wait): 
+	#	self.wpts.append([easting, northing, yaw, wptid, mode, tolerance, lin_spd, ang_spd, implement, wait])
 
 	def get_next (self):	
 		if self.next < len(self.wpts):

@@ -9,4 +9,4 @@ cd $APPDIR
 cp $1 $APPDIR/../$BAG_TMP
 
 # launch the ROS node
-roslaunch ../launch/replay_jan2014.launch
+roslaunch ../launch/replay.launch

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # PID Controller
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,8 @@
 #****************************************************************************/
 """
 2013-06-08 KJ First version
+2013-12-12 KJ Changed integral_max to max_output
+2014-02-21 KJ Added latest_update_values()
 """
 
 class pid_controller():
@@ -40,28 +42,59 @@ class pid_controller():
 		self.Kp = 0.0
 		self.Ki = 0.0
 		self.Kd = 0.0
-		self.integral_max = 0.0
+		self.feed_forward = 0.0
+		self.p = 0.0
+		self.i = 0.0
+		self.d = 0.0
+		self.max_output = 0.0
+		self.first_time = True
 
-	def set_parameters (self, Kp, Ki, Kd, integral_max):
+	def set_parameters (self, Kp, Ki, Kd, feed_forward, max_output):
 		self.Kp = Kp
 		self.Ki = Ki
 		self.Kd = Kd
-		self.integral_max = integral_max
+		self.feed_forward = feed_forward
+		self.max_output = max_output
 
 	def reset(self):
 		self.error_prev = 0.0
 		self.integral = 0.0
+		self.first_time = True
 
 	def update(self, error):
+		# proportional
+		self.error = error
+		self.p = self.Kp*self.error
+
 		# integration
-		self.integral += error * self.dT # integrate error over time
-		if self.integral > self.integral_max: # keep integral element within max
-			self.integral = self.integral_max
+		self.integral += self.error * self.dT # integrate error over time
+		self.i = self.Ki*self.integral
 
 		# derivation
-		self.derivative = (error - self.error_prev)/self.dT # error change
+		if self.first_time == False:
+			self.derivative = (self.error - self.error_prev)/self.dT # error change
+			self.d = self.Kd*self.derivative
+		else:
+			self.d = 0.0
+			self.first_time = False
+		self.error_prev  = self.error # save err for next iteration
 
-		self.output = self.Kp*error + self.Ki*self.integral + self.Kd*self.derivative
-		self.error_prev  = error # save err for next iteration
+		# calculate feed_forward
+		if self.error < 0:
+			self.ff = -self.feed_forward
+		else:
+			self.ff = self.feed_forward
+
+		# calculate output
+		self.output = self.ff + self.p + self.i + self.d
+
+		if self.output > self.max_output: # keep output element within +/- max
+			self.output = self.max_output
+		elif self.output < -self.max_output:
+			self.output = -self.max_output
+
 		return self.output
+
+	def latest_update_values (self):
+		return ([self.error, self.output, self.p, self.i, self.d, self.ff])
 

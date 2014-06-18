@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# parameters
+FILE_PREFIX=grassbots_
+BAG_SEARCH=~/.ros/20*.bag
+
+WPTLIST='waypoints.txt'
+
+# save the name of the currently latest rosbag
+BAG_LATEST_BEFORE_LAUNCH=`ls -altr $BAG_SEARCH 2>/dev/null | tail -n 1 | awk '{print $9;}'`
+
+# define a function that is called upon ctrl-c key press
+on_ctrl_c_key_press(){
+	BAG_LATEST=`ls -altr $BAG_SEARCH 2>/dev/null | tail -n 1 | awk '{print $9;}'`
+	case "$BAG_LATEST" in
+		"$BAG_LATEST_BEFORE_LAUNCH")
+			echo No rosbag created.
+    		;;
+  		*)
+			BAG_LATEST_PREFIXED=$(dirname $BAG_LATEST)/$FILE_PREFIX$(basename $BAG_LATEST)
+			mv $BAG_LATEST $BAG_LATEST_PREFIXED
+			echo Saved rosbag to: $BAG_LATEST_PREFIXED
+			;;
+	esac
+}
+trap "on_ctrl_c_key_press" 2
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+# copy waypoint list to the ROS working directory
+cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
+
+# launch the ROS node
+roslaunch ../launch/grassbots_run.launch

@@ -44,8 +44,6 @@ class mission_node():
 	def __init__(self):
 		# fixed parameters
 		self.update_rate = 20 # [Hz]
-		self.vel_lin_user_max = 0.6
-		self.vel_ang_user_max = 0.4
 
 		# robot state
 		self.STATE_AUTO = 0
@@ -81,8 +79,20 @@ class mission_node():
 		self.wii_angle_diff = self.wii_angle_max - self.wii_angle_min
 
 		# read parameters
+
+
+		self.vel_lin_user_max = rospy.get_param("~linear_velocity_default", 0.5) # [m/s]
+		self.vel_lin_user_step = rospy.get_param("~linear_velocity_step", 0.1) # [m/s]
+		self.vel_ang_user_max = rospy.get_param("~angular_velocity_default", 0.4) # [rad/s]
+		self.vel_ang_user_step = rospy.get_param("~angular_velocity_step", 0.1) # [rad/s]
+
 		self.vel_lin_max = rospy.get_param("~max_linear_velocity", 1.0) # [m/s]
 		self.vel_ang_max = rospy.get_param("~max_angular_velocity", 0.5) # [rad/s]
+		if self.vel_lin_user_max > self.vel_lin_max:
+			self.vel_lin_user_max = self.vel_lin_max
+		if self.vel_ang_user_max > self.vel_ang_max:
+			self.vel_ang_user_max = self.vel_ang_max
+
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 2.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", pi) # [rad/s^2]
 		self.acc_lin_max_step = acc_lin_max/(self.update_rate * 1.0)		
@@ -169,25 +179,25 @@ class mission_node():
 
 		if self.wii_up_changed == True:
 			self.wii_up_changed = False
-			self.vel_lin_user_max += 0.1
+			self.vel_lin_user_max += self.vel_lin_user_step
 			if self.vel_lin_user_max > self.vel_lin_max:
 				self.vel_lin_user_max = self.vel_lin_max
 
 		if self.wii_down_changed == True:
 			self.wii_down_changed = False
-			self.vel_lin_user_max -= 0.1
-			if self.vel_lin_user_max < 0.1:
-				self.vel_lin_user_max = 0.1
+			self.vel_lin_user_max -= self.vel_lin_user_step
+			if self.vel_lin_user_max < self.vel_lin_user_step:
+				self.vel_lin_user_max = self.vel_lin_user_step
 
 		if self.wii_left_changed == True:
 			self.wii_left_changed = False
-			self.vel_ang_user_max -= 0.1
-			if self.vel_ang_user_max < 0.1:
-				self.vel_ang_user_max = 0.1
+			self.vel_ang_user_max -= self.vel_ang_user_step
+			if self.vel_ang_user_max < self.vel_ang_user_step:
+				self.vel_ang_user_max = self.vel_ang_user_step
 		
 		if self.wii_right_changed == True:
 			self.wii_right_changed = False
-			self.vel_ang_user_max += 0.1
+			self.vel_ang_user_max += self.vel_ang_user_step
 			if self.vel_ang_user_max > self.vel_ang_max:
 				self.vel_ang_user_max = self.vel_ang_max
 
