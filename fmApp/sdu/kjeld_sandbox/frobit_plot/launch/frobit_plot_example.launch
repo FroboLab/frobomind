@@ -5,14 +5,14 @@
 		<node pkg="frobit_plot" name="frobit_plot" type="frobit_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="odom_sub" value="/fmKnowledge/encoder_odom" />
-			<param name="wptnav_status_sub" value="/fmData/wptnav_status" />
+			<param name="odom_sub" value="/fmKnowledge/odometry" />
+			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
 			<param name="plot_pose_track" value="true" />
 			<param name="plot_gnss_track" value="false" />
 			<param name="plot_odometry_track" value="false" />
 			<param name="plot_pose_yaw" value="false" />
-			<param name="map_trackpoint_threshold" value="0.02" />
-			<param name="map_max_trackpoints" value="500" />
+			<param name="map_trackpoint_threshold" value="0.05" />
+			<param name="map_max_trackpoints" value="1000" />
 			<param name="map_minimum_size" value="5.0" />
 			<param name="map_easting_offset" value="0.0" />
 			<param name="map_northing_offset" value="0.0" />

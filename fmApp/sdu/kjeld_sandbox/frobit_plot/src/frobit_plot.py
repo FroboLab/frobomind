@@ -33,6 +33,7 @@ Revision
 2013-11-22 KJ Added support for drawing robot avatars
 2014-02-19 KJ Migrated to a frobit_plot component
 2014-04-19 KJ Added support for reversing the avatar
+2014-06-19 KJ Various bug fixes
 """
 # imports
 import matplotlib.pyplot as plt
@@ -71,8 +72,6 @@ class frobit_plot():
 		self.gnss_pos = []
 		self.pose_pos = []
 		self.odo_yaw = []
-		self.gnss_yaw = []
-		self.ahrs_yaw = []
 		self.pose_yaw = []
 		self.wpt_mode = 0
 		self.wpt_a = False
@@ -141,12 +140,6 @@ class frobit_plot():
 	def append_pose_yaw (self, yaw):
 		self.pose_yaw.append(yaw*self.rad_to_deg)
 
-	def append_gnss_yaw (self, yaw):
-		self.gnss_yaw.append(yaw*self.rad_to_deg)
-
-	def append_ahrs_yaw (self, yaw):
-		self.ahrs_yaw.append(yaw*self.rad_to_deg)
-
 	def append_odo_yaw (self, yaw):
 		self.odo_yaw.append(yaw*self.rad_to_deg)
 
@@ -154,10 +147,6 @@ class frobit_plot():
 		self.wpt_mode = mode
 		self.wpt_a = [a_easting + self.map_easting_offset, a_northing + self.map_northing_offset]
 		self.wpt_b = [b_easting + self.map_easting_offset, b_northing + self.map_northing_offset]
-		if self.wpt_first == True:
-			self.wpt_first = False
-			self.gnss_pos.append(self.wpt_a)
-		self.gnss_pos.append(self.wpt_b)
 		self.wpt_target = [target_easting + self.map_easting_offset, target_northing + self.map_northing_offset]
 
 	def update(self):
@@ -183,63 +172,55 @@ class frobit_plot():
 				mms_listT = zip(*mms_list)
 				mms_plt = plot (mms_listT[0],mms_listT[1],'w')
 
-		if (self.plot_gnss_track and self.gnss != []):
-			#plot (self.test_fieldT[0], self.test_fieldT[1], 'g')
-			#plot (self.test_fieldT[0], self.test_fieldT[1], 'go',markersize=7)
-
-			wptlistT = zip(*self.gnss_pos)
-			wptlist_plt = plot(wptlistT[0],wptlistT[1],'#ff0000')
-			plot (self.wpt_a[0], self.wpt_a[1], 'g')
-			
-			gnssT = zip(*self.gnss)		
-			gnss_plt = plot(gnssT[0],gnssT[1],'#000000')
-
-		if self.plot_pose_track and self.pose_pos != []:
-			poseT = zip(*self.pose_pos)		
-			pose_plt = plot(poseT[0],poseT[1],'r')
-		if self.plot_pose_track or self.plot_gnss_track:
- 
-			if self.pose_yaw != [] and self.pose_pos != []:
-				yaw = self.pose_yaw[-1]*self.deg_to_rad
-				pe = self.pose_pos[-1][0]
-				pn = self.pose_pos[-1][1]
-
-				# define avatar plot
-				avatar_plot = []
-				for i in xrange(len(self.avatar)):
-					c = self.vec2d_rot (self.avatar[i],yaw)
-					avatar_plot.append([c[0]+pe,c[1]+pn])
-				avatar_plotT = zip(*avatar_plot)
-	
-				if self.wpt_mode == 1:
-					ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'b')
-				elif self.wpt_mode == 2:
-					ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'r')
-				else:
-					ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'black')
-
-			if self.wpt_mode == 1 or self.wpt_mode == 2:
-				if self.wpt_mode > 0 and self.wpt_b != False:
-					#a_plt = plot(self.wpt_a[0],self.wpt_a[1],'go',markersize=4)
-					#b_plt = plot(self.wpt_b[0],self.wpt_b[1],'ro',markersize=4)
-					ab_plt  =  plot([self.wpt_a[0], self.wpt_b[0]], [self.wpt_a[1], self.wpt_b[1]],'black')
-				if self.wpt_mode == 1:
-					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
-						#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=6)
-						pass
-					if self.wpt_target != False:
-						pass
-						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=4)
-				elif self.wpt_mode == 2:
-					if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
-						#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=6)
-						pass
-					if self.wpt_target != False:
-						target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=4)
-			elif self.wpt_mode == -1:
+		# If A-B navigating draw the navigation line
+		if self.plot_pose_track and (self.wpt_mode == 1 or self.wpt_mode == 2):
+			if self.wpt_mode > 0 and self.wpt_b != False:
+				#a_plt = plot(self.wpt_a[0],self.wpt_a[1],'go',markersize=4)
+				#b_plt = plot(self.wpt_b[0],self.wpt_b[1],'ro',markersize=4)
+				ab_plt  =  plot([self.wpt_a[0], self.wpt_b[0]], [self.wpt_a[1], self.wpt_b[1]],'#777777')
+			if self.wpt_mode == 1:
 				if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
 					#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=6)
 					pass
+				if self.wpt_target != False:
+					pass
+					target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=4)
+			elif self.wpt_mode == 2:
+				if self.pose_pos != [] and (self.pose_pos[-1][0] != 0.0  or self.pose_pos[-1][1] != 0.0):
+					#pose_plt = plot(self.pose_pos[-1][0],self.pose_pos[-1][1],'bs',markersize=6)
+					pass
+				if self.wpt_target != False:
+					target_plt = plot(self.wpt_target[0],self.wpt_target[1],'ro',markersize=4)
+
+		# draw the GNSS track
+		if (self.plot_gnss_track and self.gnss_pos != []):
+			gnssT = zip(*self.gnss_pos)		
+			gnss_plt = plot(gnssT[0],gnssT[1],'#000000')
+
+		# draw the pose track
+		if self.plot_pose_track and self.pose_pos != []:
+			poseT = zip(*self.pose_pos)		
+			pose_plt = plot(poseT[0],poseT[1],'#ff0000')
+
+		# draw the avatar
+		if self.plot_pose_track and self.pose_yaw != [] and self.pose_pos != []:
+			yaw = self.pose_yaw[-1]*self.deg_to_rad
+			pe = self.pose_pos[-1][0]
+			pn = self.pose_pos[-1][1]
+
+			# define avatar plot
+			avatar_plot = []
+			for i in xrange(len(self.avatar)):
+				c = self.vec2d_rot (self.avatar[i],yaw)
+				avatar_plot.append([c[0]+pe,c[1]+pn])
+			avatar_plotT = zip(*avatar_plot)
+
+			if self.wpt_mode == 1:
+				ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'b')
+			elif self.wpt_mode == 2:
+				ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'r')
+			else:
+				ava_plt = plot(avatar_plotT[0],avatar_plotT[1],'black')
 
 		if self.save_time_lapse_images == True:
 			self.fig1.savefig ('img%05d.jpg' % self.map_image_cnt)
@@ -253,12 +234,6 @@ class frobit_plot():
 			if  self.odo_yaw != []:
 				plt.figure(3)
 				odo_yaw_plt = plot(self.odo_yaw,'b')
-			if  self.ahrs_yaw != []:
-				plt.figure(3)
-				ahrs_yaw_plt = plot(self.ahrs_yaw,'g')
-			if  self.gnss_yaw != []:
-				plt.figure(3)
-				gnss_yaw_plt = plot(self.gnss_yaw, 'black')
 			if  self.pose_yaw != []:
 				plt.figure(3)
 				pose_yaw_plt = plot(self.pose_yaw,'r')

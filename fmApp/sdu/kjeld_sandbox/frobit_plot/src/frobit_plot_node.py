@@ -35,6 +35,7 @@ Revision
 2013-05-09 KJ First version
 2014-02-19 KJ Migrated to a frobit_plot component
 2014-04-19 KJ Added support for reversing the avatar
+2014-06-19 KJ Various bug fixes
 """
 
 # ROS imports
@@ -75,7 +76,7 @@ class ROSnode():
 		self.plot = frobit_plot(plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, avatar_reverse)
 
 		# setup yaw plot
-		self.plot_gnss_yaw = False
+		self.plot_gnss_yaw = True
 		self.plot_odo_yaw = True
 		self.latest_absolute_yaw = 0.0
 		self.latest_odo_yaw = 0.0
@@ -137,12 +138,8 @@ class ROSnode():
 		while not rospy.is_shutdown():
 			# Update map
 			self.plot.append_pose_yaw(self.yaw)
-
-			if self.plot_gnss_yaw:
-				self.plot.append_gnss_yaw (self.latest_absolute_yaw)
 			if self.plot_odo_yaw:
 				self.plot.append_odo_yaw (self.latest_odo_yaw)
-
 
 			self.plot.update()
 			self.r.sleep()
