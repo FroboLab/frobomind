@@ -1,6 +1,5 @@
 /fmApp/sdu/sdu_surveying_2014
 /fmApp/sdu/kjeld_sandbox/frobit_sim
-/fmApp/sdu/kjeld_sandbox/frobit_plot
 /fmApp/sdu/kjeld_sandbox/real_time_analyze
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
@@ -14,6 +13,7 @@
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea
 /fmLib/platform_support/cetus_froboscout
+/fmMon/frobit_plot
 /fmMon/plot_pid
 /fmMon/plot_velocity
 /fmMon/plot_propulsion_feedback_leftright
