@@ -48,9 +48,9 @@
 			<param name="map_update_frequency" value="10.0" />
 			<param name="map_title" value="GrassBots Track" />
 			<param name="map_window_size" value="5.0" />
-			<param name="avatar_extension_front" value="1.5" />
-			<param name="avatar_extension_rear" value="1.0" />
-			<param name="avatar_extension_lateral" value="1.5" />
+			<param name="avatar_extension_front" value="1.7" />
+			<param name="avatar_extension_rear" value="0.9" />
+			<param name="avatar_extension_lateral" value="0.9" />
 		</node>
 	</group>
 
