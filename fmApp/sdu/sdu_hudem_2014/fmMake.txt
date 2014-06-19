@@ -2,13 +2,12 @@
 /fmApp/sdu/kjeld_sandbox/frobit_sim
 /fmApp/sdu/kjeld_sandbox/frobit_plot
 /fmApp/sdu/kjeld_sandbox/real_time_analyze
-/fmApp/sdu/kjeld_sandbox/odometry_gnss_pose_estimator
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/implement_feedback/wads_upex740_implement
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
 /fmSensors/platform_feedback/computer_load_monitor
 /fmProcessors/platform_processing/differential_odometry
-/fmProcessors/localization_mapping/pose_2d_estimator
+/fmProcessors/localization_mapping/odometry_gnss_pose_estimator
 /fmControllers/platform/roboteq_hbl1650
 /fmLib/msgs
 /fmLib/math/geographics/transverse_mercator

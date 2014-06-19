@@ -5,7 +5,7 @@
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
 /fmSensors/platform_feedback/computer_load_monitor
 /fmProcessors/platform_processing/differential_odometry
-/fmProcessors/localization_mapping/pose_2d_estimator
+/fmProcessors/localization_mapping/odometry_gnss_pose_estimator
 /fmLib/msgs
 /fmLib/math/geographics/transverse_mercator
 /fmLib/kinematics/differential_ifk_lib
