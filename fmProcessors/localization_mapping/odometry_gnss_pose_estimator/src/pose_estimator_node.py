@@ -34,6 +34,7 @@ Revision
 2013-05-16 KJ First version
 2014-03-18 KJ Various bug fixes and computation optimizations
 2014-04-21 KJ Fixed EKF problems.
+2014-06-19 KJ "driving forward" detection now accepts zero encoder updates.
 """
 # ROS imports
 import rospy,tf
@@ -146,7 +147,7 @@ class PoseEstimatorNode():
 		(roll,pitch,yaw) = euler_from_quaternion(self.quaternion)
 
 		# driving forwards or backwards?
-		if (msg.twist.twist.linear.x > 0):
+		if (msg.twist.twist.linear.x >= 0):
 			forward = True
 		else:
 			forward = False
