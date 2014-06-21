@@ -116,7 +116,7 @@ else:
 	plot_easting_offset = -ekf_easting_init 
 	plot_northing_offset = -ekf_northing_init
 plot = track_map(plot_pose, plot_gnss, plot_odometry, plot_yaw, \
-	"Pichi", 8.0, plot_easting_offset, plot_northing_offset)
+	"Simulation", 8.0, plot_easting_offset, plot_northing_offset)
 latest_pose_yaw = 0.0
 latest_absolute_yaw = 0.0
 latest_ahrs_yaw = 0.0
