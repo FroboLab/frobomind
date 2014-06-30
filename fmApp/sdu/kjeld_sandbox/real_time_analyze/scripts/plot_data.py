@@ -37,168 +37,143 @@ from numpy import *
 class scalar_data():
 	def __init__(self, filename, data_type, skip_lines, max_lines):
 		self.i = 0
-		print 'Importing float data'
 		file = open(filename, 'r')
 		file_content = csv.reader(file, delimiter=',')
+	 	self.time = []
 	 	self.data = []
 		i = 0
 		for time, x in file_content:
 			if i > skip_lines:
+				self.time.append(float(time))
 				if data_type == 'float':
-					self.data.append([float(time), float(x)])
+					self.data.append(float(x))
 				elif data_type == 'int':
-					self.data.append([float(time), int(x)])
+					self.data.append(int(x))
 			i += 1
 			if max_lines > 0 and i == max_lines:
 				break
 		file.close()
 		self.length = len(self.data)
-		print '\tTotal samples: %d' % (self.length) 
 
 	def trim_begin (self, begin):
-		while self.data[0][0] < begin:	
+		while self.time[0] < begin:	
+			del (self.time[0])
 			del (self.data[0])
-		for i in xrange(len(self.data)):
-			self.data[i][0] -= begin
+		for i in xrange(len(self.time)):
+			self.time[i] -= begin
 
 	def trim_end (self, end):
-		while self.data[-1][0] > end:	
+		while self.time[-1] > end: 
+			del (self.time[-1])
 			del (self.data[-1])
 
-	def get_latest(self, time):
-		new_data = 0
-		while self.i < self.length and self.data[self.i][0] <= time:
-			self.i += 1
-			new_data += 1
-		return (new_data, self.data[self.i-1])
+	def convert_to_percent(self):
+		for i in xrange(len(self.data)):
+			self.data[i] *= 100
+
+	def convert_100ns_to_ms(self):
+		for i in xrange(len(self.data)):
+			self.data[i] /= 10.0
+
+def trim_begin_end (rt, cpu, mem):
+	# determine first and last time stamp
+	time_begin = rt.time[0]
+	if cpu.time[0] > time_begin:
+		time_begin = cpu.time[0]
+	if mem.time[0] > time_begin:
+		time_begin = mem.time[0]
+
+	time_end = rt.time[-1]
+	if cpu.time[-1] < time_end:
+		time_end = cpu.time[-1]
+	if mem.time[-1] < time_end:
+		time_end = mem.time[-1]
+
+	# trim data
+	rt.trim_begin(time_begin)
+	cpu.trim_begin(time_begin)
+	mem.trim_begin(time_begin)
+	rt.trim_end(time_end)
+	cpu.trim_end(time_end)
+	mem.trim_end(time_end)
+
+def adjust_rt_timing(rt):
+	a = array(rt.data)
+	mean = a.mean()
+	offset = mean/10.0
+	print 'rt timing adjusted by %.9f ms' % offset
+	for i in xrange(len(rt.data)):
+		rt.data[i] /= offset
+
+def calc_rt_timing_delays (rt):
+	delay = []
+	clock_true = 0
+	clock_actual = 0.0
+	for i in xrange(len(rt.data)):
+		clock_true += 10
+		clock_actual += (rt.data[i]) 
+		delay.append(clock_actual-clock_true) 
+
+	# offset adjust by assuming that the lowest experienced delay is 0 ms
+	minval = 10000000
+	for i in xrange(len(delay)):
+		if delay[i] < minval:
+			minval = delay[i]
+
+	for i in xrange(len(delay)):
+		delay[i] -= minval
+	return delay
+
+def calc_statistics (delay):
+	a = array(delay)
+	np_mean = a.mean()
+	np_var = a.var()
+
+	print 'samples %ld' % len(delay)
+	print 'mean %.9f' % np_mean
+	print 'variance %.6f' % np_var
+	print 'minimum/maximum %.2f %.2f' % (min(a), max(a)) 
+	p95 = np.percentile (a, 95.)
+	print ('95 %% percentile: %.19f' % (p95))
 
 # import data
 skip_lines = 0
 max_lines = 99999999
-rt = scalar_data('rosbag_rt_timing.txt', 'int', skip_lines, max_lines)
-cpu = scalar_data('rosbag_cpu_load.txt', 'float', skip_lines, max_lines)
-mem = scalar_data('rosbag_memory_load.txt', 'float', skip_lines, max_lines)
 
-# determine first and last time stamp
-time_begin = rt.data[0][0]
-if cpu.data[0][0] > time_begin:
-	time_begin = cpu.data[0][0]
-if mem.data[0][0] > time_begin:
-	time_begin = mem.data[0][0]
+# timing_adjust compensates for inaccuracy in measurement, due to x-tal on
+# the ATmega it actually counts 1.000094 per 100 ns. 
+#timing_adjust = 1.000094 # theoretical (measured using a scope)
 
-time_end = rt.data[-1][0]
-if cpu.data[-1][0] < time_end:
-	time_end = cpu.data[-1][0]
-if mem.data[-1][0] < time_end:
-	time_end = mem.data[-1][0]
-
-# trim data
-rt.trim_begin(time_begin)
-cpu.trim_begin(time_begin)
-mem.trim_begin(time_begin)
-rt.trim_end(time_end)
-cpu.trim_end(time_end)
-mem.trim_end(time_end)
-
-print "Duration %.2f seconds" % (time_end - time_begin)
-
-# convert CPU load to %
-for i in xrange(len(cpu.data)):
-	cpu.data[i][1] *= 100
-
-tim = []
-clock = -3
-actual = 0
-
-timing_adjust = 1.000094
-
-for i in xrange(len(rt.data)):
-	actual += (rt.data[i][1]/timing_adjust)
-	clock += 100
-	tim.append ([rt.data[i][0], 10+(actual-clock)/10.0])
-
-rtperc = []
-for i in xrange(len(rt.data)):
-	rtperc.append ([rt.data[i][0], rt.data[i][1]/timing_adjust/10.0])
-
-
-cpuT = zip(*cpu.data)
-timT = zip(*tim)
-rtT = zip(*rtperc)
-
-avg = 0
-mini = 9999
-maxi = 0
-for i in xrange(len(rtperc)):
-	avg += rtperc[i][1]
-	if rtperc[i][1] > maxi:
-		maxi = rtperc[i][1]
-	if rtperc[i][1] < mini:
-		mini = rtperc[i][1]
-avg /= len(rtperc)
-print 'samples %ld' % len(rtperc)
-print 'average %.6f' % avg 
-print 'min/max %.2f %.2f' % (mini,maxi) 
-
-vari = 0
-for i in xrange(len(rtperc)):
-	vari += (rtperc[i][1] - avg)**2
-vari /= len(rtperc)
-print 'variance %.2f' % vari 
-
-
-hist,bins=np.histogram(array(rtT[1]),bins=50)
-width=1*(bins[1]-bins[0])
-center=(bins[:-1]+bins[1:])/2
+pc_rt = scalar_data('rosbag_rt_timing.txt', 'int', skip_lines, max_lines)
+pc_cpu = scalar_data('rosbag_cpu_load.txt', 'float', skip_lines, max_lines)
+pc_mem = scalar_data('rosbag_memory_load.txt', 'float', skip_lines, max_lines)
+trim_begin_end (pc_rt, pc_cpu, pc_mem) # trim begin and end times
+pc_cpu.convert_to_percent() # convert cpu to percent
+pc_mem.convert_to_percent() # convert memory to percent
+pc_rt.convert_100ns_to_ms() # adjust til ms
+adjust_rt_timing(pc_rt) # make sure that the mean is exactly 10 ms
+pc_delay = calc_rt_timing_delays (pc_rt) # calc real time timing delays
+calc_statistics (pc_delay) # print all statistics informations
 
 ion()
 
-plt.bar(center,hist,align='center',width=width)
-savefig('hist.png')
-
-
-# plot data
-
+plt.figure (1)
 subplot (211)
 title ('CPU load & scheduler intervals')
-cpuT = zip(*cpu.data)
-cpu_plt = plot(cpuT[0], cpuT[1], 'red')
-#memT = zip(*mem.data)
-#mem_plt = plot(memT[0], memT[1], 'black')
-
+pc_cpu_plt = plot(pc_cpu.time, pc_cpu.data, 'red')
 ylim([0.0, 100.0])
 ylabel('CPU load [%]')
 grid (True)
 
 subplot (212)
-#ylim([0, 20])
-#timT = zip(*tim)
-#tim_plt = plot(timT[0], timT[1], 'black')
-rt_plt = plot(rtT[0], rtT[1], 'black')
+rt_plt = plot(pc_rt.time, pc_delay, 'black')
 ylabel('Scheduler interval [ms]')
 xlabel('Time [s]')
 grid (True)
 
+savefig('fm_cpu_load_sched_intervals.png')
 
-'''subplot (211)
-title ('CPU & memory load')
-cpu_plt = plot(cpuT[0], cpuT[1], 'red')
-#memT = zip(*mem.data)
-#mem_plt = plot(memT[0], memT[1], 'black')
-
-ylim([0.0, 100.0])
-ylabel('CPU load [%]')
-grid (True)
-title ('CPU load & scheduler intervals')
-
-subplot (212)
-#ylim([-5, 5])
-tim_plt = plot(timT[0], timT[1], 'black')
-ylabel('100 Hz sched. [ms]')
-grid (True)
-'''
 draw()
 
 raw_input() # wait for enter keypress 
-savefig('cpu_load_sched_interval.png')
 

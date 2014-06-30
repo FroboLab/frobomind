@@ -27,8 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
-This n.coode utilizes an external microcontroller unit to determine the real-time
-performance.
+This node utilizes an external microcontroller unit to determine the real-time
+performance. Please see the component readme.txt for more information.
 
 2014-02-21 KJ First version
 """
