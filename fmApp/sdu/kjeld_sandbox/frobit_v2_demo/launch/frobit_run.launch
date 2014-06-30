@@ -159,7 +159,8 @@
 			<param name="ramp_min_drive_velocity" value="0.07" />
 			<param name="ramp_turn_velocity_at_angle" value="30.0" />
 			<param name="ramp_min_turn_velocity" value="0.2" />
-		</node>		n 
+			<param name="stop_navigating_at_distance" value="0.01" />
+		</node>
 	</group>
 
 	<group ns="fmControllers">
