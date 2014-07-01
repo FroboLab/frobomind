@@ -1,0 +1,90 @@
+<!-- FroboScout launch file -->
+
+<launch>
+	<!-- FroboScout parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.5"/>
+	<param name="ticks_per_meter_left" value="2627" />
+	<param name="ticks_per_meter_right" value="2627" />
+
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_froboscout2_test" name="mission" type="keyboard_mission_node.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+			<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="max_linear_velocity" value="0.8"/>
+			<param name="max_angular_velocity" value="0.6"/>
+			<param name="linear_velocity_step" value="0.1"/>
+			<param name="angular_velocity_step" value="0.1"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- FroboScout interface node -->
+		<node pkg="sdu_froboscout2" name="froboscout2" type="froboscout2_interface_node.py" output="screen" >
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_status_left_pub" value="/fmInformation/wheel_status_left" />
+			<param name="wheel_status_right_pub" value="/fmInformation/wheel_status_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
+			<param name="wheel_left_sub" value="/fmSignal/data_from_wheel_left" />	 
+			<param name="wheel_left_pub" value="/fmSignal/data_to_wheel_left" /> 
+			<param name="wheel_right_sub" value="/fmSignal/data_from_wheel_right" />	 
+			<param name="wheel_right_pub" value="/fmSignal/data_to_wheel_right" /> 
+			<param name="publish_wheel_status_rate" value="10" />
+			<param name="publish_wheel_feedback_rate" value="50" />
+			<param name="max_linear_acceleration" value="1.2"/>
+			<param name="max_angular_acceleration" value="2.0"/>
+			<param name="wheel_left_kp" value="9" /> 
+			<param name="wheel_left_ki" value="15" /> 
+			<param name="wheel_left_kd" value="2" /> 
+			<param name="wheel_left_max_integral_output" value="50.0" /> 
+			<param name="wheel_right_kp" value="9" /> 
+			<param name="wheel_right_ki" value="15" /> 
+			<param name="wheel_right_kd" value="2" /> 
+			<param name="wheel_right_max_integral_output" value="50.0" /> 
+			<param name="min_supply_voltage" value="12.1" /> 
+			<param name="show_voltage_interval" value="30" /> 
+		</node>
+
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
+		<!-- serial device handler for the FroboScout2 left wheel module -->
+		<node pkg="serial_string" name="wheel_left_serial" type="serial_string_node" respawn="true" output="screen" >
+			<param name="publisher_topic" value="/fmSignal/data_from_wheel_left"/>
+			<param name="subscriber_topic" value="/fmSignal/data_to_wheel_left"/>
+			<param name="device" value="/dev/froboscout2_left"/>
+			<param name="baudrate" value="3000000"/>
+			<param name="termination_character" value="10"/>
+		</node>
+
+		<!--serial device handler for the FroboScout2 right wheel module -->
+		<node pkg="serial_string" name="wheel_right_serial" type="serial_string_node" respawn="true" output="screen" >
+			<param name="publisher_topic" value="/fmSignal/data_from_wheel_right"/>
+			<param name="subscriber_topic" value="/fmSignal/data_to_wheel_right"/>
+			<param name="device" value="/dev/froboscout2_right"/>
+			<param name="baudrate" value="3000000"/>
+			<param name="termination_character" value="10"/>
+		</node>
+	</group>
+</launch>
+

@@ -2,10 +2,8 @@
 /fmApp/sdu/kjeld_sandbox/frobit_sim
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
-/fmSensors/platform_feedback/computer_load_monitor
 /fmProcessors/platform_processing/differential_odometry
-/fmProcessors/localization_mapping/pose_2d_estimator
-/fmApp/sdu/kjeld_sandbox/odometry_gnss_pose_estimator
+/fmProcessors/localization_mapping/odometry_gnss_pose_estimator
 /fmLib/msgs
 /fmLib/math/geographics/transverse_mercator
 /fmLib/kinematics/differential_ifk_lib
@@ -17,5 +15,5 @@
 /fmMon/plot_pid
 /fmMon/plot_velocity
 /fmMon/plot_propulsion_feedback_leftright
-/fmDependencies/joystik_drivers/wiimote
 /fmDependencies/joystick_drivers/joy
+/fmDependencies/joystick_drivers/wiimote
