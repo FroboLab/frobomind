@@ -1,18 +1,29 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sdu_kent_sandbox)
+project(row_extractor_poc)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp)
+find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure laser_geometry msgs pcl_ros roscpp sensor_msgs tf visualization_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+##	Eigen
+find_package(Eigen REQUIRED)
+include_directories(${EIGEN_INCLUDE_DIRS})
+add_definitions(${EIGEN_DEFINITIONS})
+
+##	PCL
+#find_package(PCL 1.3 REQUIRED COMPONENTS common io)
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
-## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 # catkin_python_setup()
 
 #######################################
@@ -36,7 +47,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   sensor_msgs#   visualization_msgs
 # )
 
 ###################################
@@ -49,8 +60,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES sdu_kent_sandbox
-#  CATKIN_DEPENDS roscpp
+#  LIBRARIES row_extractor
+#  CATKIN_DEPENDS dynamic_reconfigure laser_geometry msgs roscpp sensor_msgs tf visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -65,28 +76,28 @@ include_directories(include
 )
 
 ## Declare a cpp library
-# add_library(sdu_kent_sandbox
-#   src/${PROJECT_NAME}/sdu_kent_sandbox.cpp
+# add_library(row_extractor
+#   src/${PROJECT_NAME}/row_extractor.cpp
 # )
 
 ## Declare a cpp executable
-add_executable(frobit_test_node src/frobit_test.cpp)
+add_executable(row_extractor_poc_node src/RowExtractorNode.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(sdu_kent_sandbox_node sdu_kent_sandbox_generate_messages_cpp)
+ add_dependencies(row_extractor_poc_node msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(frobit_test_node
-   ${catkin_LIBRARIES}
- )
+target_link_libraries(row_extractor_poc_node
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
 #############
 
 # all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/groovy/api/catkin/html/adv_user_guide/variables.html
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
@@ -96,7 +107,7 @@ add_executable(frobit_test_node src/frobit_test.cpp)
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS sdu_kent_sandbox sdu_kent_sandbox_node
+# install(TARGETS row_extractor row_extractor_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -121,7 +132,7 @@ add_executable(frobit_test_node src/frobit_test.cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_sdu_kent_sandbox.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_row_extractor.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
