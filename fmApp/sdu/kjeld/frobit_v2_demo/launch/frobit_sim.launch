@@ -6,8 +6,6 @@
 	<param name="ticks_per_meter_left" value="562" />
 	<param name="ticks_per_meter_right" value="562" />
 
-	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
-
 	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
 
 	<group ns="fmMon">
@@ -79,10 +77,6 @@
 	</group>
 
 	<group ns="fmSensors">
-		<!--node pkg="computer_load_monitor" name="load_monitor" type="computer_load_monitor_node" output="screen" >
-			<param name="update_rate" value="5" />
-		</node-->
-
 	</group>
 
 	<group ns="fmProcessors">
