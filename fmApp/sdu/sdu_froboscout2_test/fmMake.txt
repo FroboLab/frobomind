@@ -1,5 +1,4 @@
 /fmApp/sdu/sdu_froboscout2_test
-/fmApp/sdu/kjeld_sandbox/frobit_sim
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
 /fmProcessors/platform_processing/differential_odometry
@@ -11,6 +10,7 @@
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea
 /fmLib/platform_support/sdu_froboscout2
+/fmLib/simulation/frobit_sim
 /fmMon/frobit_plot
 /fmMon/plot_pid
 /fmMon/plot_velocity

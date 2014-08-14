@@ -9,7 +9,7 @@
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea
 /fmLib/msg_converters/twist_stamped_to_twist
-/fmSim/frobit_sim
+/fmLib/simulation/frobit_sim
 /fmMon/frobit_plot
 /fmMon/plot_velocity
 /fmMon/plot_propulsion_feedback_leftright

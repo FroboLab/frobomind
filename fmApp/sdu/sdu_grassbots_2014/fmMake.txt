@@ -1,5 +1,4 @@
 /fmApp/sdu/sdu_grassbots_2014
-/fmApp/sdu/kjeld_sandbox/frobit_sim
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
 /fmSensors/platform_feedback/computer_load_monitor
@@ -11,6 +10,7 @@
 /fmLib/hmi_support/keyboard_interface
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea
+/fmLib/simulation/frobit_sim
 /fmMon/frobit_plot
 /fmMon/plot_pid
 /fmMon/plot_velocity

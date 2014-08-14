@@ -1,5 +1,4 @@
 /fmApp/sdu/sdu_hudem_2014
-/fmApp/sdu/kjeld_sandbox/frobit_sim
 /fmApp/sdu/kjeld_sandbox/real_time_analyze
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/implement_feedback/wads_upex740_implement
@@ -17,6 +16,7 @@
 /fmLib/computer_support/serial_string
 /fmLib/computer_support/serial_nmea
 /fmLib/platform_support/sdu_armadillo3
+/fmLib/simulation/frobit_sim
 /fmMon/frobit_plot
 /fmMon/plot_pid
 /fmMon/plot_velocity
