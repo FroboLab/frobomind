@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # parameters
-FILE_PREFIX=frobit_sim_stage_
+FILE_PREFIX=frobit_sim_
 BAG_SEARCH=~/.ros/20*.bag
 
 WPTLIST='waypoints.txt'
@@ -33,4 +33,4 @@ cd $APPDIR
 cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
 
 # launch the ROS node
-roslaunch ../launch/frobit_sim_stage.launch
+roslaunch ../launch/frobit_sim_wpt_nav_feedback.launch

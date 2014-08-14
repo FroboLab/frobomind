@@ -7,7 +7,7 @@
 	<param name="ticks_per_meter_right" value="562" />
 
 	<!-- Notice: Use pkg="stage" if running ROS Groovy and pkg="stage_ros" if running ROS Hydro --> 
- 	<node pkg="stage_ros" type="stageros" name="simulator" args="$(find frobit_v2_demo)/stage/frobit.world"/>
+ 	<node pkg="stage_ros" type="stageros" name="simulator" args="$(find frobit_v2_demo)/stage/frobit_wpt_navigation.world"/>
 	<remap from="/fmKnowledge/pose" to="/odom" />
 
 	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->

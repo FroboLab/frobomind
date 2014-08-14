@@ -3,7 +3,6 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
   scripts=['mission/keyboard_mission_node.py',
-  'navigation/waypoint_navigation_node.py',
-  'survey/survey_log_node.py'],)
+  'waypoint_navigation/waypoint_navigation_node.py'],)
 setup(**d)
 
