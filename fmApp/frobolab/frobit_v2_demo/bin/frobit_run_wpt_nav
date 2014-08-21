@@ -11,4 +11,4 @@ cd $APPDIR
 cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
 
 # launch the ROS node
-roslaunch ../launch/frobit_run.launch
+roslaunch ../launch/frobit_run_wpt_nav.launch

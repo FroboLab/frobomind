@@ -10,7 +10,7 @@
 /fmLib/computer_support/serial_nmea
 /fmLib/msg_converters/twist_stamped_to_twist
 /fmLib/simulation/frobit_sim
-/fmMon/frobit_plot
-/fmMon/plot_velocity
-/fmMon/plot_propulsion_feedback_leftright
-/fmMon/plot_pid
+/fmLib/monitors/frobit_plot
+/fmLib/monitors/plot_velocity
+/fmLib/monitors/plot_propulsion_feedback_leftright
+/fmLib/monitors/plot_pid

@@ -1,4 +1,12 @@
-<!-- frobit launch file -->
+<!-- frobit launch file 
+
+FroboMind controller frobits using 22000/3300 ohm voltage dividers:
+	supply_voltage_scale_factor = 0.03747
+
+RoboCard based frobits using 1800/700 ohm voltage dividers: 
+	supply_voltage_scale_factor = 0.01746
+
+-->
 
 <launch>
 	<!-- frobit parameters --> 
@@ -206,6 +214,7 @@
 			<param name="wheel_turn_ki" value="20" /> 
 			<param name="wheel_turn_kd" value="3" /> 
 			<param name="wheel_turn_max_integral_output" value="300" /> 
+			<param name="supply_voltage_scale_factor" value="0.03747" /> 
 			<param name="min_supply_voltage" value="12.1" /> 
 			<param name="show_voltage_interval" value="300" /> 
 		</node>

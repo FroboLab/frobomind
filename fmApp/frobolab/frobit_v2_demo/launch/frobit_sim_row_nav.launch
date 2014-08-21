@@ -12,7 +12,42 @@
 
 	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
 
-	<group ns="fmMon">
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="frobit_v2_demo" name="mission" type="keyboard_mission_node.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="1.0"/>
+            <param name="max_angular_velocity" value="0.8"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.2"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py">	
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="cmd_vel_pub" value="/cmd_vel" />
+			<param name="deadman_sub" value="/fmCommand/deadman" />
+		</node>
+
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
 		<!--node pkg="plot_velocity" name="plot_vel" type="plot_velocity_node.py" output="screen" >
  			<param name="velocity_sub" value="/fmCommand/cmd_vel" />
  			<param name="update_frequency" value="10" />
@@ -43,45 +78,6 @@
 			<param name="avatar_extension_rear" value="0.06" />
 			<param name="avatar_extension_lateral" value="0.13" />
 			<param name="avatar_reverse" value="false" />
-		</node>
-	</group>
-
-	<group ns="fmSim">
-		<node pkg="twist_stamped_to_twist" name="converter" type="cmd_vel_converter.py">	
-			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
-			<param name="cmd_vel_pub" value="/cmd_vel" />
-			<param name="deadman_sub" value="/fmCommand/deadman" />
-		</node>
-	</group>
-
-	<group ns="fmSensors">
-	</group>
-
-	<group ns="fmProcessors">
-	</group>
-
-	<group ns="fmDecisionMakers">
-		<node pkg="frobit_v2_demo" name="mission" type="keyboard_mission_node.py" output="screen">
-			<param name="keyboard_sub" value="/fmHMI/keyboard" />
-			<param name="automode_pub" value="/fmDecision/automode" />
-    		<param name="deadman_pub" value="/fmCommand/deadman" />
-			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
-            <param name="max_linear_velocity" value="1.0"/>
-            <param name="max_angular_velocity" value="0.8"/>
-            <param name="linear_velocity_step" value="0.1"/>
-            <param name="angular_velocity_step" value="0.2"/>
-		</node>
-	</group>
-
-	<group ns="fmExecutors">
-	</group>
-
-	<group ns="fmControllers">
-	</group>
-
-	<group ns="fmLib">
-	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
-			<param name="keyboard_pub" value="/fmHMI/keyboard" />
 		</node>
 	</group>
 </launch>
