@@ -2,7 +2,7 @@
 -->
 
 <launch>
-	<group ns="fmMon">
+	<group ns="fmLib">
 		<node pkg="frobit_plot" name="frobit_plot" type="frobit_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />

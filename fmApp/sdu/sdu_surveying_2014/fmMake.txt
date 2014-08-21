@@ -13,9 +13,9 @@
 /fmLib/computer_support/serial_nmea
 /fmLib/platform_support/cetus_froboscout
 /fmLib/simulation/frobit_sim
-/fmMon/frobit_plot
-/fmMon/plot_pid
-/fmMon/plot_velocity
-/fmMon/plot_propulsion_feedback_leftright
+/fmLib/monitors/frobit_plot
+/fmLib/monitors/plot_pid
+/fmLib/monitors/plot_velocity
+/fmLib/monitors/plot_propulsion_feedback_leftright
 /fmDependencies/joystik_drivers/wiimote
 /fmDependencies/joystick_drivers/joy

@@ -10,8 +10,8 @@
 /fmLib/hmi_support/wiimote_interface
 /fmLib/platform_support/sdu_armadillo3
 /fmLib/computer_support/serial_string
-/fmMon/plot_pid
-/fmMon/plot_velocity
-/fmMon/plot_propulsion_feedback_leftright
+/fmLib/monitors/plot_pid
+/fmLib/monitors/plot_velocity
+/fmLib/monitors/plot_propulsion_feedback_leftright
 /fmDependencies/joystick_drivers/wiimote
 /fmDependencies/joystick_drivers/joy
