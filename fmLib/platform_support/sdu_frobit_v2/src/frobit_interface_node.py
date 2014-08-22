@@ -332,19 +332,6 @@ class FrobitInterfaceNode():
 				if self.frobit_state == self.STATE_ERR_NO_CONFIG: # wheel module not configured since reset?
 					self.publish_configuration_messages()
 			elif msg.type == 'PFBHI':
-				if msg.data[2] == '0':
-					reset_cause = 'Power on reset'
-				elif msg.data[2] == '1':
-					reset_cause = 'Reset'
-				elif msg.data[3] == '2':
-					reset_cause = 'Brown-out reset'
-				elif msg.data[4] == '3':
-					reset_cause = 'Watchdog reset'
-				elif msg.data[5] == '4':
-					reset_cause = 'JTAG reset'
-				else:
-					reset_cause = 'Unknown reset'
-
 				if msg.data[0] == '1':
 					hardware_type = 'RoboCard'
 				elif msg.data[0] == '2':
@@ -352,8 +339,27 @@ class FrobitInterfaceNode():
 				else:
 					hardware_type = 'Unknown hardware'
 
+				if msg.length >= 4:
+					software_ver = msg.data[1] + '.' + msg.data[2]
+
+					if msg.data[3] == '0':
+						reset_cause = 'Power on reset'
+					elif msg.data[3] == '1':
+						reset_cause = 'Reset'
+					elif msg.data[3] == '2':
+						reset_cause = 'Brown-out reset'
+					elif msg.data[3] == '3':
+						reset_cause = 'Watchdog reset'
+					elif msg.data[3] == '4':
+						reset_cause = 'JTAG reset'
+					else:
+						reset_cause = 'Unknown reset'
+				else:
+					reset_cause = 'Unknown reset'
+					software_ver = msg.data[1]
+
 				rospy.logwarn (rospy.get_name() + ': Frobit says: %s' % (reset_cause))
-				rospy.loginfo (rospy.get_name() + ': Frobit says: %s with V%s firmware detected' % (hardware_type, msg.data[1]))
+				rospy.loginfo (rospy.get_name() + ': Frobit says: %s with firmware version %s detected' % (hardware_type, software_ver))
 
 	def publish_enc_messages(self):
 		self.intstamp.header.stamp = rospy.Time.now()
