@@ -1,0 +1,15 @@
+/fmApp/sdu/sdu_rsd_2014
+/fmSensors/global_sensing/imu/vectornav_vn100
+/fmProcessors/platform_processing/differential_odometry
+/fmLib/msgs
+/fmLib/platform_support/sdu_frobit_v2
+/fmLib/kinematics/differential_ifk_lib
+/fmLib/hmi_support/keyboard_interface
+/fmLib/computer_support/serial_string
+/fmLib/computer_support/serial_nmea
+/fmLib/msg_converters/twist_stamped_to_twist
+/fmLib/simulation/frobit_sim
+/fmLib/monitors/frobit_plot
+/fmLib/monitors/plot_velocity
+/fmLib/monitors/plot_propulsion_feedback_leftright
+/fmLib/monitors/plot_pid

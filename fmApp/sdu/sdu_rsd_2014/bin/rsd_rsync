@@ -1,0 +1,2 @@
+rsync -avz --del ~/frobowork/src/* robot@frobit:~/frobowork/src
+

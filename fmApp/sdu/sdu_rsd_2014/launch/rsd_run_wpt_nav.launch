@@ -1,0 +1,241 @@
+<!-- frobit launch file 
+
+FroboMind controller frobits using 22000/3300 ohm voltage dividers:
+	supply_voltage_scale_factor = 0.03747
+
+RoboCard based frobits using 1800/700 ohm voltage dividers: 
+	supply_voltage_scale_factor = 0.01746
+
+-->
+
+<launch>
+	<!-- frobit parameters --> 
+	<param name="diff_steer_wheel_distance" value="0.23"/>
+	<param name="ticks_per_meter_left" value="562" />
+	<param name="ticks_per_meter_right" value="562" />
+
+	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
+
+		<!--node pkg="frobit_plot" name="frobit_plot" type="frobit_plot_node.py" output="screen" >
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="odom_sub" value="/fmKnowledge/odom" />
+			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
+			<param name="plot_pose_track" value="true" />
+			<param name="plot_gnss_track" value="false" />
+			<param name="plot_odometry_track" value="false" />
+			<param name="plot_pose_yaw" value="false" />
+			<param name="map_trackpoint_threshold" value="0.02" />
+			<param name="map_max_trackpoints" value="500" />
+			<param name="map_minimum_size" value="3.0" />
+			<param name="map_easting_offset" value="0.0" />
+			<param name="map_northing_offset" value="0.0" />
+			<param name="map_update_frequency" value="10.0" />
+			<param name="map_title" value="Frobit track" />
+			<param name="map_window_size" value="5.0" />
+			<param name="avatar_extension_front" value="0.05" />
+			<param name="avatar_extension_rear" value="0.30" />
+			<param name="avatar_extension_lateral" value="0.13" />
+		</node-->
+
+		<!--node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
+ 			<param name="update_rate" value="10" />
+			<param name="plot_title" value="Navigation PID status" />
+			<param name="samples" value="40" />
+			<param name="max_error" value="0.5" />
+			<param name="max_output" value="0.5" />
+			<param name="max_pid" value="1.0" />
+			<param name="plot_feed_forward" value="true" />
+		</node-->
+
+		<!--node pkg="plot_propulsion_feedback_leftright" name="plot_feedback" type="plot_propulsion_feedback_leftright_node.py" output="screen" >
+ 			<param name="propulsion_feedback_left_sub" value="/fmInformation/wheel_feedback_left" />
+ 			<param name="propulsion_feedback_right_sub" value="/fmInformation/wheel_feedback_right" />
+ 			<param name="update_frequency" value="50" />
+			<param name="plot_title" value="Wheel feedback" />
+			<param name="samples" value="50" />
+			<param name="maximum_velocity" value="0.6" />
+			<param name="maximum_thrust" value="255" />
+		</node-->
+
+		<!--node pkg="plot_pid" name="wheel_left_pid" type="plot_pid_node.py" output="screen" >
+ 			<param name="pid_sub" value="/fmInformation/wheel_pid_left" />
+ 			<param name="update_rate" value="50" />
+			<param name="plot_title" value="Left wheel PID" />
+			<param name="samples" value="50" />
+			<param name="max_error" value="50" />
+			<param name="max_output" value="200" />
+			<param name="max_pid" value="200" />
+			<param name="plot_feed_forward" value="false" />
+		</node-->
+
+	<group ns="fmSensors">
+		<!-- extract data from messages transmitted by the SparkFun Razor IMU -->
+		<!--node pkg="sparkfun_razor_9dof" name="imu_node"  type="sparkfun_9dof_node" output="screen" >
+			<param name="nmea_from_imu_sub" value="/fmData/nmea_from_imu"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="magnetometer_pub" value="/fmInformation/magnetometer"/>
+			<param name="publish_imu" value="true"/>
+			<param name="publish_magnetometer" value="false"/>
+			<param name="use_enu" value="true"/>
+			<param name="frame_id" value="imu_link"/>
+		 </node -->
+
+		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
+		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen"  respawn="true">
+			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
+			<param name="imu_pub" value="/fmInformation/imu"/>
+			<param name="frame_id" value="imu_link"/>
+			<param name="use_enu" value="true"/>
+			<param name="covariance_x" value="0.001"/>
+			<param name="covariance_y" value="0.001"/>
+			<param name="covariance_z" value="0.001"/>
+		 </node>
+	</group>
+
+	<group ns="fmProcessors">
+		<!-- calculate odometry based on wheel encoders and IMU yaw axis orientation -->
+		<node pkg="differential_odometry" name="differential_odometry" type="differential_odometry_node" output="screen" >
+			<param name="enc_left_sub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_sub" value="/fmInformation/encoder_right" />
+			<param name="imu_sub" value="/fmInformation/imu" />
+			<param name="odom_reset_sub" value="/fmInformation/odom_reset" />
+			<!--param name="odom_pub" value="/fmKnowledge/odom" /-->
+			<param name="odom_pub" value="/fmKnowledge/pose" />
+			<param name="odom_estimate_frame" value="/odom_combined" />
+			<param name="vehicle_frame" value="base_footprint" />
+			<param name="encoder_output" value="absolute" />
+			<param name="max_ticks_per_update" value="200" />
+			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="imu_angular_velocity_yaw_axis" value="z" />
+		</node>
+	</group>
+
+	<group ns="fmDecisionMakers">
+		<node pkg="sdu_rsd_2014" name="mission" type="keyboard_mission_node.py" output="screen">
+			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="automode_pub" value="/fmDecision/automode" />
+    		<param name="deadman_pub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+            <param name="max_linear_velocity" value="50.7"/>
+            <param name="max_angular_velocity" value="50.5"/>
+            <param name="linear_velocity_step" value="0.1"/>
+            <param name="angular_velocity_step" value="0.2"/>
+		</node>
+	</group>
+
+	<group ns="fmExecutors">
+		<node pkg="sdu_rsd_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
+			<param name="status_pub" value="/fmInformation/wptnav_status" />
+			<param name="pid_pub" value="/fmInformation/wptnav_pid" />
+			<param name="status_publish_interval" value="1" />
+			<param name="pid_publish_interval" value="1" />
+			<param name="print_debug_information" value="false" />
+
+            <param name="max_linear_velocity" value="1.2"/>
+            <param name="max_angular_velocity" value="0.90"/>
+
+            <param name="drive_kp" value="10.0"/> 
+            <param name="drive_ki" value="3.35"/>
+            <param name="drive_kd" value="10.0"/>
+            <param name="drive_feed_forward" value="0.00"/>
+            <param name="drive_max_output" value="0.40"/>
+
+            <param name="turn_kp" value="150.0"/>
+            <param name="turn_ki" value="350.0"/>
+            <param name="turn_kd" value="0.0"/>
+            <param name="turn_feed_forward" value="0.0"/>
+            <param name="turn_max_output" value="1.0"/>
+
+			<param name="wpt_default_mode" value="MCTE" /> 
+			<param name="wpt_default_tolerance" value="0.1" />
+			<param name="wpt_default_drive_velocity" value="0.25" />
+			<param name="wpt_default_turn_velocity" value="0.6" />
+			<param name="wpt_default_wait_after_arrival" value="1.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="target_ahead" value="0.6" />
+			<param name="turn_start_at_heading_err" value="30.0" />
+			<param name="turn_stop_at_heading_err" value="1.5" />
+	 		<param name="ramp_drive_velocity_at_distance" value="0.3" />
+			<param name="ramp_min_drive_velocity" value="0.07" />
+			<param name="ramp_turn_velocity_at_angle" value="30.0" />
+			<param name="ramp_min_turn_velocity" value="0.2" />
+			<param name="stop_navigating_at_distance" value="0.01" />
+		</node>
+	</group>
+
+	<group ns="fmControllers">
+		<!--node pkg="differential_ifk" name="differential_driver" type="differential_ifk_node" output="screen" >
+			<param name="hl_subscriber_topic" value="/fmCommand/cmd_vel"/>
+			<param name="ll_publisher_topic_left" value="/fmSignal/cmd_vel_left"/>
+			<param name="ll_publisher_topic_right" value="/fmSignal/cmd_vel_right"/>
+		</node-->	     
+	</group>
+
+	<group ns="fmLib">
+	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
+			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
+		<!-- Frobit interface node -->
+		<node pkg="sdu_frobit_v2" name="frobit" type="frobit_interface_node.py" output="screen" >
+    		<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
+			<param name="enc_left_pub" value="/fmInformation/encoder_left" />
+			<param name="enc_right_pub" value="/fmInformation/encoder_right" />
+			<param name="wheel_status_left_pub" value="/fmInformation/wheel_status_left" />
+			<param name="wheel_status_right_pub" value="/fmInformation/wheel_status_right" />
+			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
+			<param name="wheel_feedback_right_pub" value="/fmInformation/wheel_feedback_right" />
+			<param name="wheel_pid_left_pub" value="/fmInformation/wheel_pid_left" />
+			<param name="wheel_pid_right_pub" value="/fmInformation/wheel_pid_right" />
+			<param name="nmea_from_frobit_sub" value="/fmSignal/nmea_from_frobit" />	 
+			<param name="nmea_to_frobit_pub" value="/fmSignal/nmea_to_frobit" />	 
+			<param name="publish_wheel_status_rate" value="10" />
+			<param name="publish_wheel_feedback_rate" value="10" />
+			<param name="publish_wheel_pid_rate" value="10" />
+			<param name="castor_front" value="true"/>
+            <param name="max_linear_acceleration" value="16.2"/>
+            <param name="max_angular_acceleration" value="16.0"/>
+			<param name="wheel_drive_feed_forward" value="85" /> 
+			<param name="wheel_drive_kp" value="5" /> 
+			<param name="wheel_drive_ki" value="10" /> 
+			<param name="wheel_drive_kd" value="5" /> 
+			<param name="wheel_drive_max_integral_output" value="300" /> 
+			<param name="wheel_turn_feed_forward" value="110" /> 
+			<param name="wheel_turn_kp" value="10" /> 
+			<param name="wheel_turn_ki" value="20" /> 
+			<param name="wheel_turn_kd" value="3" /> 
+			<param name="wheel_turn_max_integral_output" value="300" /> 
+			<param name="supply_voltage_scale_factor" value="0.01746" /> 
+			<param name="min_supply_voltage" value="12.1" /> 
+			<param name="show_voltage_interval" value="300" /> 
+		</node>
+
+		<!-- frobit serial device and protocol interface -->
+		<node pkg="serial_nmea" name="frobit_nmea" type="serial_nmea_node" respawn="true" output="screen">
+			<param name="nmea_from_device_pub" value="/fmSignal/nmea_from_frobit"/>
+			<param name="nmea_to_device_sub" value="/fmSignal/nmea_to_frobit"/>
+			<param name="serial_device" value="/dev/frobit"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+        </node>
+
+		<!-- serial communication with the IMU -->
+		<!--node pkg="serial_string" name="imu_serial" type="serial_string_node" respawn="true" output="screen">
+			<param name="publisher_topic" value="/fmData/imu_rx" />	 
+			<param name="subscriber_topic" value="/fmData/imu_tx" />
+			<param name="device" value="/dev/imu" />	
+			<param name="baudrate" value="115200" />
+			<param name="termination_character" value="10"/>
+		</node--> 	
+	</group>
+</launch>
+

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+BAG_TMP='test.bag' 
+
+# change dir to the location of the shell script
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+cp $1 $APPDIR/../$BAG_TMP
+
+# launch the ROS node
+roslaunch ../launch/replay.launch

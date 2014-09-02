@@ -1,0 +1,15 @@
+#!/bin/sh
+
+WPTLIST='waypoints.txt'
+
+APPDIR=`dirname $(readlink -f $0)`
+cd $APPDIR
+
+# copy the waypoint list
+cp ../waypoints/$WPTLIST ~/.ros/waypoints.txt
+
+export ROS_MASTER_URI=http://frobit:11311
+export ROS_HOSTNAME=pi
+
+roslaunch ../launch/plot_feedback.launch
+
