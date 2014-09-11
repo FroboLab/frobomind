@@ -1,6 +1,6 @@
 /****************************************************************************
 # FroboMind gpgga_to_tranmerc
-# Copyright (c) 2011-2013, Kjeld Jensen <kjeld@frobolab.org>
+# Copyright (c) 2011-2014, Kjeld Jensen <kjeld@frobolab.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,6 +24,9 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*****************************************************************************
+#
+# 2014-09-11 Kjeld, changed transverse mercator launch parameters to global
 ****************************************************************************/
 
 #include <stdio.h>
@@ -92,13 +95,13 @@ int main(int argc, char **argv)
 	deg_to_rad = M_PI/180.0;
 
 	// get parameters
-	n.param<double> ("transverse_mercator_a", tm_a, 6378137.0); // Equatorial radius, default is generic for WGS-84 datum
-	n.param<double> ("transverse_mercator_f", tm_f, 0.0033528106647474805); // Flattening, default is generic for WGS-84 datum  (1/298.257223563)
-	n.param<double> ("transverse_mercator_false_easting", tm_fe, 500000.0); // False Easting, default is generic for UTM projection
-	n.param<double> ("transverse_mercator_scale_factor", tm_scale, 0.9996); // Scale Factor, default is generic for UTM projection
-	n.param<double> ("transverse_mercator_origin_latitude", tm_orglat, 0.0); // Origin Latitude, default is generic for UTM projection
-	n.param<double> ("transverse_mercator_central_meridian", tm_cmer, 9.0); // Central Meridian, default is UTM32
-	n.param<double> ("transverse_mercator_false_northing", tm_fn, 0.0); // False northing, default is for UTM northern hemisphere
+	n.param<double> ("/transverse_mercator_a", tm_a, 6378137.0); // Equatorial radius, default is generic for WGS-84 datum
+	n.param<double> ("/transverse_mercator_f", tm_f, 0.0033528106647474805); // Flattening, default is generic for WGS-84 datum  (1/298.257223563)
+	n.param<double> ("/transverse_mercator_false_easting", tm_fe, 500000.0); // False Easting, default is generic for UTM projection
+	n.param<double> ("/transverse_mercator_scale_factor", tm_scale, 0.9996); // Scale Factor, default is generic for UTM projection
+	n.param<double> ("/transverse_mercator_origin_latitude", tm_orglat, 0.0); // Origin Latitude, default is generic for UTM projection
+	n.param<double> ("/transverse_mercator_central_meridian", tm_cmer, 9.0); // Central Meridian, default is UTM32
+	n.param<double> ("/transverse_mercator_false_northing", tm_fn, 0.0); // False northing, default is for UTM northern hemisphere
 	n.param<std::string> ("frame_id", frame_id, "/base");
 
 	// configure transverse mercator parameters
