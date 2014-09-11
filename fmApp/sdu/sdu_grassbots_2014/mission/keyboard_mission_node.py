@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # Keyboard mission script
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,29 @@
 This mission file provides simple mission handling based on keyboard input
 from the user:
 
-a(uto)   Enter autonomous mode
-m(anual) Enter manual mode
+a(uto)      Enter autonomous mode
+m(anual)    Enter manual mode
 
-e(nable) Enable deadman signal
-Space:   Disable deadman signal
+e(nable)    Enable deadman signal
+Space:      Disable deadman signal
 
 In manual mode
-s(top)   Stop the robot by setting the velocity to zero
+s(top)      Stop the robot by setting the velocity to zero
+Arrows      Set the velocity
 
+In autonomous mode
+Up arrow    Go to the next waypoint
+Down arrow  Go to the previous waypoint
 
 Revision
 2013-11-06 KJ First version
+2014-09-08 KJ Added support for /fmDecision/hmi (previous/next waypoint)
 """
 
 import rospy
 from std_msgs.msg import Bool, Char
 from geometry_msgs.msg import TwistStamped
+from msgs.msg import StringArrayStamped
 
 class mission_node():
 	def __init__(self):
@@ -57,13 +63,20 @@ class mission_node():
 		self.STATE_MANUAL = 1
 		self.state = self.STATE_MANUAL
 
+		# HMI id's
+		self.HMI_ID_DEADMAN = 0
+		self.HMI_ID_MODE = 1
+		self.HMI_ID_GOTO_WAYPOINT = 2
+		self.HMI_MODE_MANUAL = 0
+		self.HMI_MODE_AUTO = 1
+
 		# keyboard interface
 		self.KEY_ESC = 27
 		self.KEY_SECOND = 91
 		self.KEY_SPACE = 32
 		self.KEY_a = 97
-		self.KEY_m = 109
 		self.KEY_e = 101
+		self.KEY_m = 109
 		self.KEY_s = 115
 		self.KEY_ARROW_UP = 65
 		self.KEY_ARROW_DOWN = 66
@@ -81,6 +94,7 @@ class mission_node():
 		# get topic names
 		kbd_topic = rospy.get_param("~keyboard_sub", "/fmHMI/keyboard")
 		deadman_topic = rospy.get_param("~deadman_pub", "/fmCommand/deadman")
+		hmi_pub_topic = rospy.get_param("~hmi_pub",'/fmDecision/hmi')
 		automode_topic = rospy.get_param("~automode_pub", "/fmDecision/automode")
 		cmd_vel_topic = rospy.get_param("~cmd_vel_pub", "/fmCommand/cmd_vel")
 
@@ -92,6 +106,11 @@ class mission_node():
 		# setup automode publish topic
 		self.automode_msg = Bool()
 		self.automode_pub = rospy.Publisher(automode_topic, Bool)
+
+		# setup HMI publish topic
+		self.hmi_msg = StringArrayStamped()
+		self.hmi_msg.data = ['', ''] # initialize string array
+		self.hmi_pub = rospy.Publisher(hmi_pub_topic, StringArrayStamped)
 		
 		# setup manual velocity topic
 		self.vel_lin = 0.0
@@ -165,6 +184,17 @@ class mission_node():
 						self.vel_lin = 0.0
 					if abs (self.vel_ang) < 0.0001:
 						self.vel_ang = 0.0
+				elif self.state == self.STATE_AUTO:
+					if msg.data == self.KEY_ARROW_UP:
+						self.hmi_msg.header.stamp = rospy.Time.now()
+						self.hmi_msg.data[0] = '%d' % self.HMI_ID_GOTO_WAYPOINT
+						self.hmi_msg.data[1] = '+'
+						self.hmi_pub.publish (self.hmi_msg)
+					elif msg.data == self.KEY_ARROW_DOWN:
+						self.hmi_msg.header.stamp = rospy.Time.now()
+						self.hmi_msg.data[0] = '%d' % self.HMI_ID_GOTO_WAYPOINT
+						self.hmi_msg.data[1] = '-'
+						self.hmi_pub.publish (self.hmi_msg)
 
 	def publish_deadman_message(self):
 		self.deadman_msg = self.deadman_state

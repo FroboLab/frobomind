@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # Wiimote mission script
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,14 @@ Nintendo Wiimote
 
 Revision
 2013-11-14 KJ First version
+2014-09-08 KJ Added support for /fmDecision/hmi (previous/next waypoint)
 """
 
 import rospy
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import TwistStamped
+from msgs.msg import StringArrayStamped
 from math import pi
 
 class mission_node():
@@ -49,6 +51,13 @@ class mission_node():
 		self.STATE_AUTO = 0
 		self.STATE_MANUAL = 1
 		self.state = self.STATE_MANUAL
+
+		# HMI id's
+		self.HMI_ID_DEADMAN = 0
+		self.HMI_ID_MODE = 1
+		self.HMI_ID_GOTO_WAYPOINT = 2
+		self.HMI_MODE_MANUAL = 0
+		self.HMI_MODE_AUTO = 1
 
 		# wiimote state
 		self.wii_1 = False
@@ -79,8 +88,6 @@ class mission_node():
 		self.wii_angle_diff = self.wii_angle_max - self.wii_angle_min
 
 		# read parameters
-
-
 		self.vel_lin_user_max = rospy.get_param("~linear_velocity_default", 0.5) # [m/s]
 		self.vel_lin_user_step = rospy.get_param("~linear_velocity_step", 0.1) # [m/s]
 		self.vel_ang_user_max = rospy.get_param("~angular_velocity_default", 0.4) # [rad/s]
@@ -103,6 +110,7 @@ class mission_node():
 		self.dec_ang_max_step = dec_ang_max/(self.update_rate * 1.0)		
 
 		# get topic names
+		hmi_pub_topic = rospy.get_param("~hmi_pub",'/fmDecision/hmi')
 		joy_topic = rospy.get_param("~wiimote_sub",'/fmLib/joy')
 		deadman_topic = rospy.get_param("~deadman_pub", "/fmCommand/deadman")
 		automode_topic = rospy.get_param("~automode_pub", "/fmDecision/automode")
@@ -116,6 +124,10 @@ class mission_node():
 		# setup automode publish topic
 		self.automode_msg = Bool()
 		self.automode_pub = rospy.Publisher(automode_topic, Bool)
+
+		# setup HMI publish topic
+		self.hmi_msg = StringArrayStamped()
+		self.hmi_pub = rospy.Publisher(hmi_pub_topic, StringArrayStamped)
 		
 		# setup manual velocity topic
 		self.vel_lin_user = 0.0
@@ -179,27 +191,41 @@ class mission_node():
 
 		if self.wii_up_changed == True:
 			self.wii_up_changed = False
-			self.vel_lin_user_max += self.vel_lin_user_step
-			if self.vel_lin_user_max > self.vel_lin_max:
-				self.vel_lin_user_max = self.vel_lin_max
+			if self.state = self.STATE_MANUAL:
+				self.vel_lin_user_max += self.vel_lin_user_step
+				if self.vel_lin_user_max > self.vel_lin_max:
+					self.vel_lin_user_max = self.vel_lin_max
+			else:
+				self.hmi_msg.header.stamp = rospy.Time.now()
+				self.hmi_msg.data[0] = '%d' % self.HMI_ID_GOTO_WAYPOINT
+				self.hmi_msg.data[1] = '+'
+				self.hmi_pub.publish (self.hmi_msg)
 
 		if self.wii_down_changed == True:
 			self.wii_down_changed = False
-			self.vel_lin_user_max -= self.vel_lin_user_step
-			if self.vel_lin_user_max < self.vel_lin_user_step:
-				self.vel_lin_user_max = self.vel_lin_user_step
+			if self.state = self.STATE_MANUAL:
+				self.vel_lin_user_max -= self.vel_lin_user_step
+				if self.vel_lin_user_max < self.vel_lin_user_step:
+					self.vel_lin_user_max = self.vel_lin_user_step
+			else:
+				self.hmi_msg.header.stamp = rospy.Time.now()
+				self.hmi_msg.data[0] = '%d' % self.HMI_ID_GOTO_WAYPOINT
+				self.hmi_msg.data[1] = '-'
+				self.hmi_pub.publish (self.hmi_msg)
 
 		if self.wii_left_changed == True:
 			self.wii_left_changed = False
-			self.vel_ang_user_max -= self.vel_ang_user_step
-			if self.vel_ang_user_max < self.vel_ang_user_step:
-				self.vel_ang_user_max = self.vel_ang_user_step
+			if self.state = self.STATE_MANUAL:
+				self.vel_ang_user_max -= self.vel_ang_user_step
+				if self.vel_ang_user_max < self.vel_ang_user_step:
+					self.vel_ang_user_max = self.vel_ang_user_step
 		
 		if self.wii_right_changed == True:
-			self.wii_right_changed = False
-			self.vel_ang_user_max += self.vel_ang_user_step
-			if self.vel_ang_user_max > self.vel_ang_max:
-				self.vel_ang_user_max = self.vel_ang_max
+			if self.state = self.STATE_MANUAL:
+				self.wii_right_changed = False
+				self.vel_ang_user_max += self.vel_ang_user_step
+				if self.vel_ang_user_max > self.vel_ang_max:
+					self.vel_ang_user_max = self.vel_ang_max
 
 		if pitch >= 0:
 			self.vel_lin_user = self.vel_lin_user_max*(pitch-self.wii_angle_min)/self.wii_angle_diff

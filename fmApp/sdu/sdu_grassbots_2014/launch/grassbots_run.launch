@@ -6,6 +6,15 @@
 	<param name="ticks_per_meter_left" value="2627" />
 	<param name="ticks_per_meter_right" value="2627" />
 
+	<!-- Transverse Mercator Projection parameters --> 
+	<param name="transverse_mercator_a" value="6378137.0" />
+	<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+	<param name="transverse_mercator_false_easting" value="500000.0" />
+	<param name="transverse_mercator_scale_factor" value="0.9996" />
+	<param name="transverse_mercator_origin_latitude" value="0.0" />
+	<param name="transverse_mercator_central_meridian" value="9.0" />
+	<param name="transverse_mercator_false_northing" value="0.0" />
+
 	<node pkg="rosbag" name="rosbag_record" type="record" args="-a"/>
 
 	<group ns="fmSensors">
@@ -28,13 +37,6 @@
 		<node pkg="nmea_to_tranmerc" name="nmea_to_tranmerc" type="nmea_to_tranmerc_node" output="screen" respawn="true">
 			<param name="nmea_sub" value="/fmData/nmea_from_gps" />
 			<param name="gpgga_tranmerc_pub" value="/fmInformation/gpgga_tranmerc" />
-			<param name="transverse_mercator_a" value="6378137.0" />
-			<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
-			<param name="transverse_mercator_false_easting" value="500000.0" />
-			<param name="transverse_mercator_scale_factor" value="0.9996" />
-			<param name="transverse_mercator_origin_latitude" value="0.0" />
-			<param name="transverse_mercator_central_meridian" value="9.0" />
-			<param name="transverse_mercator_false_northing" value="0.0" />
 		</node>
 	</group>
 

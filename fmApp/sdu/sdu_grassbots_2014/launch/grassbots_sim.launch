@@ -1,11 +1,16 @@
 <!-- GrassBots simulation launch file -->
 
 <launch>
-	<group ns="fmSensors">
-		<node pkg="computer_load_monitor" name="load_monitor" type="computer_load_monitor_node" output="screen" >
-			<param name="update_rate" value="5" />
-		</node>
+	<!-- Transverse Mercator Projection parameters --> 
+	<param name="transverse_mercator_a" value="6378137.0" />
+	<param name="transverse_mercator_f" value="0.0033528106647474805" /> 
+	<param name="transverse_mercator_false_easting" value="500000.0" />
+	<param name="transverse_mercator_scale_factor" value="0.9996" />
+	<param name="transverse_mercator_origin_latitude" value="0.0" />
+	<param name="transverse_mercator_central_meridian" value="9.0" />
+	<param name="transverse_mercator_false_northing" value="0.0" />
 
+	<group ns="fmSensors">
 	</group>
 
 	<group ns="fmProcessors">
@@ -14,6 +19,7 @@
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_grassbots_2014" name="mission" type="keyboard_mission_node.py" output="screen">
 			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="hmi_pub" value="/fmDecision/hmi" />
 			<param name="automode_pub" value="/fmDecision/automode" />
 			<param name="deadman_pub" value="/fmCommand/deadman" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
@@ -26,9 +32,10 @@
 
 	<group ns="fmExecutors">
 		<node pkg="sdu_grassbots_2014" type="waypoint_navigation_node.py" name="wptnav" output="screen">
-			<param name="automode_sub" value="/fmDecision/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="hmi_sub" value="/fmDecision/hmi" />
+			<param name="routept_pub" value="/fmPlan/route_point" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
 			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmInformation/wptnav_status" />
@@ -68,6 +75,16 @@
 			<param name="ramp_min_turn_velocity" value="0.15" />
 			<param name="stop_navigating_at_distance" value="0.03" />
 		</node>		
+
+		<node pkg="sdu_grassbots_2014" name="route_plan_socketd" type="route_plan_socketd_node.py" output="screen" respawn="true" >
+			<param name="hmi_pub" value="/fmDecision/hmi" />
+			<param name="routept_pub" value="/fmPlan/route_point" />
+			<param name="socket_address" value="localhost" />
+			<param name="socket_port" value="8080" />
+			<param name="socket_timeout" value="30" />
+			<param name="socket_password" value="" />
+			<param name="debug" value="false" />
+		</node>
 	</group>
 
 	<group ns="fmControllers">
@@ -108,7 +125,7 @@
 			<param name="maximum_thrust" value="511" />
 		</node-->
 
-		<node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
+		<!--node pkg="plot_pid" name="wptnav_pid" type="plot_pid_node.py" output="screen" >
  			<param name="pid_sub" value="/fmInformation/wptnav_pid" />
  			<param name="update_rate" value="10" />
 			<param name="plot_title" value="Navigation PID status" />
@@ -117,7 +134,7 @@
 			<param name="max_output" value="0.5" />
 			<param name="max_pid" value="1.1" />
 			<param name="plot_feed_forward" value="true" />
-		</node>
+		</node-->
 
 		<node pkg="frobit_plot" name="frobit_plot" type="frobit_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
