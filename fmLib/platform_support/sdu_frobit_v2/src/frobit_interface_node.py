@@ -359,7 +359,7 @@ class FrobitInterfaceNode():
 					software_ver = msg.data[1]
 
 				rospy.logwarn (rospy.get_name() + ': Frobit says: %s' % (reset_cause))
-				rospy.loginfo (rospy.get_name() + ': Frobit says: %s with firmware version %s detected' % (hardware_type, software_ver))
+				rospy.loginfo (rospy.get_name() + ': Frobit says: %s with firmware %s detected' % (hardware_type, software_ver))
 
 	def publish_enc_messages(self):
 		self.intstamp.header.stamp = rospy.Time.now()
