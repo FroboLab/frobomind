@@ -1,5 +1,5 @@
 #
-# http://playerstage.sourceforge.net/doc/Stage-3.2.1/group__world.html
+# http://playerstage.sourceforge.net/doc/stage-svn/index.html
 #
 name            "FrobitWorld"
 interval_sim    100 # the amount fof simulation time run for each call of Woeld::Update()
@@ -47,10 +47,25 @@ obstacles
 position
 (
    pose [ 0.0 0.0 0.0 0.0 ] # [x,y,z,heading]
+   #Shape of robot
+   block
+   (
+      points 7
+      point[0] [35 12.5]
+      point[1] [35 7]
+      point[2] [28 0]
+      point[3] [0 0]
+      point[4] [0 25]
+      point[5] [28 25]
+      point[6] [35 18]
+      z [0 1]
+   )
    size [ 0.35 0.25 0.10 ] # Robot size [x,y,z]
    name "Frobit" 
    color "blue"
    drive "diff"
+   localization "odom"
+   odom_error [0.03 0.03 0.00 0.05] # odom_error [x y z theta]
    laser_scanner(pose [ 0 0 0 0 ])
    obstacle_return 1
 )
