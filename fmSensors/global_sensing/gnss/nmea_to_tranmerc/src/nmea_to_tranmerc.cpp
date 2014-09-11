@@ -127,13 +127,13 @@ void NmeaToTranmerc::onNmeaMessage(const msgs::nmea::ConstPtr& msg)
 
 void NmeaToTranmerc::makeItSpin()
 {
-	local_node_handler.param<double> ("transverse_mercator_a", tm_a, 6378137.0); // Equatorial radius, default is generic for WGS-84 datum
-	local_node_handler.param<double> ("transverse_mercator_f", tm_f, 0.0033528106647474805); // Flattening, default is generic for WGS-84 datum  (1/298.257223563)
-	local_node_handler.param<double> ("transverse_mercator_false_easting", tm_fe, 500000.0); // False Easting, default is generic for UTM projection
-	local_node_handler.param<double> ("transverse_mercator_scale_factor", tm_scale, 0.9996); // Scale Factor, default is generic for UTM projection
-	local_node_handler.param<double> ("transverse_mercator_origin_latitude", tm_orglat, 0.0); // Origin Latitude, default is generic for UTM projection
-	local_node_handler.param<double> ("transverse_mercator_central_meridian", tm_cmer, 9.0); // Central Meridian, default is UTM32
-	local_node_handler.param<double> ("transverse_mercator_false_northing", tm_fn, 0.0); // False northing, default is for UTM northern hemisphere
+	local_node_handler.param<double> ("/transverse_mercator_a", tm_a, 6378137.0); // Equatorial radius, default is generic for WGS-84 datum
+	local_node_handler.param<double> ("/transverse_mercator_f", tm_f, 0.0033528106647474805); // Flattening, default is generic for WGS-84 datum  (1/298.257223563)
+	local_node_handler.param<double> ("/transverse_mercator_false_easting", tm_fe, 500000.0); // False Easting, default is generic for UTM projection
+	local_node_handler.param<double> ("/transverse_mercator_scale_factor", tm_scale, 0.9996); // Scale Factor, default is generic for UTM projection
+	local_node_handler.param<double> ("/transverse_mercator_origin_latitude", tm_orglat, 0.0); // Origin Latitude, default is generic for UTM projection
+	local_node_handler.param<double> ("/transverse_mercator_central_meridian", tm_cmer, 9.0); // Central Meridian, default is UTM32
+	local_node_handler.param<double> ("/transverse_mercator_false_northing", tm_fn, 0.0); // False northing, default is for UTM northern hemisphere
 	local_node_handler.param<std::string> ("frame_id", frame_id, "/base");
 	local_node_handler.param<std::string> ("nmea_sub", subscribe_topic_id, "fmInformation/gps_nmea");
 	local_node_handler.param<std::string> ("gpgga_tranmerc_pub", publish_topic_id, "fmInformation/gpgga_tranmerc");

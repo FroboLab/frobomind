@@ -32,6 +32,7 @@ History
 
 2013-08-xx Leon, original code written
 2014-03-08 Kjeld, major profiling, bugfixes and documentation.
+2014-09-11 Kjeld, changed transverse mercator launch parameters to global
 
 *****************************************************************************/
 
