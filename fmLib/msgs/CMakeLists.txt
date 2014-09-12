@@ -45,6 +45,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation roscpp rospy std_msgs
 	serial.msg
 	steering_angle_cmd.msg
 	StringStamped.msg
+	StringArrayStamped.msg
 	waypoint_navigation_status.msg
 	velocity.msg
  )
