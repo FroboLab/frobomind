@@ -1,5 +1,12 @@
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="FTFU8AMZ", GROUP="dialout",MODE="0666", NAME:="gps"
 #
-# To activate copy this file to: /etc/udev/rules.d/
-# Example on how to retrieve the FTDI serial from a device:
+# To activate this udev rule copy this file to: /etc/udev/rules.d/
+#
+# How to reload udev rules after copying this file:
+#   sudo udevadm control --reload-rules
+# Then disconnect and reconnect your USB device.
+# If it doesn't work then reboot your computer.
+#
+# Example on how to retrieve the serial number from a FTDI device:
 #   udevadm info -a -n /dev/ttyUSB0 | grep 'serial'
+#
