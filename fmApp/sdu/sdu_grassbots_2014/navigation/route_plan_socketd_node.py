@@ -132,7 +132,7 @@ class socketd():
 				if self.debug:
 					self.msg_type = self.MSG_TYPE_INFO
 					self.msg_text = "Connection established from %s port %d" % (addr[0],addr[1])
-				outdata = "$PFMRH,FroboMind Route Plan Socket Interface\r\n"
+				outdata = "$PFMRH,1.0,FroboMind Route Plan Socket Interface\r\n"
 				self.tcpCliSock.send(outdata)
 
 		if close_socket_now:
@@ -211,6 +211,8 @@ class ROSnode():
 					if self.debug:
 						rospy.loginfo(rospy.get_name() + ": Closing socket on user request")
 					self.sd.close_socket()
+				elif p[4]=='R' and p[5]=='K': # keep socket alive
+					pass
 				elif p[4]=='R' and p[5]=='D': # delete route plan
 					if self.sd.socket_password_received:
 						self.routept_msg.cmd = self.ROUTEPT_CMD_DELETE

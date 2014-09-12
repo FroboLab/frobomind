@@ -48,7 +48,7 @@ from differential_ifk_py.differential_kinematics import differential_kinematics
 from pid_controller import pid_controller
 
 class waypoint_navigation():
-	def __init__(self, update_rate, wheel_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tol_default, wpt_def_drive_vel, wpt_def_turn_vel, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, debug):
+	def __init__(self, update_rate, wheel_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tolerance, wpt_def_drive_vel, wpt_def_turn_vel, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, debug):
 
 		# constants
 		self.UPDATE_NONE = 0
@@ -60,14 +60,13 @@ class waypoint_navigation():
 		# list index for destination (b) and origin (a) waypoints
 		self.W_E = 0 
 		self.W_N = 1
-		self.W_YAW = 2
+		self.W_HEADING = 2
 		self.W_ID = 3
-		self.W_MODE = 4
-		self.W_TOL = 5
-		self.W_LIN_VEL = 6
-		self.W_ANG_VEL = 7
-		self.W_WAIT = 8
-		self.W_IMPLEMENT = 9
+		self.W_NAV_MODE = 4
+		self.W_LIN_VEL = 5
+		self.W_ANG_VEL = 6
+		self.W_PAUSE = 7
+		self.W_TASK = 8
 
 		# parameters
 		self.update_rate = update_rate # [Hz]
@@ -86,7 +85,7 @@ class waypoint_navigation():
 		self.turn_kd = turn_kd
 		self.turn_ff = turn_ff
 		self.turn_max_output = turn_max_output
-		self.wpt_tolerance_default = wpt_tol_default # [m]
+		self.wpt_tolerance = wpt_tolerance # [m]
 		self.wpt_def_drive_vel = wpt_def_drive_vel # [m/s]
 		self.wpt_def_turn_vel = wpt_def_turn_vel # [m/s]
 
@@ -117,7 +116,6 @@ class waypoint_navigation():
 		self.pose = False
 		self.vel = 0.0
 		self.target = False
-		self.wpt_tolerance = 0.0
 		self.wpt_drive_vel = 0.0
 		self.wpt_turn_vel = 0.0
 		self.wpt_ramp_drive_vel_at_dist = 0.0
@@ -175,13 +173,8 @@ class waypoint_navigation():
 
 		self.start = self.pose # where we started driving from (updated in drive_init())
 
-		# set velocity and waypoint reached tolerance
-		self.wpt_tolerance = float(self.b[self.W_TOL])
-		if self.wpt_tolerance < 0.001:
-			self.wpt_tolerance = self.wpt_tolerance_default
-
 		# set drive velocity
-		self.wpt_drive_vel = float(self.b[self.W_LIN_VEL])
+		self.wpt_drive_vel = self.b[self.W_LIN_VEL]
 		if self.wpt_drive_vel < 0.001:
 			self.wpt_drive_vel = self.wpt_def_drive_vel
 
@@ -207,11 +200,11 @@ class waypoint_navigation():
 
 		self.update_navigation_state()
 		self.drive_init()
-	
+
 	# call to stop navigating to the destination
 	def stop (self):
 		if self.debug:
-			print "Stop"
+			print "Stop navigating"
 		self.a = False
 		self.b = False
 		self.linear_vel = 0.0
@@ -247,7 +240,7 @@ class waypoint_navigation():
 
 	# drive towards destination (b) waypoint
 	def drive(self):
-		if fabs(self.target_heading_err) > self.turn_start_at_heading_err and self.dist > self.wpt_tolerance_default:
+		if fabs(self.target_heading_err) > self.turn_start_at_heading_err and self.dist > self.wpt_tolerance:
 			self.turn_init()
 		else:
 			# determine angular speed

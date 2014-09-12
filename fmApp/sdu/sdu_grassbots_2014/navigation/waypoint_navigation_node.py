@@ -58,6 +58,7 @@ class WptNavNode():
 		self.state = self.STATE_IDLE
 		self.state_prev = self.state
 		self.automode_warn = False
+		self.no_route_plan_warn = False
 		self.wait_after_arrival = 0.0
 		self.wait_timeout = 0.0
 		self.status = 0
@@ -149,7 +150,7 @@ class WptNavNode():
 		self.wptnav = waypoint_navigation(self.update_rate, self.w_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, self.wpt_def_tolerance, self.wpt_def_drive_vel, self.wpt_def_turn_vel, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, self.debug)
 
 		self.wptlist = waypoint_list()
-		self.wptlist_loaded = False
+		self. load_wpt_list() # load locally saved waypoint list if it exist
 
 		# setup subscription topic callbacks
 		rospy.Subscriber(self.automode_topic, Bool, self.on_automode_message)
@@ -166,13 +167,25 @@ class WptNavNode():
 		(numwpt, nextwpt) = self.wptlist.status()
 		self.prev_wpt = False 
 		self.wpt = False 
-		rospy.loginfo(rospy.get_name() + ": %d waypoints loaded" % numwpt)
+		if numwpt > 0:
+			rospy.loginfo(rospy.get_name() + ": %d waypoints loaded" % numwpt)
 
 	def update_implement_value (self):
-		if self.wpt[self.wptnav.W_IMPLEMENT] != self.IMPLEMENT_INVALID:
-			self.implement.data = self.wpt[self.wptnav.W_IMPLEMENT]
+		if self.wpt[self.wptnav.W_TASK] != self.ROUTEPT_INVALID_DATA:
+			self.implement.data = self.wpt[self.wptnav.W_TASK]
 		else:
 			self.implement.data = self.wpt_def_implement
+
+	def goto_first_wpt (self):
+		self.prev_wpt = False
+		self.wpt = self.wptlist.get_first()
+		if self.wpt != False:
+			self.update_implement_value()
+			self.wptnav.navigate(self.wpt, self.prev_wpt)
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm, bearing %.0f)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist, self.wptnav.bearing*180.0/pi))
+		else:
+			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
+			self.wptnav.stop()
 
 	def goto_next_wpt (self):
 		self.prev_wpt = self.wpt
@@ -215,33 +228,34 @@ class WptNavNode():
 			if self.wii_a == True and self.wii_a_changed == True:
 				self.wii_a_changed = False
 				rospy.loginfo(rospy.get_name() + ': Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1]))
-			if self.wii_home == True and self.wii_home_changed == True:
-				self.wii_home_changed = False
-				rospy.loginfo(rospy.get_name() + ": User reloaded waypoint list")
-				self.load_wpt_list()				
-				self.goto_next_wpt()
 		'''
 
 	def on_routept_message(self, msg):
 		if msg.cmd==self.ROUTEPT_CMD_DELETE or msg.cmd==self.ROUTEPT_CMD_DELETE_THEN_APPEND:
+			self.no_route_plan_warn = False
 			self.wptlist.delete_list()
 		if msg.cmd==self.ROUTEPT_CMD_APPEND or msg.cmd==self.ROUTEPT_CMD_DELETE_THEN_APPEND:
 			self.wptlist.append(msg.easting, msg.northing, msg.heading, msg.id, msg.nav_mode, msg.linear_vel, msg.angular_vel, msg.pause, msg.task)
+			if self.state == self.STATE_NAVIGATE and self.wptnav.state == self.wptnav.STATE_STOP:
+				self.goto_next_wpt()
 
 	def on_automode_message(self, msg):
 		if msg.data == True: # if autonomous mode requested
 			if self.state == self.STATE_IDLE:
 				if self.wptnav.pose != False: # if we have a valid pose				
-					self.state = self.STATE_NAVIGATE
-					rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
-					if self.wptlist_loaded == False:
-						rospy.loginfo(rospy.get_name() + ": Loading waypoint list")
-						self.load_wpt_list()				
-						self.goto_next_wpt()
-						self.wptlist_loaded = True
-					elif self.wptnav.state == self.wptnav.STATE_STANDBY:
-						self.wptnav.resume()
-						rospy.loginfo(rospy.get_name() + ": Resuming waypoint navigation")
+					(num_wpt, next_wpt) = self.wptlist.status()
+					if num_wpt > 0:
+						self.state = self.STATE_NAVIGATE	
+						if self.wptnav.state == self.wptnav.STATE_STANDBY:
+							self.wptnav.resume()
+							rospy.loginfo(rospy.get_name() + ": Resuming waypoint navigation")
+						elif self.wptnav.state == self.wptnav.STATE_STOP:
+							self.goto_first_wpt()
+							rospy.loginfo(rospy.get_name() + ": Switching to waypoint navigation")
+					else:
+						if self.no_route_plan_warn == False:
+							rospy.logwarn(rospy.get_name() + ": No route plan available")
+							self.no_route_plan_warn = True
 
 				else: # no valid pose yet
 					if self.automode_warn == False:
@@ -325,8 +339,8 @@ class WptNavNode():
 					rospy.loginfo(rospy.get_name() + ": Arrived at waypoint: %s (error %.2fm)" % (self.wpt[self.wptnav.W_ID], self.wptnav.dist))
 
 					# activate wait mode
-					if self.wpt[self.wptnav.W_WAIT] >= 0.0:
-						self.wait_after_arrival = self.wpt[self.wptnav.W_WAIT]
+					if self.wpt[self.wptnav.W_PAUSE] >= 0.0:
+						self.wait_after_arrival = self.wpt[self.wptnav.W_PAUSE]
 					else:
 						self.wait_after_arrival = self.wpt_def_wait_after_arrival
 
