@@ -66,7 +66,7 @@ class ROSnode():
 		self.wheel_speed_delay = 0.05 # [s]
 		self.wheel_speed_delay_variance = 0.05
 		self.wheel_speed_error = 0.03 # [m/s]
-		self.wheel_speed_minimum = 0.02 
+		self.wheel_speed_minimum = 0.0
 
 		pub_fb_rate = rospy.get_param("~publish_wheel_feedback_rate", 0)
 		if pub_fb_rate != 0:
