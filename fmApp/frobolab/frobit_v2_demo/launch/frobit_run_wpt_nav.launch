@@ -83,7 +83,7 @@ RoboCard based frobits using 1800/700 ohm voltage dividers:
 		 </node -->
 
 		<!-- extract data from messages transmitted by the VectorNav VN-100 IMU -->
-		<node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen"  respawn="true">
+		<!--node pkg="vectornav_vn100" name="imu_node"  type="vectornav_vn100_node" output="screen"  respawn="true">
 			<param name="vectornav_vn100_sub" value="/fmData/imu_rx"/>
 			<param name="imu_pub" value="/fmInformation/imu"/>
 			<param name="frame_id" value="imu_link"/>
@@ -91,7 +91,7 @@ RoboCard based frobits using 1800/700 ohm voltage dividers:
 			<param name="covariance_x" value="0.001"/>
 			<param name="covariance_y" value="0.001"/>
 			<param name="covariance_z" value="0.001"/>
-		 </node>
+		 </node-->
 	</group>
 
 	<group ns="fmProcessors">
@@ -107,7 +107,8 @@ RoboCard based frobits using 1800/700 ohm voltage dividers:
 			<param name="vehicle_frame" value="base_footprint" />
 			<param name="encoder_output" value="absolute" />
 			<param name="max_ticks_per_update" value="200" />
-			<param name="yaw_angle_source" value="imu_angular_velocity" />
+			<param name="yaw_angle_source" value="odometry" />
+			<!--param name="yaw_angle_source" value="imu_angular_velocity" /-->
 			<param name="imu_angular_velocity_yaw_axis" value="z" />
 		</node>
 	</group>
@@ -214,7 +215,7 @@ RoboCard based frobits using 1800/700 ohm voltage dividers:
 			<param name="wheel_turn_ki" value="20" /> 
 			<param name="wheel_turn_kd" value="3" /> 
 			<param name="wheel_turn_max_integral_output" value="300" /> 
-			<param name="supply_voltage_scale_factor" value="0.03747" /> 
+			<param name="supply_voltage_scale_factor" value="0.01746" /> 
 			<param name="min_supply_voltage" value="12.1" /> 
 			<param name="show_voltage_interval" value="300" /> 
 		</node>
@@ -229,13 +230,13 @@ RoboCard based frobits using 1800/700 ohm voltage dividers:
         </node>
 
 		<!-- serial communication with the IMU -->
-		<node pkg="serial_string" name="imu_serial" type="serial_string_node" respawn="true" output="screen">
+		<!--node pkg="serial_string" name="imu_serial" type="serial_string_node" respawn="true" output="screen">
 			<param name="publisher_topic" value="/fmData/imu_rx" />	 
 			<param name="subscriber_topic" value="/fmData/imu_tx" />
 			<param name="device" value="/dev/imu" />	
 			<param name="baudrate" value="115200" />
 			<param name="termination_character" value="10"/>
-		</node> 	
+		</node--> 	
 	</group>
 </launch>
 
