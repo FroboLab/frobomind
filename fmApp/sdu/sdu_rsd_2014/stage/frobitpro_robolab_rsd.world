@@ -1,0 +1,71 @@
+#
+# http://playerstage.sourceforge.net/doc/Stage-3.2.1/group__world.html
+#
+name            "RSDworld"
+interval_sim    100 # the amount fof simulation time run for each call of World::Update()
+resolution      0.05 # The resolution [m] of the underlying bitmap model. Larger values speed up raytracing at the expense of fidelity in collision detection and sensing.
+threads         2
+show_clock		0
+
+window
+( 
+	size [ 750 500 ]  # Defines the window size in pixels
+
+	# Camera options
+	center [ 0 0 ]
+	rotate [ 0 0 ]
+	scale 45 # Ratio of world to pixel coordinates (defines the window zoom)
+)
+
+define laser_scanner ranger
+(
+   sensor
+   ( 		
+      range [ 0.0  4 ]
+      fov 270
+      samples 270
+   )
+  size [ 0.07 0.07 0.08 ]
+)
+
+define obstacles model
+(
+   size [15.0 10.0 1.0]
+   bitmap "robolab_rsd.png" # the image will be scaled to fit, so add tiny "obstacles" in each corner to control the size
+   color "black"
+   ranger_return 1
+   gui_move 0
+)
+
+obstacles
+(
+   name "obstacles"
+   pose [ 0 0 0 0 ]
+)
+
+# The position model simulates a mobile robot base
+position
+(
+   pose [ 0.0 0.0 0.0 0.0 ] # [x,y,z,heading]
+   #Shape of robot
+   block
+   (
+      points 7
+      point[0] [42 16]
+      point[1] [42 9]
+      point[2] [33 0]
+      point[3] [0 0]
+      point[4] [0 32]
+      point[5] [33 32]
+      point[6] [42 23]
+      z [0 1]
+   )
+   size [ 0.42 0.33 0.10 ] # Robot size [x,y,z]
+   name "FrobitPro" 
+   color "blue"
+   drive "diff"
+   localization "gps"
+   laser_scanner(pose [ 0 0 0 0 ])
+   obstacle_return 1
+)
+
