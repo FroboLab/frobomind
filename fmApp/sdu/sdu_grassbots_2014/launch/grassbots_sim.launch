@@ -19,10 +19,12 @@
 	<group ns="fmDecisionMakers">
 		<node pkg="sdu_grassbots_2014" name="mission" type="keyboard_mission_node.py" output="screen">
 			<param name="keyboard_sub" value="/fmHMI/keyboard" />
+			<param name="hmi_sub" value="/fmDecision/hmi" />
 			<param name="hmi_pub" value="/fmDecision/hmi" />
 			<param name="automode_pub" value="/fmDecision/automode" />
 			<param name="deadman_pub" value="/fmCommand/deadman" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="actuation_requires_user_enable" value="false"/>
 			<param name="max_linear_velocity" value="1.0"/>
 			<param name="max_angular_velocity" value="0.4"/>
 			<param name="linear_velocity_step" value="0.1"/>
@@ -76,14 +78,15 @@
 			<param name="stop_navigating_at_distance" value="0.03" />
 		</node>		
 
-		<node pkg="sdu_grassbots_2014" name="route_plan_socketd" type="route_plan_socketd_node.py" output="screen" respawn="true" >
+		<node pkg="sdu_grassbots_2014" name="route_plan_server" type="route_plan_server_node.py" output="screen" respawn="true" >
+			<param name="status_pub" value="/fmInformation/wptnav_status" />
 			<param name="hmi_pub" value="/fmDecision/hmi" />
 			<param name="routept_pub" value="/fmPlan/route_point" />
 			<param name="socket_address" value="localhost" />
 			<param name="socket_port" value="8080" />
-			<param name="socket_timeout" value="30" />
+			<param name="socket_timeout" value="10" />
 			<param name="socket_password" value="" />
-			<param name="debug" value="false" />
+			<param name="debug" value="true" />
 		</node>
 	</group>
 

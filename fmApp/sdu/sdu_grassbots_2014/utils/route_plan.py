@@ -145,7 +145,28 @@ class socket_functions():
 			print 'Unable to delete route plan'
 
 	def subscribe_status(self):
-		pass
+		self.connect_to_socket_server()
+		if self.socket != False:
+			print 'Subscribing to the status (each 2 seconds)'
+			self.socket.send ('$PFMRS,2.0\r\n')
+			ack_ok = False
+			ack_tout = time.time() + self.ack_timeout
+			while ack_ok == False and ack_tout > time.time():
+				answer = self.socket.receive()
+				if answer=='$PFMRS,ok\r\n':
+					print 'Subscription ok'
+					ack_ok = True
+					msg_tout = time.time() + self.ack_timeout
+					while msg_tout > time.time():
+						answer = self.socket.receive()
+						if answer[0] == '$':
+							print answer
+							msg_tout = time.time() + self.ack_timeout
+				else:
+					print 'Unknown response: %s' % answer
+			self.disconnect_from_socket_server()
+		else:
+			print 'Unable to suscribe to the status'
 
 	def upload_route_plan(self, filename):
 		self.connect_to_socket_server()
@@ -188,13 +209,54 @@ class socket_functions():
 		else:
 			print 'Route upload error\n'
 
+	def mode_auto(self):
+		self.connect_to_socket_server()
+		if self.socket != False:
+			print 'Switching to autonomous mode'
+			self.socket.send ('$PFMHM,1\r\n')
+			ack_ok = False
+			ack_tout = time.time() + self.ack_timeout
+			while ack_ok == False and ack_tout > time.time():
+				answer = self.socket.receive()
+				if answer=='$PFMHM,ok\r\n':
+					print 'Switch ok'
+					ack_ok = True
+				else:
+					print 'Unknown response: %s' % answer
+			self.disconnect_from_socket_server()
+		else:
+			print 'Unable to switch to autonomous mode'
+
+	def mode_manual(self):
+		self.connect_to_socket_server()
+		if self.socket != False:
+			print 'Switching to manual mode'
+			self.socket.send ('$PFMHM,0\r\n')
+			ack_ok = False
+			ack_tout = time.time() + self.ack_timeout
+			while ack_ok == False and ack_tout > time.time():
+				answer = self.socket.receive()
+				if answer=='$PFMHM,ok\r\n':
+					print 'Switch ok'
+					ack_ok = True
+				else:
+					print 'Unknown response: %s' % answer
+			self.disconnect_from_socket_server()
+		else:
+			print 'Unable to switch to manual mode'
+
+
+
 # main function
-print 'FroboMind navigation socket interface v2014-09-08'
+print 'FroboMind route plan server utility v2014-09-16'
 argc = len(argv)
 if argc < 5:
 	print 'Usage: route_plan.py server port password delete'
-	print 'Usage: route_plan.py server port password status interval'
 	print 'Usage: route_plan.py server port password upload filename'
+	print 'Usage: route_plan.py server port password status interval'
+	print 'Usage: route_plan.py server port password auto'
+	print 'Usage: route_plan.py server port password manual'
+	print 'Usage: route_plan.py server port password status'
 
 else:
 	# define and install ctrl-c handler
@@ -215,11 +277,15 @@ else:
 
 	if socket_cmd == 'delete':
 		sf.delete_route_plan()
-	elif socket_cmd == 'status':
-		sf.subscribe_status()
 	elif socket_cmd == 'upload':
 		route_file_name =  argv[1:][4]
 		sf.upload_route_plan (route_file_name)
+	elif socket_cmd == 'status':
+		sf.subscribe_status()
+	elif socket_cmd == 'auto':
+		sf.mode_auto()
+	elif socket_cmd == 'manual':
+		sf.mode_manual()
 	else:
 		print 'Unknown command'
 	print ''

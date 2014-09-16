@@ -32,7 +32,7 @@
 """
 
 import rospy
-from msgs.msg import StringArrayStamped, RoutePt
+from msgs.msg import StringArrayStamped, RoutePt, waypoint_navigation_status
 from socket import *
 
 class socketd():
@@ -48,7 +48,6 @@ class socketd():
 			self.socket_password_received = False
 		self.socket_timeout = 0.0
 		self.socket_packets = []
-		self.send_status_interval = 1.0
 		self.debug = debug
 		self.tcpSerSock = socket(AF_INET, SOCK_STREAM)
 		self.msg_text = ""
@@ -141,19 +140,32 @@ class socketd():
 class ROSnode():
 	def __init__(self):
 		rospy.loginfo(rospy.get_name() + ": Start")
-		# defines
+		# routept defines
 		self.ROUTEPT_CMD_DELETE = 0
 		self.ROUTEPT_CMD_DELETE_THEN_APPEND = 1
 		self.ROUTEPT_CMD_APPEND = 2
 		self.ROUTEPT_MODE_PP = 0
 		self.ROUTEPT_MODE_MCTE = 1
 		self.ROUTEPT_INVALID_DATA = -1000000
-		self.count = 0
+
+		# HMI defines
+		self.HMI_ID_DEADMAN = '0'
+		self.HMI_ID_MODE = '1'
+		self.HMI_ID_GOTO_WAYPOINT = '2'
+		self.HMI_MODE_MANUAL = '0'
+		self.HMI_MODE_AUTO = '1'
 
 		# static parameters
 		self.update_rate = 50 # set update frequency [Hz]
 		self.deadman_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
+
+		# variables
+		self.send_status_interval = 0.0
+		self.send_status_timeout = 0.0
+		self.pose_e = 0.0
+		self.pose_n = 0.0
+		self.pose_orientation = 0.0
 
 		# get parameters
 		socket_addr = rospy.get_param("~socket_address",'localhost')
@@ -163,6 +175,7 @@ class ROSnode():
 		self.debug = rospy.get_param("~debug",'false')
 
 		# get topic names
+		topic_status_sub =  rospy.get_param("~status_pub",'/fmInformation/wptnav_status')
 		topic_hmi_pub = rospy.get_param("~hmi_pub",'/fmDecision/hmi')
 		topic_routept = rospy.get_param("~routept_pub",'/fmPlan/route_point')
 
@@ -176,6 +189,7 @@ class ROSnode():
 		self.routept_msg = RoutePt()
 
 		# setup subscription topic callbacks
+		rospy.Subscriber(topic_status_sub, waypoint_navigation_status, self.on_status_message)
 
 		# setup socket
 		self.sd = socketd(socket_addr, socket_port, socket_timeout, self.socket_password, self.debug)
@@ -187,9 +201,19 @@ class ROSnode():
 			(msg_type, msg_text) = self.sd.message()
 			rospy.logerr(rospy.get_name() + ": %s", msg_text)
 
+	def on_status_message(self, msg):
+		self.pose_e = msg.easting
+		self.pose_n = msg.northing
+
 	def publish_routept_message(self):
 		self.routept_msg.header.stamp = rospy.Time.now()
 		self.routept_pub.publish(self.routept_msg)
+
+	def publish_hmi_message(self, id_str, value_str):
+		self.hmi_msg.header.stamp = rospy.Time.now()
+		self.hmi_msg.data[0] = id_str
+		self.hmi_msg.data[1] = value_str
+		self.hmi_pub.publish (self.hmi_msg)
 
 	def socket_updater(self):
 		self.sd.update(rospy.get_time())
@@ -213,6 +237,52 @@ class ROSnode():
 					self.sd.close_socket()
 				elif p[4]=='R' and p[5]=='K': # keep socket alive
 					pass
+				elif p[4]=='H' and p[5]=='M': # mode select
+					if self.sd.socket_password_received:
+						data = p.split (',') # split into comma separated list
+						if len(data) > 1 and data[1] != '':
+							value = data[1].rstrip()
+							if value == '0' or value == '1':
+								if value == '0':
+									self.publish_hmi_message (self.HMI_ID_MODE, self.HMI_MODE_MANUAL)
+								elif value == '1':
+									self.publish_hmi_message (self.HMI_ID_MODE, self.HMI_MODE_AUTO)
+								self.sd.send_str('$PFMHM,ok')
+								if self.debug:
+									if value == '0':
+										rospy.loginfo(rospy.get_name() + ": Switching to manual mode")
+									else:
+										rospy.loginfo(rospy.get_name() + ": Switching to autonomous mode")
+							else:
+								self.sd.send_str('$PFMHM,err')
+						else:
+							self.sd.send_str('$PFMHM,err')
+					else:
+						self.sd.send_str('$PFMHM,passwd')			
+
+				elif p[4]=='R' and p[5]=='S': # subscribe to status
+					if self.sd.socket_password_received:
+						message_ok = False
+						data = p.split (',') # split into comma separated list
+						if len(data) > 1 and data[1] != '':
+							value = data[1].rstrip()
+							if value != '':
+								time = float(value)
+								if time >= 0.0:
+									message_ok = True
+									self.send_status_interval = time
+									self.send_status_timeout = 0.0
+						if message_ok == True:
+							self.sd.send_str('$PFMRS,ok')
+							if self.debug:
+								rospy.loginfo(rospy.get_name() + ": Subscribing to status")
+						else:
+							self.sd.send_str('$PFMRS,err')
+							if self.debug:
+								rospy.loginfo(rospy.get_name() + ": Error subscribing to status")
+					else:
+						self.sd.send_str('$PFMRS,passwd')			
+
 				elif p[4]=='R' and p[5]=='D': # delete route plan
 					if self.sd.socket_password_received:
 						self.routept_msg.cmd = self.ROUTEPT_CMD_DELETE
@@ -270,6 +340,13 @@ class ROSnode():
 						self.sd.send_str('$PFMRE,passwd')				
 				else:
 					rospy.logwarn(rospy.get_name() + ": Unknown packet: %s" % p)	
+
+			# is it time to send a status?
+			if self.sd.socket_open and self.send_status_interval > 0 and self.send_status_timeout < rospy.get_time():
+				self.send_status_timeout = rospy.get_time() + self.send_status_interval
+				self.sd.send_str('$PFMRS,%.2f,%.2f' % (self.pose_e, self.pose_n))
+			elif self.sd.socket_open == False:
+				self.send_status_interval = 0.0
 
 			self.r.sleep()
 
