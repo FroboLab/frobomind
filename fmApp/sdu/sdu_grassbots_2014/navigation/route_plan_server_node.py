@@ -175,7 +175,7 @@ class ROSnode():
 		self.debug = rospy.get_param("~debug",'false')
 
 		# get topic names
-		topic_status_sub =  rospy.get_param("~status_pub",'/fmInformation/wptnav_status')
+		topic_status_sub =  rospy.get_param("~status_sub",'/fmInformation/wptnav_status')
 		topic_hmi_pub = rospy.get_param("~hmi_pub",'/fmDecision/hmi')
 		topic_routept = rospy.get_param("~routept_pub",'/fmPlan/route_point')
 

@@ -79,7 +79,7 @@
 		</node>		
 
 		<node pkg="sdu_grassbots_2014" name="route_plan_server" type="route_plan_server_node.py" output="screen" respawn="true" >
-			<param name="status_pub" value="/fmInformation/wptnav_status" />
+			<param name="status_sub" value="/fmInformation/wptnav_status" />
 			<param name="hmi_pub" value="/fmDecision/hmi" />
 			<param name="routept_pub" value="/fmPlan/route_point" />
 			<param name="socket_address" value="localhost" />
