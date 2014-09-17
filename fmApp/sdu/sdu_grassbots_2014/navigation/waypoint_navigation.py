@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#   * Neither the name of the copyright holder nor the names of its
+#     contributors may be used to endorse or promote products derived from
+#     this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -40,15 +40,17 @@ Navigation modes:
 2013-12-03 KJ Added ramp up which works like the previous ramp down
 2014-02-26 KJ Added support for PID feed forward
               Changed target navigation method
+              Added waypoint transition without stopping 
 """
 
 # imports
+from navigation_globals import *
 from math import pi, atan2, sqrt, fabs, cos
 from differential_ifk_py.differential_kinematics import differential_kinematics
 from pid_controller import pid_controller
 
 class waypoint_navigation():
-	def __init__(self, update_rate, wheel_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tolerance, wpt_def_drive_vel, wpt_def_turn_vel, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, debug):
+	def __init__(self, update_rate, wheel_dist, drive_kp, drive_ki, drive_kd, drive_ff, drive_max_output, turn_kp, turn_ki, turn_kd, turn_ff, turn_max_output, max_linear_vel, max_angular_vel, wpt_tolerance, target_ahead, turn_start_at_heading_err, turn_stop_at_heading_err, ramp_drive_vel_at_dist, ramp_min_drive_vel, ramp_turn_vel_at_angle, ramp_min_turn_vel, stop_nav_at_dist, debug):
 
 		# constants
 		self.UPDATE_NONE = 0
@@ -56,17 +58,6 @@ class waypoint_navigation():
 		self.pi2 = 2.0*pi
 		self.deg_to_rad = pi/180.0
 		self.rad_to_deg = 180.0/pi
-
-		# list index for destination (b) and origin (a) waypoints
-		self.W_E = 0 
-		self.W_N = 1
-		self.W_HEADING = 2
-		self.W_ID = 3
-		self.W_NAV_MODE = 4
-		self.W_LIN_VEL = 5
-		self.W_ANG_VEL = 6
-		self.W_PAUSE = 7
-		self.W_TASK = 8
 
 		# parameters
 		self.update_rate = update_rate # [Hz]
@@ -86,8 +77,6 @@ class waypoint_navigation():
 		self.turn_ff = turn_ff
 		self.turn_max_output = turn_max_output
 		self.wpt_tolerance = wpt_tolerance # [m]
-		self.wpt_def_drive_vel = wpt_def_drive_vel # [m/s]
-		self.wpt_def_turn_vel = wpt_def_turn_vel # [m/s]
 
 		self.target_ahead = target_ahead
 		self.turn_start_at_heading_err = turn_start_at_heading_err*self.deg_to_rad # [radians] set to 2pi if not applicable to the robot9
@@ -174,25 +163,22 @@ class waypoint_navigation():
 		self.start = self.pose # where we started driving from (updated in drive_init())
 
 		# set drive velocity
-		self.wpt_drive_vel = self.b[self.W_LIN_VEL]
-		if self.wpt_drive_vel < 0.001:
-			self.wpt_drive_vel = self.wpt_def_drive_vel
-
+		self.wpt_drive_vel = self.b[W_LIN_VEL]
 		self.wpt_ramp_min_drive_vel = self.ramp_min_drive_vel_default
 		self.wpt_ramp_drive_vel_at_dist = self.ramp_drive_vel_at_dist_default
 
 		# set turn velocity limit
-		if self.b[self.W_ANG_VEL] > 0.001:
-			self.turn_vel_limit = self.b[self.W_ANG_VEL]
-		else:
-			self.turn_vel_limit = self.wpt_def_turn_vel
+		self.turn_vel_limit = self.b[W_ANG_VEL]
 
 		if self.turn_vel_limit > self.max_angular_vel:
 				self.turn_vel_limit = self.max_angular_vel	
 
 		# calculate ab-line properties (used by the drive function)
-		self.ab_len = sqrt((self.b[self.W_E]-self.a[self.W_E])**2 + (self.b[self.W_N]-self.a[self.W_N])**2) # length of ab line
-		self.ab_norm = [(self.b[self.W_E]-self.a[self.W_E])/self.ab_len,(self.b[self.W_N]-self.a[self.W_N])/self.ab_len] # normalized ab vector
+		self.ab_len = sqrt((self.b[W_E]-self.a[W_E])**2 + (self.b[W_N]-self.a[W_N])**2) # length of ab line
+		if self.a[W_E] != self.b[W_E] or self.a[W_N] != self.b[W_N]:
+			self.ab_norm = [(self.b[W_E]-self.a[W_E])/self.ab_len,(self.b[W_N]-self.a[W_N])/self.ab_len] # normalized ab vector
+		else:
+			self.ab_norm = [1.0, 0.0] # fictive AB norm
 		self.a_dot_ab_norm = self.a[0]*self.ab_norm[0] + self.a[1]*self.ab_norm[1] # (vector defined by point a) dot (normalized ab vector) 
 
 		# reset state variables
@@ -256,13 +242,14 @@ class waypoint_navigation():
 			ramp_start = 1.0
 			ramp_turn = 1.0
 
-			if self.dist < self.wpt_ramp_drive_vel_at_dist: # close to destination
-				ramp_dest = self.dist/self.wpt_ramp_drive_vel_at_dist
-			if self.dist_start < self.wpt_ramp_drive_vel_at_dist: # close to starting point
-				ramp_start = self.dist_start/self.wpt_ramp_drive_vel_at_dist
+			#if self.dist < self.wpt_ramp_drive_vel_at_dist: # close to destination
+			#	ramp_dest = self.dist/self.wpt_ramp_drive_vel_at_dist
+			#if self.dist_start < self.wpt_ramp_drive_vel_at_dist: # close to starting point
+			#	ramp_start = self.dist_start/self.wpt_ramp_drive_vel_at_dist
 			
 			wheel_spd  = fabs(self.wheel_dist*self.angular_vel) # [m/s]
 			ramp_turn = (self.wpt_drive_vel - wheel_spd)/self.wpt_drive_vel
+			ramp_heading_err = (self.wpt_drive_vel - self.target_heading_err/self.turn_start_at_heading_err*self.wpt_drive_vel*0.8)/self.wpt_drive_vel 
 
 			#if self.target_dist < self.wpt_ramp_drive_vel_at_dist: # close to target
 			#	ramp_target = self.target_dist/self.wpt_ramp_drive_vel_at_dist
@@ -272,6 +259,8 @@ class waypoint_navigation():
 				ramp = ramp_start
 			if ramp_turn < ramp:
 				ramp = ramp_turn
+			if ramp_heading_err < ramp:
+				ramp = ramp_heading_err
 
 			self.linear_vel = self.wpt_drive_vel - (1-ramp)*(self.wpt_drive_vel - self.wpt_ramp_min_drive_vel)
 
@@ -342,91 +331,97 @@ class waypoint_navigation():
 
 	# calculate distance, bearing, heading error
 	def update_navigation_state(self):
-		self.dist = sqrt((self.b[self.W_E]-self.pose[self.W_E])**2 + (self.b[self.W_N]-self.pose[self.W_N])**2) # dist to destination
-		self.dist_start = sqrt((self.start[self.W_E]-self.pose[self.W_E])**2 + (self.start[self.W_N]-self.pose[self.W_N])**2) # dist to starting position
+		self.dist = sqrt((self.b[W_E]-self.pose[W_E])**2 + (self.b[W_N]-self.pose[W_N])**2) # dist to destination
+		self.dist_start = sqrt((self.start[W_E]-self.pose[W_E])**2 + (self.start[W_N]-self.pose[W_N])**2) # dist to starting position
 		if self.dist < self.dist_minimum: # used for arrival detection
 			self.dist_minimum = self.dist
-		easting_component = self.b[self.W_E] - self.pose[self.W_E]  # destination bearing (angle with easting axis)
-		northing_component = self.b[self.W_N] - self.pose[self.W_N]
+		easting_component = self.b[W_E] - self.pose[W_E]  # destination bearing (angle with easting axis)
+		northing_component = self.b[W_N] - self.pose[W_N]
 		self.bearing = self.angle_limit(atan2 (northing_component, easting_component)) 
 		self.heading_err_prev = self.heading_err
 		self.heading_err = self.angle_diff(self.bearing, self.pose[2]) # signed diff. heading to destination bearing
 
 		# find the point on the ab-line that is closest to the robot
-		pose_dot_ab_norm = self.pose[self.W_E]*self.ab_norm[0] + self.pose[self.W_N]*self.ab_norm[1] # (vector defined by pose) dot (normalized ab vector)
+		pose_dot_ab_norm = self.pose[W_E]*self.ab_norm[0] + self.pose[W_N]*self.ab_norm[1] # (vector defined by pose) dot (normalized ab vector)
 		d = pose_dot_ab_norm - self.a_dot_ab_norm  # distance along the ab line 
 
 		pt = [self.a[0] + d*self.ab_norm[0], self.a[1] + d*self.ab_norm[1]] # define closest point along the ab line
-		self.ab_dist_to_pose = sqrt((self.pose[self.W_E]-pt[self.W_E])**2 + (self.pose[self.W_N]-pt[self.W_N])**2)
-		if d > self.ab_len: # the pose lies beyond the end of the ab line and the closest point is therefore in fact b
-			self.target = self.b # set b as target point	
+		self.ab_dist_to_pose = sqrt((self.pose[W_E]-pt[W_E])**2 + (self.pose[W_N]-pt[W_N])**2)
+
+		if self.b[W_NAV_MODE] == ROUTEPT_NAV_MODE_PP:
+			self.target = self.b
 			self.target_bearing = self.bearing
 			self.target_dist = self.dist
-
-			'''elif d < 0: # the pose lies before the beginning of the ab line so the closest point is in fact a
-			#self.target = [self.a[self.W_E], self.a[self.W_E]]
-			#self.target_bearing = self.angle_limit(atan2 (self.target[self.W_N]-self.pose[self.W_N], self.target[self.W_E]-self.pose[self.W_E])) #  target bearing (angle with easting axis)			
-			#self.target_dist = sqrt((self.target[self.W_E]-self.pose[self.W_E])**2 + (self.target[self.W_N]-self.pose[self.W_N])**2) # dist to target
-
-			self.target = self.b # set b as target point	
-			self.target_bearing = self.bearing
-			self.target_dist = self.dist 
-			'''
-
-		else: # the closest point is defined by A + d(B-A)
-			dist_pt_to_b = sqrt((self.b[self.W_E]-pt[self.W_E])**2 + (self.b[self.W_N]-pt[self.W_N])**2)  # calc distance from closest point to b
-			self.target_percent = 0.5
-			dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
-			if dist_pt_to_target > self.target_ahead:
-				dist_pt_to_target = self.target_ahead
-			self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
-
-			# now navigate to the target point...
-			self.target_dist = sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2) # dist to target
-			self.target_bearing = self.angle_limit(atan2 (self.target[1]-self.pose[1], self.target[0]-self.pose[0])) #  target bearing (angle with easting axis)
-
-		'''
-		else: # the closest point is between A and B
-			if self.ab_dist_to_pose < 0.001:
+		elif self.b[W_NAV_MODE] == ROUTEPT_NAV_MODE_AB:
+			if d > self.ab_len: # the pose lies beyond the end of the ab line and the closest point is therefore in fact b
 				self.target = self.b # set b as target point	
-				self.target_dist = self.dist
 				self.target_bearing = self.bearing
-			else:
-				# determine target point based on robot heading and dist from ab line
-				ab_e = self.b[self.W_E] - self.a[self.W_E]  
-				ab_n = self.b[self.W_N] - self.a[self.W_N]
-				self.ab_bearing = self.angle_limit(atan2 (ab_n, ab_e)) # ab line bearing (angle with easting axis)
-				self.left_of_ab = (self.angle_diff(self.bearing, self.ab_bearing) < 0.0)
+				self.target_dist = self.dist
 
-				self.target_max_angle = pi/6.0 
-				self.target_angle_at_1m_offset = 90*pi/180.0
-			
-				offset_angle = self.ab_dist_to_pose**1.2 * self.target_angle_at_1m_offset
-				if offset_angle > self.target_max_angle:
-					offset_angle = self.target_max_angle
-				if self.left_of_ab: # the robot pose is to the left of the ab line
-					offset_angle_signed = - offset_angle
-				else:
-					offset_angle_signed = offset_angle
+				'''elif d < 0: # the pose lies before the beginning of the ab line so the closest point is in fact a
+				#self.target = [self.a[W_E], self.a[W_E]]
+				#self.target_bearing = self.angle_limit(atan2 (self.target[W_N]-self.pose[W_N], self.target[W_E]-self.pose[W_E])) #  target bearing (angle with easting axis)			
+				#self.target_dist = sqrt((self.target[W_E]-self.pose[W_E])**2 + (self.target[W_N]-self.pose[W_N])**2) # dist to target
 
-				self.target_bearing = self.angle_limit(self.ab_bearing + offset_angle_signed)
-				self.target_dist = self.ab_dist_to_pose/cos(pi/2.0 - offset_angle) # dist to target, OBS assuming offset_angle != 0	
-				if self.target_dist > self.dist:
+				self.target = self.b # set b as target point	
+				self.target_bearing = self.bearing
+				self.target_dist = self.dist 
+				'''
+
+			else: # the closest point is defined by A + d(B-A)
+				dist_pt_to_b = sqrt((self.b[W_E]-pt[W_E])**2 + (self.b[W_N]-pt[W_N])**2)  # calc distance from closest point to b
+				self.target_percent = 0.5
+				dist_pt_to_target = dist_pt_to_b*self.target_percent # define distance from closest point to target point
+				if dist_pt_to_target > self.target_ahead:
+					dist_pt_to_target = self.target_ahead
+				self.target = [pt[0] + dist_pt_to_target*self.ab_norm[0], pt[1] + dist_pt_to_target*self.ab_norm[1]] # define target point
+
+				# now navigate to the target point...
+				self.target_dist = sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2) # dist to target
+				self.target_bearing = self.angle_limit(atan2 (self.target[1]-self.pose[1], self.target[0]-self.pose[0])) #  target bearing (angle with easting axis)
+
+			'''
+			else: # the closest point is between A and B
+				if self.ab_dist_to_pose < 0.001:
+					self.target = self.b # set b as target point	
 					self.target_dist = self.dist
 					self.target_bearing = self.bearing
-				dist_pt_to_target = sqrt (self.target_dist**2 - self.ab_dist_to_pose**2)
-				self.target = [pt[self.W_E] + dist_pt_to_target*self.ab_norm[0], pt[self.W_N] + dist_pt_to_target*self.ab_norm[1]]
-		'''	
+				else:
+					# determine target point based on robot heading and dist from ab line
+					ab_e = self.b[W_E] - self.a[W_E]  
+					ab_n = self.b[W_N] - self.a[W_N]
+					self.ab_bearing = self.angle_limit(atan2 (ab_n, ab_e)) # ab line bearing (angle with easting axis)
+					self.left_of_ab = (self.angle_diff(self.bearing, self.ab_bearing) < 0.0)
 
-		#self.target = self.b # set b as target point	
-		#self.target_dist = self.dist
-		#self.target_bearing = self.bearing
+					self.target_max_angle = pi/6.0 
+					self.target_angle_at_1m_offset = 90*pi/180.0
+			
+					offset_angle = self.ab_dist_to_pose**1.2 * self.target_angle_at_1m_offset
+					if offset_angle > self.target_max_angle:
+						offset_angle = self.target_max_angle
+					if self.left_of_ab: # the robot pose is to the left of the ab line
+						offset_angle_signed = - offset_angle
+					else:
+						offset_angle_signed = offset_angle
+
+					self.target_bearing = self.angle_limit(self.ab_bearing + offset_angle_signed)
+					self.target_dist = self.ab_dist_to_pose/cos(pi/2.0 - offset_angle) # dist to target, OBS assuming offset_angle != 0	
+					if self.target_dist > self.dist:
+						self.target_dist = self.dist
+						self.target_bearing = self.bearing
+					dist_pt_to_target = sqrt (self.target_dist**2 - self.ab_dist_to_pose**2)
+					self.target = [pt[W_E] + dist_pt_to_target*self.ab_norm[0], pt[W_N] + dist_pt_to_target*self.ab_norm[1]]
+			'''	
+
+			#self.target = self.b # set b as target point	
+			#self.target_dist = self.dist
+			#self.target_bearing = self.bearing
 	
 		
 		self.target_heading_err = self.angle_diff(self.target_bearing, self.pose[2]) # signed diff. heading to target bearing
 
 
-		#print self.target_dist, self.target_heading_err, self.a[0], self.a[1], self.b[self.W_E], self.b[self.W_N], self.pose[0], self.pose[1], self.target[0], self.target[1] 
+		#print self.target_dist, self.target_heading_err, self.a[0], self.a[1], self.b[W_E], self.b[W_N], self.pose[0], self.pose[1], self.target[0], self.target[1] 
 
 
 	# make sure we don't exceed maximum linear and angular velocity

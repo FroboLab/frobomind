@@ -2,7 +2,7 @@
 
 # parameters
 #WPTLIST='waypoints_rel_coverage.txt'
-#WPTLIST='dummy.txt'
+WPTLIST='waypoints.txt'
 
 # change dir to the location of the shell script
 APPDIR=`dirname $(readlink -f $0)`

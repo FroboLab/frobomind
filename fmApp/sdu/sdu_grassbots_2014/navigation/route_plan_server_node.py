@@ -28,9 +28,9 @@
 #****************************************************************************/
 """
 
-2014-09-10 KJ First version
+2014-09-17 KJ First version
 """
-
+from navigation_globals import *
 import rospy
 from msgs.msg import StringArrayStamped, RoutePt, waypoint_navigation_status
 from socket import *
@@ -106,7 +106,7 @@ class socketd():
 					close_socket_now = True
 				else:
 					if d[0]=='$' and d[1]=='P' and d[2]=='F' and d[3]=='M' and d[-1]=='\n':
-						self.socket_packets.append (d)
+						self.socket_packets.append (d.rstrip())
 						self.socket_timeout = time_now + self.max_idle
 			except:
 				if rospy.get_time() > self.socket_timeout:
@@ -131,7 +131,7 @@ class socketd():
 				if self.debug:
 					self.msg_type = self.MSG_TYPE_INFO
 					self.msg_text = "Connection established from %s port %d" % (addr[0],addr[1])
-				outdata = "$PFMRH,1.0,FroboMind Route Plan Socket Interface\r\n"
+				outdata = "$PFMRH,1.0,FroboMind Route Plan Server\r\n"
 				self.tcpCliSock.send(outdata)
 
 		if close_socket_now:
@@ -140,20 +140,6 @@ class socketd():
 class ROSnode():
 	def __init__(self):
 		rospy.loginfo(rospy.get_name() + ": Start")
-		# routept defines
-		self.ROUTEPT_CMD_DELETE = 0
-		self.ROUTEPT_CMD_DELETE_THEN_APPEND = 1
-		self.ROUTEPT_CMD_APPEND = 2
-		self.ROUTEPT_MODE_PP = 0
-		self.ROUTEPT_MODE_MCTE = 1
-		self.ROUTEPT_INVALID_DATA = -1000000
-
-		# HMI defines
-		self.HMI_ID_DEADMAN = '0'
-		self.HMI_ID_MODE = '1'
-		self.HMI_ID_GOTO_WAYPOINT = '2'
-		self.HMI_MODE_MANUAL = '0'
-		self.HMI_MODE_AUTO = '1'
 
 		# static parameters
 		self.update_rate = 50 # set update frequency [Hz]
@@ -241,12 +227,12 @@ class ROSnode():
 					if self.sd.socket_password_received:
 						data = p.split (',') # split into comma separated list
 						if len(data) > 1 and data[1] != '':
-							value = data[1].rstrip()
+							value = data[1]
 							if value == '0' or value == '1':
 								if value == '0':
-									self.publish_hmi_message (self.HMI_ID_MODE, self.HMI_MODE_MANUAL)
+									self.publish_hmi_message (str(HMI_ID_MODE), str(HMI_MODE_MANUAL))
 								elif value == '1':
-									self.publish_hmi_message (self.HMI_ID_MODE, self.HMI_MODE_AUTO)
+									self.publish_hmi_message (str(HMI_ID_MODE), str(HMI_MODE_AUTO))
 								self.sd.send_str('$PFMHM,ok')
 								if self.debug:
 									if value == '0':
@@ -285,7 +271,7 @@ class ROSnode():
 
 				elif p[4]=='R' and p[5]=='D': # delete route plan
 					if self.sd.socket_password_received:
-						self.routept_msg.cmd = self.ROUTEPT_CMD_DELETE
+						self.routept_msg.cmd = ROUTEPT_CMD_DELETE
 						self.publish_routept_message()
 						self.sd.send_str('$PFMRD,ok')
 						if self.debug:
@@ -297,40 +283,40 @@ class ROSnode():
 				elif p[4]=='R' and p[5]=='E': # wpt using ENU coordinates
 					if self.sd.socket_password_received:
 						data = p.split (',') # split into comma separated list
-						self.routept_msg.cmd = self.ROUTEPT_CMD_APPEND
+						self.routept_msg.cmd = ROUTEPT_CMD_APPEND
 						self.routept_msg.easting = float(data[1])
 						self.routept_msg.northing = float(data[2])
 						if len(data) > 3 and data[3] != '':
 							self.routept_msg.heading = float(data[3])
 						else:
-							self.routept_msg.heading = self.ROUTEPT_INVALID_DATA
+							self.routept_msg.heading = ROUTEPT_INVALID_DATA
 						if len(data) > 4 and data[4] != '':
 							self.routept_msg.id = data[4]
 						else:
 							self.routept_msg.id = ''
 						if len(data) > 5 and data[5] != '':
 							if data[5]=='PP':
-								self.routept_msg.nav_mode = self.ROUTEPT_MODE_PP
+								self.routept_msg.nav_mode = ROUTEPT_NAV_MODE_PP
 							else:
-								self.routept_msg.nav_mode = self.ROUTEPT_MODE_MCTE
+								self.routept_msg.nav_mode = ROUTEPT_NAV_MODE_AB
 						else:
-							self.routept_msg.nav_mode = self.ROUTEPT_MODE_MCTE
+							self.routept_msg.nav_mode = ROUTEPT_INVALID_DATA
 						if len(data) > 6 and data[6] != '':
 							self.routept_msg.linear_vel = float(data[6])
 						else:
-							self.routept_msg.linear_vel = self.ROUTEPT_INVALID_DATA
+							self.routept_msg.linear_vel = ROUTEPT_INVALID_DATA
 						if len(data) > 7 and data[7] != '':
 							self.routept_msg.angular_vel = float(data[7])
 						else:
-							self.routept_msg.angular_vel = self.ROUTEPT_INVALID_DATA
+							self.routept_msg.angular_vel = ROUTEPT_INVALID_DATA
 						if len(data) > 8 and data[8] != '':
 							self.routept_msg.pause = float(data[8])
 						else:
-							self.routept_msg.pause = self.ROUTEPT_INVALID_DATA
+							self.routept_msg.pause = ROUTEPT_INVALID_DATA
 						if len(data) > 9 and data[9] != '':
 							self.routept_msg.task = int(data[9])
 						else:
-							self.routept_msg.task = self.ROUTEPT_INVALID_DATA
+							self.routept_msg.task = ROUTEPT_INVALID_DATA
 						
 						self.publish_routept_message()
 						self.sd.send_str('$PFMRE,ok')
@@ -352,7 +338,7 @@ class ROSnode():
 
 # Main function.    
 if __name__ == '__main__':
-    rospy.init_node('route_plan_socketd')
+    rospy.init_node('route_plan_server')
     try:
         node_class = ROSnode()
     except rospy.ROSInterruptException:

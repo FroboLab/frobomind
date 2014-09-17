@@ -28,9 +28,9 @@
 #****************************************************************************/
 """
 
-2014-09-10 KJ First version
+2014-09-17 KJ First version
 """
-
+from navigation_globals import *
 from sys import argv
 import signal
 import time
@@ -76,20 +76,53 @@ class route_plan():
 		self.seperator = ','
 
 	def load_from_csv (self, filename):
-		lines = [line.rstrip('\n') for line in open(filename)] # read the file and strip \n
+		lines = [line.rstrip() for line in open(filename)] # read the file and strip \n
 		wpt_num = 0
 		for i in xrange(len(lines)): # for all lines
 			if len(lines[i]) > 0 and lines[i][0] != '#': # if not a comment or empty line
 				data = lines[i].split (self.seperator) # split into comma separated list
-				if len(data) >= 2 and data[0] != '' and data[1] != '':
+				if len(data) >= CSV_N and data[CSV_E] != '' and data[CSV_N] != '':
 					wpt_num += 1
-					e = float (data[0])
-					n = float (data[1])
+					e = float (data[CSV_E])
+					n = float (data[CSV_N])
+					if (len(data) > CSV_HEADING) and data[CSV_HEADING] != '':
+						heading = float (data[CSV_HEADING])
+					else:
+						heading = ROUTEPT_INVALID_DATA
+					if (len(data) > CSV_ID) and data[CSV_ID] != '':
+						name = data[CSV_ID]
+					else:
+						name = ''
+					if (len(data) > CSV_NAV_MODE) and data[CSV_NAV_MODE] != '':
+						if data[CSV_NAV_MODE] == 'PP':
+							nav_mode = 'PP'
+						elif data[CSV_NAV_MODE] == 'AB':
+							nav_mode = 'AB'
+						else:
+							nav_mode = ''
+					else:
+						nav_mode  = ''
+					if (len(data) > CSV_LIN_VEL) and data[CSV_LIN_VEL] != '':
+						lin_vel = float (data[CSV_LIN_VEL])
+					else:
+						lin_vel = ROUTEPT_INVALID_DATA
+					if (len(data) > CSV_ANG_VEL) and data[CSV_ANG_VEL] != '':
+						ang_vel = float (data[CSV_ANG_VEL])
+					else:
+						ang_vel = ROUTEPT_INVALID_DATA
+					if (len(data) > CSV_PAUSE) and data[CSV_PAUSE] != '':
+						pause = float (data[CSV_PAUSE])
+					else:
+						pause = ROUTEPT_INVALID_DATA
+					if (len(data) > CSV_TASK) and data[CSV_TASK] != '':
+						task = int (data[CSV_TASK])
+					else:
+						task = ROUTEPT_INVALID_DATA
 
-					self.list.append([e, n])
+					self.list.append([e, n, heading, name, nav_mode, lin_vel, ang_vel, pause, task])
 				else:
-					print '  Erroneous waypoint: %s' % lines[i]
-		print '  Total %d waypoints loaded.' % wpt_num
+					print 'Erroneous waypoint: %s' % lines[i]
+		print 'Total %d waypoints loaded.' % wpt_num
 
 
 class socket_functions():
@@ -180,10 +213,29 @@ class socket_functions():
 		i = 0
 		send_err = False		
 		while i < list_len and send_err == False:
-			print 'sending', plan.list[i]
-
 			# send waypoint
-			wpt_msg = '$PFMRE,%d,%d\r\n' % (plan.list[i][0],plan.list[i][1])
+			if plan.list[i][W_HEADING] != ROUTEPT_INVALID_DATA:
+				heading_str = '%.3f' % plan.list[i][W_HEADING]
+			else:
+				heading_str = ''
+			if plan.list[i][W_LIN_VEL] != ROUTEPT_INVALID_DATA:
+				lin_vel_str = '%.3f' % plan.list[i][W_LIN_VEL]
+			else:
+				lin_vel_str = ''
+			if plan.list[i][W_ANG_VEL] != ROUTEPT_INVALID_DATA:
+				ang_vel_str = '%.3f' % plan.list[i][W_ANG_VEL]
+			else:
+				ang_vel_str = ''
+			if plan.list[i][W_PAUSE] != ROUTEPT_INVALID_DATA:
+				pause_str = '%.2f' % plan.list[i][W_PAUSE]
+			else:
+				pause_str = ''
+			if plan.list[i][W_TASK] != ROUTEPT_INVALID_DATA:
+				task_str = '%.2f' % plan.list[i][W_TASK]
+			else:
+				task_str = ''
+
+			wpt_msg = '$PFMRE,%.3f,%.3f,%s,%s,%s,%s,%s,%s,%s\r\n' % (plan.list[i][W_E],plan.list[i][W_N], heading_str, plan.list[i][W_ID], plan.list[i][W_NAV_MODE],lin_vel_str, ang_vel_str, pause_str, task_str)
 			self.socket.send (wpt_msg)
 
 			# wait for acknowledge
@@ -192,7 +244,7 @@ class socket_functions():
 			while ack_ok == False and ack_tout > time.time():
 				answer = self.socket.receive()
 				if answer=='$PFMRE,ok\r\n':
-					print 'ok'
+					print 'Route point %s sent ok' % plan.list[i]
 					ack_ok = True
 				elif answer=='$PFMRE,passwd\r\n':
 					print 'Password error'

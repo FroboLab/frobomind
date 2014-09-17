@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -39,26 +39,30 @@ Reference: https://docs.google.com/document/d/1nXmZ2Yz4_EzWaQ4GabGi4fah6phSRXDoe
 """
 
 #imports
+from navigation_globals import *
 from transverse_mercator_py.transverse_mercator import tranmerc
 
 class waypoint_list():
-	def __init__(self):
-		self.ROUTEPT_MODE_PP = 0
-		self.ROUTEPT_MODE_MCTE = 1
-		self.ROUTEPT_INVALID_DATA = -1000000
-		self.W_E = 0 
-		self.W_N = 1
-		self.W_HEADING = 2
-		self.W_ID = 3
-		self.W_NAV_MODE = 4
-		self.W_LIN_VEL = 5
-		self.W_ANG_VEL = 6
-		self.W_PAUSE = 7
-		self.W_TASK = 8
+	def __init__(self, wpt_def_nav_mode, wpt_def_lin_vel, wpt_def_ang_vel, wpt_def_pause, wpt_def_task):
+		self.wpt_def_nav_mode = wpt_def_nav_mode
+		self.wpt_def_lin_vel = wpt_def_lin_vel
+		self.wpt_def_ang_vel = wpt_def_ang_vel
+		self.wpt_def_pause = wpt_def_pause
+		self.wpt_def_task = wpt_def_task
 		self.delete_list()
 
-	def append(self, e, n, heading, name, nav_mode, lin_vel, ang_vel, wait, task):
-		self.list.append([e, n, heading, name, nav_mode, lin_vel, ang_vel, wait, task])
+	def append(self, e, n, heading, name, nav_mode, lin_vel, ang_vel, pause, task):
+		if nav_mode == ROUTEPT_INVALID_DATA:
+			nav_mode = self.wpt_def_nav_mode
+		if lin_vel == ROUTEPT_INVALID_DATA or lin_vel < 0.001:
+			lin_vel = self.wpt_def_lin_vel
+		if ang_vel == ROUTEPT_INVALID_DATA or ang_vel < 0.001:
+			ang_vel = self.wpt_def_ang_vel
+		if pause == ROUTEPT_INVALID_DATA:
+			pause = self.wpt_def_pause
+		if task == ROUTEPT_INVALID_DATA:
+			task = self.wpt_def_task
+		self.list.append([e, n, heading, name, nav_mode, lin_vel, ang_vel, pause, task])
 	
 	def delete_list(self):
 		self.list = []
@@ -68,7 +72,7 @@ class waypoint_list():
 		self.list = []
 		file_ok = True
 		try:
-			lines = [line.rstrip('\n') for line in open(filename)] # read the file and strip \n
+			lines = [line.rstrip() for line in open(filename)] # read the file and strip \n
 		except:
 			file_ok = False
 		if file_ok == True:
@@ -79,48 +83,46 @@ class waypoint_list():
 					position_available = False
 					if len(data) >= 2 and data[0] != '' and data[1] != '':
 						position_available = True
-						e = float (data[0])
-						n = float (data[1])
+						e = float (data[CSV_E])
+						n = float (data[CSV_N])
 					else:
-						e = self.ROUTEPT_INVALID_DATA
-						n = self.ROUTEPT_INVALID_DATA
-					if len(data)>=4 and data[2]!='' and data[3]!='':
-						position_available = True
-						lat = float(data[2])
-						lon = float(data[3])
-					else:
-						lat = self.ROUTEPT_INVALID_DATA
-						lon = self.ROUTEPT_INVALID_DATA
+						e = ROUTEPT_INVALID_DATA
+						n = ROUTEPT_INVALID_DATA
 
 					if position_available == True:
 						wpt_num += 1
-						if len(data) > 4 and data[4] != '':
-							heading = float(data[4])
+						if len(data) > CSV_HEADING and data[CSV_HEADING] != '':
+							heading = float(data[CSV_HEADING])
 						else:
-							heading = self.ROUTEPT_INVALID_DATA
-						if len(data)>5 and data[5] != '':
-							name = data[5]
+							heading = ROUTEPT_INVALID_DATA
+						if len(data)>CSV_ID and data[CSV_ID] != '':
+							name = data[CSV_ID]
 						else:
 							name = 'Wpt%d' % (wpt_num)
-						nav_mode = self.ROUTEPT_MODE_MCTE # default is 'minimize cross track error'
-						if  len(data) > 6 and data[6] == 'STWP': # 'straight to waypoint' 
-							nav_mode = self.ROUTEPT_MODE_PP 
-						if  len(data) > 7 and data[7] != '': # linear velocity
-							lin_vel = float(data[7])
+						nav_mode = ROUTEPT_INVALID_DATA
+						if  len(data) > CSV_NAV_MODE:
+							if data[CSV_NAV_MODE] == 'PP': 
+								nav_mode = ROUTEPT_NAV_MODE_PP
+							elif data[CSV_NAV_MODE] == 'AB':
+								nav_mode = ROUTEPT_NAV_MODE_AB
+							else:
+								nav_mode = self.wpt_def_nav_mode
+						if  len(data) > CSV_LIN_VEL and data[CSV_LIN_VEL] != '': 
+							lin_vel = float(data[CSV_LIN_VEL])
 						else:
-							lin_vel = 0.0 
-						if  len(data) > 8 and data[8] != '': # angular velocity
-							ang_vel = float(data[8])
+							lin_vel = self.wpt_def_lin_vel
+						if  len(data) > CSV_ANG_VEL and data[CSV_ANG_VEL] != '':
+							ang_vel = float(data[CSV_ANG_VEL])
 						else:
-							ang_vel = 0.0
-						if  len(data) > 8 and data[8] != '': # wait after reaching wpt
-							pause = float(data[8])
+							ang_vel = self.wpt_def_ang_vel
+						if  len(data) > CSV_PAUSE and data[CSV_PAUSE] != '':
+							pause = float(data[CSV_PAUSE])
 						else:
-							pause = self.ROUTEPT_INVALID_DATA
-						if  len(data) > 9 and data[9] != '': # task
-							task = float(data[9])
+							pause = self.wpt_def_pause
+						if  len(data) > CSV_TASK and data[CSV_TASK] != '':
+							task = float(data[CSV_TASK])
 						else:
-							task = self.ROUTEPT_INVALID_DATA
+							task = self.wpt_def_task
 
 						self.append(e, n, heading, name, nav_mode, lin_vel, ang_vel, pause, task)
 					else:
