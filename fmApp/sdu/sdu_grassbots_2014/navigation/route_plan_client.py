@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #/****************************************************************************
-# FroboMind route plan socket utility
+# FroboMind route plan client
 # Copyright (c) 2014, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -300,15 +300,19 @@ class socket_functions():
 
 
 # main function
-print 'FroboMind route plan server utility v2014-09-16'
+print 'FroboMind route plan server utility v2014-09-17'
 argc = len(argv)
 if argc < 5:
-	print 'Usage: route_plan.py server port password delete'
-	print 'Usage: route_plan.py server port password upload filename'
-	print 'Usage: route_plan.py server port password status interval'
-	print 'Usage: route_plan.py server port password auto'
-	print 'Usage: route_plan.py server port password manual'
-	print 'Usage: route_plan.py server port password status'
+	print ''
+	print 'Usage: route_plan_client.py server port password command'
+	print ''
+	print 'Commands:'
+	print '  delete'
+	print '  upload filename'
+	print '  auto'
+	print '  manual'
+	print '  status'
+	print ''
 
 else:
 	# define and install ctrl-c handler
