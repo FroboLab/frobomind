@@ -65,6 +65,8 @@ class ros_node():
 		self.pose = False
 		self.pose_timeout = 1.0
 		self.latest_pose = 0.0
+		self.gps_timeout = 1.0
+		self.latest_gps = 0.0
 		self.gps_fix = 0
 
 		# Get parameters
@@ -104,10 +106,13 @@ class ros_node():
 
 	# handle incoming gpgga messages
 	def on_gga_msg(self, msg):
+		self.latest_gps = rospy.Time.now().to_sec() 
 		self.gps_fix = msg.fix
 		if self.gps_fix == 5:
 			self.gps_fix = 3
-
+		elif self.gps_fix == 0:
+			self.gps_fix = 1
+		
 	# handle incoming pose messages
 	def on_pose_msg(self, msg):
 		self.latest_pose = rospy.Time.now().to_sec() 
@@ -153,14 +158,16 @@ class ros_node():
 		self.nmea_pub.publish (self.nmea_pflsl)
 
 	def update_lights(self):
-		self.light_red = 0
-
 		# update red and yellow light
 		if self.latest_pose + self.pose_timeout < rospy.Time.now().to_sec():
-			self.light_yellow = self.gps_fix
-			if self.gps_fix == 0:
+			if self.latest_gps + self.gps_timeout < rospy.Time.now().to_sec():
 				self.light_red = 1
+				self.light_yellow = 0
 			else:
+				if self.gps_fix != 4:
+					self.light_yellow = self.gps_fix
+				else:
+					self.gps_fix = 10
 				self.light_red = 0
 			self.light_green = 0
 		else:
@@ -170,7 +177,6 @@ class ros_node():
 				self.light_green = 10
 			else:
 				self.light_green = 1
-
 		self.publish_frobolight_messages()
 	
 	# update loop
