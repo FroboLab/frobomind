@@ -155,6 +155,14 @@ class waypoint_list():
 				prev_wpt = self.list[self.next-2]
 		return (wpt, prev_wpt)
 
+	def get_number (self, wpt_num):	
+		if wpt_num < len(self.list):
+			wpt = self.list[wpt_num]
+			self.next = wpt_num + 1
+		else:
+			wpt = False
+		return wpt
+
 	def status (self):		
 		return (len(self.list), self.next)
 

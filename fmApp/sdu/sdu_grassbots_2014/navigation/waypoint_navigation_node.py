@@ -175,6 +175,17 @@ class WptNavNode():
 		else:
 			self.implement.data = self.wpt_def_implement
 
+	def goto_wpt_number (self, wpt_num):
+		self.prev_wpt = False
+		self.wpt = self.wptlist.get_number(wpt_num)
+		if self.wpt != False:
+			self.update_implement_value()
+			self.wptnav.navigate(self.wpt, self.prev_wpt)
+			rospy.loginfo(rospy.get_name() + ": Navigating to waypoint: %s (distance %.2fm)" % (self.wpt[W_ID], self.wptnav.dist))
+		else:
+			rospy.loginfo(rospy.get_name() + ": End of waypoint list reached")
+			self.wptnav.stop()
+
 	def goto_first_wpt (self):
 		self.prev_wpt = False
 		self.wpt = self.wptlist.get_first()
@@ -222,6 +233,10 @@ class WptNavNode():
 				elif msg.data[1] == '+':
 					rospy.loginfo(rospy.get_name() + ": User skipped waypoint")
 					self.goto_next_wpt()
+				elif msg.data[1].isdigit():
+					wpt_num = int(msg.data[1])
+					rospy.loginfo(rospy.get_name() + ": User selected waypoint number %ld" % wpt_num)
+					self.goto_wpt_number(wpt_num)
 				
 		'''
 			if self.wii_a == True and self.wii_a_changed == True:
