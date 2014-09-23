@@ -45,6 +45,7 @@ from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from msgs.msg import StringArrayStamped, FloatStamped, FloatArrayStamped, RoutePt, waypoint_navigation_status
+from route_plan_srv.srv import GetRoutePlan, SetRoutePlan, GetRoutePlanResponse, SetRoutePlanResponse
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -149,6 +150,12 @@ class WptNavNode():
 		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
 		rospy.Subscriber(HMI_sub_topic, StringArrayStamped, self.on_hmi_message)
 		rospy.Subscriber(ROUTEPT_topic, RoutePt, self.on_routept_message)
+
+		# setup service topic calbacks
+		topic_service_get_route_plan = '/fmPlans/get_route_plan'
+		topic_service_set_route_plan = '/fmPlans/set_route_plan'
+		self.get_route_plan_service = rospy.Service(topic_service_get_route_plan, GetRoutePlan, self.on_get_route_plan)
+		self.set_route_plan_service = rospy.Service(topic_service_set_route_plan, SetRoutePlan, self.on_set_route_plan)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -267,6 +274,37 @@ class WptNavNode():
 		yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
 		self.wptnav.state_update (msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x)
 	
+	def on_get_route_plan(self,req):
+		plan = GetRoutePlanResponse()
+		if req.route_plan_id == 0:
+			plan.error = 0
+			for i in xrange(len(self.wptlist.list)):
+				pt = RoutePt()
+				pt.easting = self.wptlist.list[i][W_E]
+				pt.northing = self.wptlist.list[i][W_N]
+				pt.heading = self.wptlist.list[i][W_HEADING]
+				pt.id = self.wptlist.list[i][W_ID]
+				pt.nav_mode = self.wptlist.list[i][W_NAV_MODE]
+				pt.linear_vel = self.wptlist.list[i][W_LIN_VEL]
+				pt.angular_vel = self.wptlist.list[i][W_ANG_VEL]
+				pt.pause = self.wptlist.list[i][W_PAUSE]
+				pt.task = self.wptlist.list[i][W_TASK]
+				plan.points.append(pt)
+		else:		
+			self.plan.error = -1	
+		return plan
+		
+	def on_set_route_plan(self,req):
+		plan = SetRoutePlanResponse()
+		if req.route_plan_id == 0:
+			plan.error = 0
+			self.wptlist.delete_list()
+			for i in xrange(len(req.points)):
+				self.wptlist.append(req.points[i].easting, req.points[i].northing, req.points[i].heading, req.points[i].id, req.points[i].nav_mode, req.points[i].linear_vel, req.points[i].angular_vel, req.points[i].pause, req.points[i].task)
+		else:		
+			self.plan.error = -1	
+		return plan
+
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
 		self.twist.twist.linear.x = self.linear_vel
@@ -283,6 +321,7 @@ class WptNavNode():
 		if self.wptnav.pose != False:
 			self.wptnav_status.easting = self.wptnav.pose[0]
 			self.wptnav_status.northing = self.wptnav.pose[1]
+			self.wptnav_status.orientation = self.wptnav.pose[2] 
 
 		if self.state == self.STATE_NAVIGATE and self.wptnav.b != False:
 			if  self.wptnav.state == self.wptnav.STATE_STOP or self.wptnav.state == self.wptnav.STATE_STANDBY:
@@ -291,6 +330,7 @@ class WptNavNode():
 				self.wptnav_status.mode = 1
 			elif self.wptnav.state == self.wptnav.STATE_TURN:
 				self.wptnav_status.mode = 2
+			self.wptnav_status.task = self.wptnav.b[W_TASK]
 			self.wptnav_status.b_id = self.wptnav.b[W_ID]
 			self.wptnav_status.b_easting = self.wptnav.b[W_E]
 			self.wptnav_status.b_northing = self.wptnav.b[W_N]

@@ -9,6 +9,7 @@ d = generate_distutils_setup(
   'navigation/route_plan_server_node.py',
   'navigation/area_coverage_casmo_node.py',
   'navigation/area_coverage_casmo_implement_node.py',
+  'monitor/lighthouse_node.py',
   'monitor/show_navigation_status_node.py'],
 )
 

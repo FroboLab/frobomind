@@ -75,9 +75,10 @@ class socketd():
 
 	def send_str(self, s):
 		self.tcpCliSock.send('%s\r\n' % s)
-
+	'''
 	def send_status(self, x, y):
 		self.tcpCliSock.send('$S,%.9f,%.9f\r\n' % (x,y))
+	'''
 
 	def packets_available(self):
 		if len(self.socket_packets) > 0:
@@ -152,6 +153,10 @@ class ROSnode():
 		self.pose_e = 0.0
 		self.pose_n = 0.0
 		self.pose_orientation = 0.0
+		self.status_linear_vel = 0.0
+		self.status_angular_vel = 0.0
+		self.status_task = 0
+		self.status_b_id = ""
 
 		# get parameters
 		socket_addr = rospy.get_param("~socket_address",'localhost')
@@ -190,6 +195,11 @@ class ROSnode():
 	def on_status_message(self, msg):
 		self.pose_e = msg.easting
 		self.pose_n = msg.northing
+		self.pose_orientation = msg.orientation
+		self.status_linear_vel = msg.linear_speed
+		self.status_angular_vel = msg.angular_speed
+		self.status_b_id = msg.b_id
+		self.status_task = msg.task
 
 	def publish_routept_message(self):
 		self.routept_msg.header.stamp = rospy.Time.now()
@@ -282,6 +292,7 @@ class ROSnode():
 					pass
 				elif p[4]=='R' and p[5]=='E': # wpt using ENU coordinates
 					if self.sd.socket_password_received:
+						self.sd.send_str('$PFMRE,ok')
 						data = p.split (',') # split into comma separated list
 						self.routept_msg.cmd = ROUTEPT_CMD_APPEND
 						self.routept_msg.easting = float(data[1])
@@ -319,9 +330,8 @@ class ROSnode():
 							self.routept_msg.task = ROUTEPT_INVALID_DATA
 						
 						self.publish_routept_message()
-						self.sd.send_str('$PFMRE,ok')
 						if self.debug:
-							rospy.loginfo(rospy.get_name() + ": RoutePt (ENU) E%.3f N%.3f received" % (self.routept_msg.easting, self.routept_msg.northing))
+							rospy.loginfo(rospy.get_name() + ": RoutePt (ENU) %s E%.3f N%.3f received" % (self.routept_msg.id, self.routept_msg.easting, self.routept_msg.northing))
 					else:
 						self.sd.send_str('$PFMRE,passwd')				
 				else:
@@ -330,7 +340,7 @@ class ROSnode():
 			# is it time to send a status?
 			if self.sd.socket_open and self.send_status_interval > 0 and self.send_status_timeout < rospy.get_time():
 				self.send_status_timeout = rospy.get_time() + self.send_status_interval
-				self.sd.send_str('$PFMRS,%.2f,%.2f' % (self.pose_e, self.pose_n))
+				self.sd.send_str('$PFMRS,%.3f,%.3f,%.3f,%.3f,%.3f,%ld,%s,,,,,,' % (self.pose_e, self.pose_n, self.pose_orientation, self.status_linear_vel, self.status_angular_vel, self.status_task, self.status_b_id))
 			elif self.sd.socket_open == False:
 				self.send_status_interval = 0.0
 

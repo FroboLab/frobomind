@@ -1,4 +1,5 @@
 /fmApp/sdu/sdu_grassbots_2014
+/fmApp/sdu/route_plan_srv
 /fmSensors/global_sensing/imu/vectornav_vn100
 /fmSensors/global_sensing/gnss/nmea_to_tranmerc
 /fmSensors/platform_feedback/computer_load_monitor

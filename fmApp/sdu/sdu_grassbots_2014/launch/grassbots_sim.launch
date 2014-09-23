@@ -82,7 +82,7 @@
 			<param name="status_sub" value="/fmInformation/wptnav_status" />
 			<param name="hmi_pub" value="/fmDecision/hmi" />
 			<param name="routept_pub" value="/fmPlan/route_point" />
-			<param name="socket_address" value="localhost" />
+			<param name="socket_address" value="192.168.1.112" />
 			<param name="socket_port" value="8080" />
 			<param name="socket_timeout" value="10" />
 			<param name="socket_password" value="" />
@@ -99,6 +99,9 @@
 			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel" />
 			<param name="odom_reset_sub" value="/fmInformation/odom_reset" />
 			<param name="pose_pub" value="/fmKnowledge/pose" />
+			<param name="init_easting" value="535518.0"/>
+			<param name="init_northing" value="6260299.0"/>
+			<param name="init_orientation" value="0.0"/>
 			<param name="max_linear_acceleration" value="1.0"/>
 			<param name="max_angular_acceleration" value="1.0"/>
 			<param name="wheel_feedback_left_pub" value="/fmInformation/wheel_feedback_left" />
@@ -106,8 +109,27 @@
 			<param name="publish_wheel_feedback_rate" value="50" />
 		</node>
 
+		<node pkg="sdu_grassbots_2014" name="lighthouse" type="lighthouse_node.py" output="screen" respawn="true" >
+			<param name="gga_sub" value="/fmInformation/gpgga_tranmerc" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="deadman_sub" value="/fmCommand/deadman" />
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="wptnav_status_sub" value="/fmInformation/wptnav_status" />
+			<param name="lighthouse_sub" value="/fmData/nmea_from_lighthouse" />
+			<param name="lighthouse_pub" value="/fmData/nmea_to_lighthouse" />
+		</node>
+
 	 	<node pkg="keyboard_interface" type="keyboard_node" name="keyboard">
 			<param name="keyboard_pub" value="/fmHMI/keyboard" />
+		</node>
+
+		<!-- serial device and NMEA protocol handler for the FroboLightHouse -->
+		<node pkg="serial_nmea" name="lighthouse_nmea" type="serial_nmea_node" output="screen" >
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_lighthouse"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_lighthouse"/>
+			<param name="serial_device" value="/dev/lighthouse"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
 		</node>
 
 		<!--node pkg="plot_velocity" name="plot_vel" type="plot_velocity_node.py" output="screen" >
@@ -139,7 +161,7 @@
 			<param name="plot_feed_forward" value="true" />
 		</node-->
 
-		<node pkg="frobit_plot" name="frobit_plot" type="frobit_plot_node.py" output="screen" >
+		<!--node pkg="frobit_plot" name="frobit_plot" type="frobit_plot_node.py" output="screen" >
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="gnss_sub" value="/fmInformation/gpgga_tranmerc" />
 			<param name="odom_sub" value="/fmKnowledge/odom" />
@@ -159,7 +181,7 @@
 			<param name="avatar_extension_front" value="1.7" />
 			<param name="avatar_extension_rear" value="0.9" />
 			<param name="avatar_extension_lateral" value="0.9" />
-		</node>
+		</node-->
 	</group>
 </launch>
 
