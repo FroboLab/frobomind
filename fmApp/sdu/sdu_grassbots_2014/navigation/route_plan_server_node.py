@@ -155,6 +155,7 @@ class ROSnode():
 		self.pose_orientation = 0.0
 		self.status_linear_vel = 0.0
 		self.status_angular_vel = 0.0
+		self.status_mode = 0
 		self.status_task = 0
 		self.status_b_id = ""
 
@@ -199,6 +200,10 @@ class ROSnode():
 		self.status_linear_vel = msg.linear_speed
 		self.status_angular_vel = msg.angular_speed
 		self.status_b_id = msg.b_id
+		if msg.state == 1 or msg.state == 2: # automode = True
+			self.status_mode = 1
+		else:
+			self.status_mode = 0
 		self.status_task = msg.task
 
 	def publish_routept_message(self):
@@ -340,7 +345,7 @@ class ROSnode():
 			# is it time to send a status?
 			if self.sd.socket_open and self.send_status_interval > 0 and self.send_status_timeout < rospy.get_time():
 				self.send_status_timeout = rospy.get_time() + self.send_status_interval
-				self.sd.send_str('$PFMRS,%.3f,%.3f,%.3f,%.3f,%.3f,%ld,%s,,,,,,' % (self.pose_e, self.pose_n, self.pose_orientation, self.status_linear_vel, self.status_angular_vel, self.status_task, self.status_b_id))
+				self.sd.send_str('$PFMRS,%.3f,%.3f,%.3f,%.3f,%.3f,%ld,%ld,%s,,,,,,' % (self.pose_e, self.pose_n, self.pose_orientation, self.status_linear_vel, self.status_angular_vel, self.status_mode, self.status_task, self.status_b_id))
 			elif self.sd.socket_open == False:
 				self.send_status_interval = 0.0
 
