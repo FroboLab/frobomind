@@ -291,6 +291,7 @@ class WptNavNode():
 				self.wptnav_status.mode = 1
 			elif self.wptnav.state == self.wptnav.STATE_TURN:
 				self.wptnav_status.mode = 2
+			self.wptnav_status.b_id = self.wptnav.b[W_ID]
 			self.wptnav_status.b_easting = self.wptnav.b[W_E]
 			self.wptnav_status.b_northing = self.wptnav.b[W_N]
 			self.wptnav_status.a_easting = self.wptnav.a[W_E]
