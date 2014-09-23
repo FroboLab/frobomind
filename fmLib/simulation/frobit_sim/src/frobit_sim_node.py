@@ -60,7 +60,10 @@ class ROSnode():
 		self.ticks_per_meter_left = rospy.get_param("/ticks_per_meter_left", 500)
 		self.ticks_per_meter_right = rospy.get_param("/ticks_per_meter_right", 500)
 
-		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
+		init_e = rospy.get_param("~init_easting", 0.0) # [m]
+		init_n = rospy.get_param("~init_northing", 0.0) # [m]
+		init_orientation = rospy.get_param("~init_orientation", 0.0) # [m]
+		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 1.8) # [rad/s^2]
 		self.wheel_speed_variance = 0.001
 		self.wheel_speed_delay = 0.05 # [s]
@@ -86,7 +89,7 @@ class ROSnode():
 		self.update_interval = 1/(self.update_rate * 1.0)
 		self.pi2 = 2*pi
 		self.cmd_vel_tout_active = True
-		self.pose = [0.0, 0.0, 0.0]
+		self.pose = [init_e, init_n, init_orientation]
 		self.deadman_tout = 0.0
 		self.cmd_vel_msgs = []
 		self.vel_lin_desired = 0.0
