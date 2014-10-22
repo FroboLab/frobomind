@@ -7,7 +7,7 @@
 	<param name="ticks_per_meter_right" value="562" />
 
 	<!-- Notice: Use pkg="stage" if running ROS Groovy and pkg="stage_ros" if running ROS Hydro --> 
- 	<node pkg="stage_ros" type="stageros" name="simulator" args="$(find frobit_v2_demo)/stage/frobit_wpt_navigation.world"/>
+ 	<node pkg="stage_ros" type="stageros" name="simulator" args="$(find frobit_demo)/stage/frobit_wpt_navigation.world"/>
 	<remap from="/fmKnowledge/pose" to="/odom" />
 
 	<!-- node pkg="rosbag" name="rosbag_record" type="record" args="-a"/-->
@@ -19,7 +19,7 @@
 	</group>
 
 	<group ns="fmDecisionMakers">
-		<node pkg="frobit_v2_demo" name="mission" type="keyboard_mission_node.py" output="screen">
+		<node pkg="frobit_demo" name="mission" type="keyboard_mission_node.py" output="screen">
 			<param name="keyboard_sub" value="/fmHMI/keyboard" />
 			<param name="automode_pub" value="/fmDecision/automode" />
     		<param name="deadman_pub" value="/fmCommand/deadman" />
@@ -32,7 +32,7 @@
 	</group>
 
 	<group ns="fmExecutors">
-		<node pkg="frobit_v2_demo" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+		<node pkg="frobit_demo" type="waypoint_navigation_node.py" name="wptnav" output="screen">
 			<param name="automode_sub" value="/fmDecision/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
 			<param name="joy_sub" value="/fmLib/joy" />

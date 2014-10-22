@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>frobit_v2_demo</name>
+  <name>frobit_demo</name>
   <version>0.0.0</version>
-  <description>The frobit_v2_demo package</description>
+  <description>The frobit_demo package</description>
 
   <maintainer email="kjeld@frobomind.org">Kjeld Jensen</maintainer>
   <url type="website">http://www.frobomind.org</url>
