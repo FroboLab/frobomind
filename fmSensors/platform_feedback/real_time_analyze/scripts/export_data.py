@@ -40,15 +40,6 @@ if arg1 != '':
 	bag = rosbag.Bag (arg1)
 else:
 	bag = rosbag.Bag ('test.bag')
-	
-def time_stamp (stamp):
-	secs = stamp.secs
-	msecs = int(stamp.nsecs/1000000.0+0.5)
-	if msecs == 1000:
-		secs += 1 
-		msecs = 0		
-	return '%d.%03d' % (secs, msecs)
-
 
 topic_rt_timing = '/fmInformation/rt_timing'
 topic_cpu_load = '/fmInformation/cpu_load'
