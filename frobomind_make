@@ -1,7 +1,7 @@
 #!/bin/sh
 #*****************************************************************************
 # frobomind_make script
-# Copyright (c) 2014, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2014-2015, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,28 @@
 #
 # 2014-03-17 KJ First version
 # 2014-03-26 KJ A few optimizations, no functionality changed.
+# 2015-03-04 KJ Updated to support external projects
 #*****************************************************************************
 
 # find out where FroboMind is
 ROOT_FM=$(dirname $(readlink -f $0))
-ROOT_WS=$ROOT_FM/..
+ROOT_SRC=$ROOT_FM/..
+ROOT_WS=$ROOT_FM/../..
 FILE_MAKE="fmMake.txt"
 
 # this function shows the help text
 show_help(){
-	echo "\nFroboMind make v2014-03-26" 
+	echo "\nFroboMind make v2015-03-04" 
     echo "Usage:"
     echo "  frobomind_make [options] command"
 	echo "Commands:"
-	echo "  all         Make all FroboMind components"
-	echo "  list        List all FroboMind components"
-    echo "  /fmApp/...  Make FroboMind components listed in $FILE_MAKE in this application directory"
-    echo "  clean       Make clean"
-    echo "  cleanall    Clean up everything (remove devel and build directories)"
+	echo "  all             Make all FroboMind components"
+	echo "  list            List all FroboMind components"
+    echo "  /frobomind/...  Make FroboMind components listed in $FILE_MAKE in this directory"
+    echo "  clean           Make clean"
+    echo "  cleanall        Clean up everything (remove devel and build directories)"
     echo "Options:"
-    echo "  -i          Do not ignore (other) components" 
+    echo "  -i              Do not ignore (other) components" 
     echo ""
 }
 
@@ -58,7 +60,7 @@ show_help(){
 # this function adds a CATKIN_IGNORE file to all directories containing a package.xml file
 add_ignore_to_all_packages(){
 	cd $ROOT_FM
-    PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
+    PACKAGES=`find $ROOT_SRC -name "package.xml"` # find all directories with package.xml
     for LINE in $PACKAGES; do # for each directory
        echo > $(dirname $LINE)/CATKIN_IGNORE # add ignore file
 	done 
@@ -67,7 +69,7 @@ add_ignore_to_all_packages(){
 # this function lists all directories containing a package.xml file
 list_all_packages(){
 	cd $ROOT_FM
-    PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
+    PACKAGES=`find $ROOT_SRC -name "package.xml"` # find all directories with package.xml
     for LINE in $PACKAGES; do # for each directory
        echo $(dirname $LINE)
 	done 
@@ -76,7 +78,7 @@ list_all_packages(){
 # this function removes the CATKIN_IGNORE file from all directories containing a package.xml file
 remove_ignore_from_all_packages(){
 	cd $ROOT_FM
-    PACKAGES=`find $ROOT_FM -name "package.xml"` # find all directories with package.xml
+    PACKAGES=`find $ROOT_SRC -name "package.xml"` # find all directories with package.xml
     for LINE in $PACKAGES; do # for each directory
        FILE_IGNORE=$(dirname $LINE)/CATKIN_IGNORE
        if [ -e $FILE_IGNORE ]; then
@@ -138,10 +140,10 @@ case $CMD in
     list_all_packages
     ;;
   app)
-    APP_FIRST=`echo $APP | cut -c1-3)`
+    APP_FIRST=`echo $APP | cut -c1-1)`
     case "$APP_FIRST" in
-      /fm)
-        ROOT_APP=$ROOT_FM$APP 
+      /)
+        ROOT_APP=$ROOT_SRC$APP 
         if [ -d $ROOT_APP ]; then
           if [ -e $ROOT_APP/$FILE_MAKE ]; then
             echo "Making the FroboMind components listed in:" $APP/$FILE_MAKE
@@ -153,7 +155,7 @@ case $CMD in
             APP_PACKAGES=`cat $ROOT_APP/$FILE_MAKE`
             for LINE in $APP_PACKAGES; do # for each directory
               echo "  Adding directory:" $LINE
-              FILE_IGNORE=$ROOT_FM$LINE/CATKIN_IGNORE
+              FILE_IGNORE=$ROOT_SRC$LINE/CATKIN_IGNORE
               if [ -e $FILE_IGNORE ]; then
                 rm $FILE_IGNORE
               fi
@@ -174,13 +176,17 @@ case $CMD in
     ;;
   clean)
     echo "Make clean"
+    echo "Removing ignore from all packages"
     remove_ignore_from_all_packages
     cd $ROOT_WS
+    echo "Running catkin_make clean"
+    pwd
     catkin_make clean
-    if [ $IGNORE -eq 0 ]; then
-      echo "Ignoring all packages"
-      add_ignore_to_all_packages
-    fi
+    #if [ $IGNORE -eq 0 ]; then
+    #  echo "Ignoring all packages"
+    #  add_ignore_to_all_packages
+    #fi
+    echo "completed"
     ;;
   cleanall)
     echo "Cleaning up everything"
