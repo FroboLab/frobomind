@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboMind cmd_vel_converter.py
-# Copyright (c) 2011-2013, author Leon Bonde Larsen <leon@bondelarsen.dk>
+# Copyright (c) 2011-2015, author Leon Bonde Larsen <leon@bondelarsen.dk>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
+"""
+2015-03-05 KJ Added queue_size to rospy.Publisher calls (Indigo compatiblity)
+"""
+
 import rospy
 from geometry_msgs.msg import TwistStamped,Twist
 from std_msgs.msg import Bool
@@ -44,7 +48,7 @@ class CmdVelConverter():
 		topic_tw_stamped = rospy.get_param("~cmd_vel_sub", "/fmCommand/cmd_vel")
 		topic_tw = rospy.get_param("~cmd_vel_pub", "/cmd_vel")
 		topic_deadman = rospy.get_param("~deadman_sub", "/fmCommand/deadman")
-		self.twist_pub = rospy.Publisher(topic_tw, Twist)
+		self.twist_pub = rospy.Publisher(topic_tw, Twist, queue_size=1)
 		self.twist_sub = rospy.Subscriber(topic_tw_stamped, TwistStamped, self.onTwist )
 		self.deadman_sub = rospy.Subscriber(topic_deadman, Bool, self.onDeadman )
 		self.twist_zero = Twist()
