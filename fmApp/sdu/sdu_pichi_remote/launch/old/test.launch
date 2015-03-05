@@ -1,5 +1,0 @@
-<launch>
-	<machine name="robot" address="192.168.1.1" user="robot" password="robotbil" env-loader="/home/robot/roswork/src/fmApp/sdu_pichi_surveyor/conf/robot.sh"/>
-	<machine name="remote" address="192.168.1.2" env-loader="$(find sdu_pichi_surveyor)/conf/remote.sh"/>
-  	<!--node machine="robot" name="rviz" pkg="rviz" type="rviz" /-->
-</launch>
