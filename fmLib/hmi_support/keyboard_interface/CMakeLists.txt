@@ -4,7 +4,7 @@ project(keyboard_interface)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp msgs rospy)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -66,7 +66,7 @@ catkin_package(
  add_executable(keyboard_node src/keyboardEventListener.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(keyboard_node ${PROJECT_NAME} std_msgs_gencpp msgs_gencpp)
+ add_dependencies(keyboard_node ${PROJECT_NAME} std_msgs_gencpp  msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(keyboard_node
