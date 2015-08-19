@@ -27,7 +27,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #****************************************************************************/
 """
+2013-11-06 Kjeld Jensen profiled code and added launch parameters for the topics
+	(currently defaults to the previous static names though this is conflicting with
+	the fmNaming convention).
 2015-03-05 KJ Added queue_size to rospy.Publisher calls (Indigo compatiblity)
+2015-08-19 KJ Removed check for deadman signal, this is now handled in fmSafety.
 """
 
 import rospy
@@ -38,32 +42,17 @@ class CmdVelConverter():
 	"""
 		Converter for using FroboMind with stage. 
 		Takes TwistStamped message from /fmSignals/cmd_vel and parses as Twist message on /cmd_vel
-
-		2013-11-06 Kjeld Jensen profiled code and added launch parameters for the topics
-		(currently defaults to the previous static names though this is conflicting with
-		the fmNaming convention).
 	"""
 	def __init__(self):
 		# Init node
 		topic_tw_stamped = rospy.get_param("~cmd_vel_sub", "/fmCommand/cmd_vel")
 		topic_tw = rospy.get_param("~cmd_vel_pub", "/cmd_vel")
-		topic_deadman = rospy.get_param("~deadman_sub", "/fmCommand/deadman")
 		self.twist_pub = rospy.Publisher(topic_tw, Twist, queue_size=1)
 		self.twist_sub = rospy.Subscriber(topic_tw_stamped, TwistStamped, self.onTwist )
 		self.deadman_sub = rospy.Subscriber(topic_deadman, Bool, self.onDeadman )
-		self.twist_zero = Twist()
-		self.twist_zero.linear.x = 0.0
-		self.twist_zero.angular.z = 0.0		
-		self.deadman = False
 		
 	def onTwist(self,msg):
-		if self.deadman == True:
-			self.twist_pub.publish(msg.twist)
-		else:
-			self.twist_pub.publish(self.twist_zero)
-		
-	def onDeadman(self,msg):
-		self.deadman = msg.data
+		self.twist_pub.publish(msg.twist)
 
 if __name__ == '__main__':
 	rospy.init_node('cmd_vel_converter')
