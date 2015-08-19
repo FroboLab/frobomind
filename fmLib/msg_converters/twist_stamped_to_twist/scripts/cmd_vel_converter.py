@@ -6,14 +6,14 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#	* Redistributions of source code must retain the above copyright
-#	  notice, this list of conditions and the following disclaimer.
-#	* Redistributions in binary form must reproduce the above copyright
-#	  notice, this list of conditions and the following disclaimer in the
-#	  documentation and/or other materials provided with the distribution.
-#	* Neither the name FroboMind nor the
-#	  names of its contributors may be used to endorse or promote products
-#	  derived from this software without specific prior written permission.
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -31,7 +31,7 @@
 	(currently defaults to the previous static names though this is conflicting with
 	the fmNaming convention).
 2015-03-05 KJ Added queue_size to rospy.Publisher calls (Indigo compatiblity)
-2015-08-19 KJ Removed check for deadman signal, this is now handled in fmSafety.
+2015-08-20 KJ Removed check for deadman signal, this is now handled in fmSafety.
 """
 
 import rospy
@@ -49,7 +49,6 @@ class CmdVelConverter():
 		topic_tw = rospy.get_param("~cmd_vel_pub", "/cmd_vel")
 		self.twist_pub = rospy.Publisher(topic_tw, Twist, queue_size=1)
 		self.twist_sub = rospy.Subscriber(topic_tw_stamped, TwistStamped, self.onTwist )
-		self.deadman_sub = rospy.Subscriber(topic_deadman, Bool, self.onDeadman )
 		
 	def onTwist(self,msg):
 		self.twist_pub.publish(msg.twist)
