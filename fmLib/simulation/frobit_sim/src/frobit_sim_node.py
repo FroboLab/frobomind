@@ -6,14 +6,14 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#	* Redistributions of source code must retain the above copyright
-#	  notice, this list of conditions and the following disclaimer.
-#	* Redistributions in binary form must reproduce the above copyright
-#	  notice, this list of conditions and the following disclaimer in the
-#	  documentation and/or other materials provided with the distribution.
-#	* Neither the name FroboMind nor the
-#	  names of its contributors may be used to endorse or promote products
-#	  derived from this software without specific prior written permission.
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -34,11 +34,10 @@ A simple differentially steered robot (frobit) simulator.
 
 import rospy
 from math import sin, cos, pi
-from std_msgs.msg import Bool
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
-from msgs.msg import FloatArrayStamped, PropulsionModuleFeedback
+from msgs.msg import BoolStamped, FloatArrayStamped, PropulsionModuleFeedback
 from tf.transformations import quaternion_from_euler
 from differential_ifk_py.differential_kinematics import differential_kinematics
 import numpy as np
@@ -108,19 +107,19 @@ class ROSnode():
 		self.dk = differential_kinematics(self.w_dist)
 
 		# setup topic publishers
-		self.pose_pub = rospy.Publisher(self.topic_pose, Odometry)
+		self.pose_pub = rospy.Publisher(self.topic_pose, Odometry, queue_size=10)
 		self.pose_msg = Odometry()
 
 		# setup wheel feedback topic publisher
 		if self.pub_fb_interval > 0:
 			self.wl_fb_vel_set = 0.0
 			self.wr_fb_vel_set = 0.0
-			self.w_fb_left_pub = rospy.Publisher(self.topic_w_fb_left_pub, PropulsionModuleFeedback)
-			self.w_fb_right_pub = rospy.Publisher(self.topic_w_fb_right_pub, PropulsionModuleFeedback)
+			self.w_fb_left_pub = rospy.Publisher(self.topic_w_fb_left_pub, PropulsionModuleFeedback, queue_size=10)
+			self.w_fb_right_pub = rospy.Publisher(self.topic_w_fb_right_pub, PropulsionModuleFeedback, queue_size=10)
 			self.w_fb = PropulsionModuleFeedback()
 
 		# setup subscription topic callbacks
-		rospy.Subscriber(self.topic_deadman, Bool, self.on_deadman_message)
+		rospy.Subscriber(self.topic_deadman, BoolStamped, self.on_deadman_message)
 		rospy.Subscriber(self.topic_cmd_vel, TwistStamped, self.on_cmd_vel_message)
 		rospy.Subscriber(self.topic_odom_reset, FloatArrayStamped, self.on_odom_reset_message)
 
