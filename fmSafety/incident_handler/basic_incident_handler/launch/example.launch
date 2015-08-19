@@ -1,0 +1,16 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmSafety">
+		<node pkg="basic_incident_handler" name="incident_handler" type="basic_incident_handler_node.py" output="screen">
+    		<param name="deadman_enabled" value="True" />
+    		<param name="deadman_timeout" value="0.100" />
+    		<param name="deadman_sub" value="/fmUser/deadman" />
+    		<param name="critical_fault_enabled" value="False" />
+    		<param name="critical_fault_timeout" value="0.100" />
+    		<param name="critical_fault_sub" value="/fmSafe/critical_fault" />
+			<param name="actuation_enable_pub" value="/fmSafe/actuation_enable" />
+		</node>
+	</group>
+</launch>
+
