@@ -32,7 +32,7 @@
 """
 
 import rospy
-from msgs.msg import BoolStamped
+from msgs.msg import BoolStamped, IntStamped
 
 class ROSnode():
 	def __init__(self):
@@ -63,7 +63,7 @@ class ROSnode():
 		rospy.Subscriber(self.topic_deadman, BoolStamped, self.on_deadman_msg)
 		self.critfault_state = False
 		self.critfault_next_tout = 0.0
-		rospy.Subscriber(self.topic_critical_fault, BoolStamped, self.on_critfault_msg)
+		rospy.Subscriber(self.topic_critical_fault, IntStamped, self.on_critfault_msg)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -87,7 +87,7 @@ class ROSnode():
 
 			# cricital fault if true or too old
 			if self.critfault_en == True:
-				if self.critfault_state == True or self.critfault_next_tout < rospy.get_time():
+				if self.critfault_state != 0 or self.critfault_next_tout < rospy.get_time():
 					self.act_en_msg.data = False
 
 			# deadman fault if false or too old
