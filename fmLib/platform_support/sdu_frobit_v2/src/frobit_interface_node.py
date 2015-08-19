@@ -39,8 +39,7 @@
 
 # imports
 import rospy
-from msgs.msg import nmea, IntStamped, FloatArrayStamped, PropulsionModuleStatus, PropulsionModuleFeedback
-from std_msgs.msg import Bool
+from msgs.msg import  nmea, BoolStamped, IntStamped, FloatArrayStamped, PropulsionModuleStatus, PropulsionModuleFeedback
 from geometry_msgs.msg import Twist, TwistStamped
 from differential_ifk_py.differential_kinematics import differential_kinematics
 #from time import sleep
@@ -213,7 +212,7 @@ class FrobitInterfaceNode():
 
 		# setup subscription topic callbacks
 		self.actuation_enable_tout = 0
-		rospy.Subscriber(self.actuation_enable_topic, Bool, self.on_actuation_enable_message)
+		rospy.Subscriber(self.actuation_enable_topic, BoolStamped, self.on_actuation_enable_message)
 		self.cmd_vel_tout = 0
 		self.cmd_vel_tout_active = True
 		self.frobit_tout = 0
