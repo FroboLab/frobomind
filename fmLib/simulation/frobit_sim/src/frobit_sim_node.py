@@ -51,7 +51,7 @@ class ROSnode():
 
 		# static parameters
 		self.update_rate = 50 # set update frequency [Hz]
-		self.deadman_tout_duration = 0.2 # [s]
+		self.act_en_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
 
 		# get parameters
@@ -77,7 +77,7 @@ class ROSnode():
 			self.pub_fb_interval = 0
 
 		# get topic names
-		self.topic_deadman = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
+		self.topic_act_en = rospy.get_param("~actuation_enable_sub",'/fmSafe/actuation_enable')
 		self.topic_cmd_vel = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
 		self.topic_odom_reset = rospy.get_param("~odom_reset_sub",'/fmInformation/odom_reset')
 		self.topic_pose = rospy.get_param("~pose_pub",'/fmKnowledge/pose')
@@ -89,7 +89,7 @@ class ROSnode():
 		self.pi2 = 2*pi
 		self.cmd_vel_tout_active = True
 		self.pose = [init_e, init_n, init_orientation]
-		self.deadman_tout = 0.0
+		self.act_en_tout = 0.0
 		self.cmd_vel_msgs = []
 		self.vel_lin_desired = 0.0
 		self.vel_ang_desired = 0.0
@@ -119,7 +119,7 @@ class ROSnode():
 			self.w_fb = PropulsionModuleFeedback()
 
 		# setup subscription topic callbacks
-		rospy.Subscriber(self.topic_deadman, BoolStamped, self.on_deadman_message)
+		rospy.Subscriber(self.topic_act_en, BoolStamped, self.on_act_en_message)
 		rospy.Subscriber(self.topic_cmd_vel, TwistStamped, self.on_cmd_vel_message)
 		rospy.Subscriber(self.topic_odom_reset, FloatArrayStamped, self.on_odom_reset_message)
 
@@ -149,7 +149,7 @@ class ROSnode():
 			(self.wl_fb_vel_set, self.wr_fb_vel_set) = self.dk.inverse(self.vel_lin_desired, self.vel_ang_desired)
 			del(self.cmd_vel_msgs[0])
 
-		if self.deadman_tout < now:
+		if self.act_en_tout < now:
 			self.vel_lin_desired = 0.0
 			self.vel_ang_desired = 0.0
 	
@@ -212,11 +212,11 @@ class ROSnode():
 		self.pose[2] += da
 	
 
-	def on_deadman_message(self, msg):
+	def on_act_en_message(self, msg):
 		if msg.data == True:
-			self.deadman_tout = rospy.get_time() + self.deadman_tout_duration
+			self.act_en_tout = rospy.get_time() + self.act_en_tout_duration
 		else:
-			self.deadman_tout = 0
+			self.act_en_tout = 0
 
 	def on_cmd_vel_message(self, msg):
 		# update timeout
