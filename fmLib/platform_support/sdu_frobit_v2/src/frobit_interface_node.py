@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # Frobobit V2 Interface
-# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2015, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
               center.
 2014-08-21 KJ Added supply_voltage_scale_factor parameter to support the
               FroboMind Controller
+2015-08-19 KJ Renamed "deadman" topic to "actuation_enable"
 """
 
 # imports
@@ -63,7 +64,7 @@ class FrobitInterfaceNode():
 		self.motion = self.MOTION_DRIVE
 
 		# locally defined parameters
-		self.deadman_tout_duration = 0.2 # [s]
+		self.actuation_enable_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
 		self.frobit_tout_duration = 0.2 # [s]
 
@@ -125,7 +126,7 @@ class FrobitInterfaceNode():
 		self.dk = differential_kinematics(self.w_dist)
 
 		# get topic names
-		self.deadman_topic = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
+		self.actuation_enable_topic = rospy.get_param("~actuation_enable_sub",'/fmCommand/actuation_enable')
 		self.cmd_vel_topic = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
 		self.enc_l_topic = rospy.get_param("~enc_left_pub",'/fmInformation/enc_left')
 		self.enc_r_topic = rospy.get_param("~enc_right_pub",'/fmInformation/enc_right')
@@ -139,7 +140,7 @@ class FrobitInterfaceNode():
 		self.frobit_pub_topic = rospy.get_param("~nmea_to_frobit_pub",'/fmSignal/nmea_to_frobit')
 
 		# setup frobit NMEA topic publisher
-		self.frobit_pub = rospy.Publisher(self.frobit_pub_topic, nmea)
+		self.frobit_pub = rospy.Publisher(self.frobit_pub_topic, nmea,  queue_size=50)
 
 		# setup NMEA $PFBCT topic publisher
 		self.nmea_pfbct = nmea()
@@ -160,14 +161,14 @@ class FrobitInterfaceNode():
 		self.enc_l_buf = [0]*5
 		self.enc_r_buf = [0]*5
 
-		self.enc_l_pub = rospy.Publisher(self.enc_l_topic, IntStamped)
-		self.enc_r_pub = rospy.Publisher(self.enc_r_topic, IntStamped)
+		self.enc_l_pub = rospy.Publisher(self.enc_l_topic, IntStamped,  queue_size=50)
+		self.enc_r_pub = rospy.Publisher(self.enc_r_topic, IntStamped,  queue_size=50)
 		self.intstamp = IntStamped()
 
 		# setup wheel status topic publisher
 		if self.pub_status_interval > 0:
-			self.w_stat_left_pub = rospy.Publisher(self.w_stat_left_pub_topic, PropulsionModuleStatus)
-			self.w_stat_right_pub = rospy.Publisher(self.w_stat_right_pub_topic, PropulsionModuleStatus)
+			self.w_stat_left_pub = rospy.Publisher(self.w_stat_left_pub_topic, PropulsionModuleStatus,  queue_size=10)
+			self.w_stat_right_pub = rospy.Publisher(self.w_stat_right_pub_topic, PropulsionModuleStatus , queue_size=10)
 			self.w_stat = PropulsionModuleStatus()
 
 		# setup wheel feedback topic publisher
@@ -178,8 +179,8 @@ class FrobitInterfaceNode():
 			self.wr_fb_vel = 0.0
 			self.wr_fb_vel_set = 0.0
 			self.wr_fb_thrust = 0.0
-			self.w_fb_left_pub = rospy.Publisher(self.w_fb_left_pub_topic, PropulsionModuleFeedback)
-			self.w_fb_right_pub = rospy.Publisher(self.w_fb_right_pub_topic, PropulsionModuleFeedback)
+			self.w_fb_left_pub = rospy.Publisher(self.w_fb_left_pub_topic, PropulsionModuleFeedback,  queue_size=10)
+			self.w_fb_right_pub = rospy.Publisher(self.w_fb_right_pub_topic, PropulsionModuleFeedback,  queue_size=10)
 			self.w_fb = PropulsionModuleFeedback()
 			self.tick_to_vel_factor = 1000.0/(1.0*self.ticks_per_meter_left*self.pfbst_update_interval)
 
@@ -195,8 +196,8 @@ class FrobitInterfaceNode():
 			self.wr_pid_p = 0.0
 			self.wr_pid_i = 0.0
 			self.wr_pid_d = 0.0
-			self.w_pid_left_pub = rospy.Publisher(self.w_pid_left_pub_topic, FloatArrayStamped)
-			self.w_pid_right_pub = rospy.Publisher(self.w_pid_right_pub_topic, FloatArrayStamped)
+			self.w_pid_left_pub = rospy.Publisher(self.w_pid_left_pub_topic, FloatArrayStamped,  queue_size=10)
+			self.w_pid_right_pub = rospy.Publisher(self.w_pid_right_pub_topic, FloatArrayStamped,  queue_size=10)
 			self.w_pid = FloatArrayStamped()
 			self.nmea_pid = nmea()
 			self.nmea_pid.type = 'PFBWP'
@@ -211,8 +212,8 @@ class FrobitInterfaceNode():
 			self.nmea_pid.data.append('0') 
 
 		# setup subscription topic callbacks
-		self.deadman_tout = 0
-		rospy.Subscriber(self.deadman_topic, Bool, self.on_deadman_message)
+		self.actuation_enable_tout = 0
+		rospy.Subscriber(self.actuation_enable_topic, Bool, self.on_actuation_enable_message)
 		self.cmd_vel_tout = 0
 		self.cmd_vel_tout_active = True
 		self.frobit_tout = 0
@@ -242,7 +243,7 @@ class FrobitInterfaceNode():
 		return vel_actual
 
 	def update_vel (self):
-		if self.deadman_tout < rospy.get_time() or self.frobit_state >= self.STATE_ERR:
+		if self.actuation_enable_tout < rospy.get_time() or self.frobit_state >= self.STATE_ERR:
 			self.vel_lin_desired = 0.0
 			self.vel_ang_desired = 0.0
 
@@ -256,11 +257,11 @@ class FrobitInterfaceNode():
 		self.ref_ticks_left = self.ref_vel_left*self.ticks_per_meter_left;
 		self.ref_ticks_right = self.ref_vel_right*self.ticks_per_meter_right;
 
-	def on_deadman_message(self, msg):
+	def on_actuation_enable_message(self, msg):
 		if msg.data == True:
-			self.deadman_tout = rospy.get_time() + self.deadman_tout_duration
+			self.actuation_enable_tout = rospy.get_time() + self.actuation_enable_tout_duration
 		else:
-			self.deadman_tout = 0
+			self.actuation_enable_tout = 0
 
 	def on_cmd_vel_message(self, msg):
 		# update timeout
@@ -420,7 +421,7 @@ class FrobitInterfaceNode():
 				self.motion = self.MOTION_DRIVE
 
 		self.nmea_pfbct.header.stamp = rospy.Time.now()
-		if self.deadman_tout > rospy.get_time() and self.frobit_tout_active == False:
+		if self.actuation_enable_tout > rospy.get_time() and self.frobit_tout_active == False:
 			self.nmea_pfbct.data[0] = ('%d' % (self.ref_ticks_left))
 			self.nmea_pfbct.data[1] = ('%d' % (self.ref_ticks_right))
 		else:
