@@ -1,0 +1,58 @@
+<!-- frobit launch file 
+
+FroboMind controller frobits using 22000/3300 ohm voltage dividers:
+	supply_voltage_scale_factor = 0.03747
+
+RoboCard based frobits using 1800/700 ohm voltage dividers: 
+	supply_voltage_scale_factor = 0.01746
+
+-->
+
+<launch>
+	<group ns="fmExecutors">
+		<node pkg="frobit_waypoint_navigation" type="waypoint_navigation_node.py" name="wptnav" output="screen">
+			<param name="automode_sub" value="/fmDecision/automode" />
+			<param name="pose_sub" value="/fmKnowledge/pose" />
+			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
+			<param name="implement_pub" value="/fmCommand/implement" />
+			<param name="status_pub" value="/fmInformation/wptnav_status" />
+			<param name="pid_pub" value="/fmInformation/wptnav_pid" />
+			<param name="status_publish_interval" value="1" />
+			<param name="pid_publish_interval" value="1" />
+			<param name="print_debug_information" value="false" />
+
+            <param name="max_linear_velocity" value="1.2"/>
+            <param name="max_angular_velocity" value="0.90"/>
+
+            <param name="drive_kp" value="10.0"/> 
+            <param name="drive_ki" value="3.35"/>
+            <param name="drive_kd" value="10.0"/>
+            <param name="drive_feed_forward" value="0.00"/>
+            <param name="drive_max_output" value="0.40"/>
+
+            <param name="turn_kp" value="150.0"/>
+            <param name="turn_ki" value="350.0"/>
+            <param name="turn_kd" value="0.0"/>
+            <param name="turn_feed_forward" value="0.0"/>
+            <param name="turn_max_output" value="1.0"/>
+
+			<param name="wpt_default_mode" value="MCTE" /> 
+			<param name="wpt_default_tolerance" value="0.1" />
+			<param name="wpt_default_drive_velocity" value="0.25" />
+			<param name="wpt_default_turn_velocity" value="0.6" />
+			<param name="wpt_default_wait_after_arrival" value="1.0" />
+			<param name="wpt_default_implement_command" value="0.0" />
+
+			<param name="target_ahead" value="0.6" />
+			<param name="turn_start_at_heading_err" value="30.0" />
+			<param name="turn_stop_at_heading_err" value="1.5" />
+	 		<param name="ramp_drive_velocity_at_distance" value="0.3" />
+			<param name="ramp_min_drive_velocity" value="0.07" />
+			<param name="ramp_turn_velocity_at_angle" value="30.0" />
+			<param name="ramp_min_turn_velocity" value="0.2" />
+			<param name="stop_navigating_at_distance" value="0.01" />
+		</node>
+	</group>
+</launch>
+
