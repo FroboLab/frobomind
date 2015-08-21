@@ -1,0 +1,23 @@
+<!-- SDU painter example launch file -->
+
+<launch>
+	<group ns="fmControllers">
+		<node pkg="sdu_painter" name="painter" type="painter_node.py" output="screen">
+			<param name="painter_cmd_sub" value="/fmCommand/implement"/>
+			<param name="nmea_from_painter_sub" value="/fmData/nmea_from_painter"/>
+			<param name="nmea_from_painter_pub" value="/fmData/nmea_to_painter"/>
+			<param name="paint_time" value="0.4"/>
+		</node>
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="serial_nmea" name="sdu_painter_nmea" type="serial_nmea_node" respawn="true" output="screen">
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_painter"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_painter"/>
+			<param name="serial_device" value="/dev/sdu_painter"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="use_nmea_checksum" value="true"/>
+	    </node>
+	</group>
+</launch>
+
