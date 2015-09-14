@@ -35,6 +35,8 @@
 2013-12-03 KJ Added ramp up which works like the previous ramp down
 2015-03-05 KJ Added queue_size to rospy.Publisher calls (Indigo compatiblity)
 2015-08-19 KJ Switched from Bool to BoolStamped
+2015-03-13 KJ Changed automode message type from BoolStamped to IntStamped
+              and default topic name to /fmPlan/automode
 """
 
 # imports
@@ -43,7 +45,7 @@ import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Joy
-from msgs.msg import BoolStamped, FloatStamped, FloatArrayStamped, waypoint_navigation_status
+from msgs.msg import BoolStamped, IntStamped, FloatStamped, FloatArrayStamped, waypoint_navigation_status
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -96,7 +98,7 @@ class WptNavNode():
 		self.pid_publish_interval = rospy.get_param("~pid_publish_interval", 0) 
 
 		# get topic names
-		self.automode_topic = rospy.get_param("~automode_sub",'/fmDecision/automode')
+		self.automode_topic = rospy.get_param("~automode_sub",'/fmPlan/automode')
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
 		self.joy_topic = rospy.get_param("~joy_sub",'/fmLib/joy')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
@@ -153,7 +155,7 @@ class WptNavNode():
 		self.wptlist_loaded = False
 
 		# setup subscription topic callbacks
-		rospy.Subscriber(self.automode_topic, BoolStamped, self.on_automode_message)
+		rospy.Subscriber(self.automode_topic, IntStamped, self.on_automode_message)
 		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
 		rospy.Subscriber(self.joy_topic, Joy, self.on_joy_message)
 
@@ -197,7 +199,7 @@ class WptNavNode():
 			rospy.loginfo(rospy.get_name() + ": This is the first waypoint")
 
 	def on_automode_message(self, msg):
-		if msg.data == True: # if autonomous mode requested
+		if msg.data == 1: # if autonomous waypoint navigation mode is active
 			if self.state == self.STATE_IDLE:
 				if self.wptnav.pose != False: # if we have a valid pose				
 					self.state = self.STATE_NAVIGATE
