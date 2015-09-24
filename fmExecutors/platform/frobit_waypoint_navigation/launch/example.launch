@@ -22,20 +22,20 @@ Old RoboCard based frobits using 1800/700 ohm voltage dividers:
 			<param name="pid_publish_interval" value="1" />
 			<param name="print_debug_information" value="false" />
 
-            <param name="max_linear_velocity" value="1.2"/>
-            <param name="max_angular_velocity" value="0.90"/>
+			<param name="max_linear_velocity" value="1.2"/>
+			<param name="max_angular_velocity" value="0.90"/>
 
-            <param name="drive_kp" value="10.0"/> 
-            <param name="drive_ki" value="3.35"/>
-            <param name="drive_kd" value="10.0"/>
-            <param name="drive_feed_forward" value="0.00"/>
-            <param name="drive_max_output" value="0.40"/>
+			<param name="drive_kp" value="10.0"/> 
+			<param name="drive_ki" value="3.35"/>
+			<param name="drive_kd" value="10.0"/>
+			<param name="drive_feed_forward" value="0.00"/>
+			<param name="drive_max_output" value="0.40"/>
 
-            <param name="turn_kp" value="150.0"/>
-            <param name="turn_ki" value="350.0"/>
-            <param name="turn_kd" value="0.0"/>
-            <param name="turn_feed_forward" value="0.0"/>
-            <param name="turn_max_output" value="1.0"/>
+			<param name="turn_kp" value="150.0"/>
+			<param name="turn_ki" value="350.0"/>
+			<param name="turn_kd" value="0.0"/>
+			<param name="turn_feed_forward" value="0.0"/>
+			<param name="turn_max_output" value="1.0"/>
 
 			<param name="wpt_default_mode" value="MCTE" /> 
 			<param name="wpt_default_tolerance" value="0.1" />
