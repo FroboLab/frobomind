@@ -1,0 +1,11 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmDecisionMakers">
+		<node pkg="wiimote_remote_control" name="wiimote_remote" type="wiimote_remote_control_node.py" output="screen" >
+			<param name="wiimote_sub" value="/fmLib/joy"/>
+			<param name="remote_control_pub" value="/fmHMI/remote_control"/>
+		</node>
+	</group>
+</launch>
+
