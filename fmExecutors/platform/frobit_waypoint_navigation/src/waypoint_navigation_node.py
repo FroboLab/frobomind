@@ -37,6 +37,9 @@
 2015-08-19 KJ Switched from Bool to BoolStamped
 2015-03-13 KJ Changed automode message type from BoolStamped to IntStamped
               and default topic name to /fmPlan/automode
+2015-10-03 KJ Seperated the remote control output from the mission planner.
+              this component now monitors /fmHMI/remote_control insted of
+              /fmLib/joy
 """
 
 # imports
@@ -44,8 +47,7 @@ import rospy
 import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
-from sensor_msgs.msg import Joy
-from msgs.msg import BoolStamped, IntStamped, FloatStamped, FloatArrayStamped, waypoint_navigation_status
+from msgs.msg import BoolStamped, IntStamped, FloatStamped, FloatArrayStamped, waypoint_navigation_status, RemoteControl
 from math import pi, atan2
 from waypoint_list import waypoint_list
 from waypoint_navigation import waypoint_navigation
@@ -73,22 +75,10 @@ class WptNavNode():
 
 		rospy.loginfo(rospy.get_name() + ": Start")
 		self.quaternion = np.empty((4, ), dtype=np.float64)
-		self.wii_a = False
-		self.wii_a_changed = False
-		self.wii_plus = False
-		self.wii_plus_changed = False
-		self.wii_minus = False
-		self.wii_minus_changed = False
-		self.wii_up = False
-		self.wii_up_changed = False
-		self.wii_down = False
-		self.wii_down_changed = False
-		self.wii_left = False
-		self.wii_left_changed = False
-		self.wii_right = False
-		self.wii_right_changed = False
-		self.wii_home = False
-		self.wii_home_changed = False
+		self.hmi_digital_joy_a_up = False
+		self.hmi_digital_joy_a_up_changed = False
+		self.hmi_digital_joy_a_down = False
+		self.hmi_digital_joy_a_down_changed = False
 
 		# get parameters
 		self.debug = rospy.get_param("~print_debug_information", 'true') 
@@ -100,7 +90,7 @@ class WptNavNode():
 		# get topic names
 		self.automode_topic = rospy.get_param("~automode_sub",'/fmPlan/automode')
 		self.pose_topic = rospy.get_param("~pose_sub",'/fmKnowledge/pose')
-		self.joy_topic = rospy.get_param("~joy_sub",'/fmLib/joy')
+		topic_rc = rospy.get_param("~remote_control_sub",'/fmHMI/remote_control')
 		self.cmdvel_topic = rospy.get_param("~cmd_vel_pub",'/fmCommand/cmd_vel')
 		self.implement_topic = rospy.get_param("~implement_pub",'/fmCommand/implement')
 		self.wptnav_status_topic = rospy.get_param("~status_pub",'/fmInformation/wptnav_status')
@@ -157,7 +147,7 @@ class WptNavNode():
 		# setup subscription topic callbacks
 		rospy.Subscriber(self.automode_topic, IntStamped, self.on_automode_message)
 		rospy.Subscriber(self.pose_topic, Odometry, self.on_pose_message)
-		rospy.Subscriber(self.joy_topic, Joy, self.on_joy_message)
+		rospy.Subscriber(topic_rc, RemoteControl, self.on_rc_message)
 
 		# call updater function
 		self.r = rospy.Rate(self.update_rate)
@@ -231,19 +221,18 @@ class WptNavNode():
 		yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz)
 		self.wptnav.state_update (msg.pose.pose.position.x, msg.pose.pose.position.y, yaw, msg.twist.twist.linear.x)
 
-	def on_joy_message(self, msg):
-		if int(msg.buttons[2]) != self.wii_a:
-			self.wii_a =  int(msg.buttons[2])
-			self.wii_a_changed = True
-		if self.state != self.STATE_IDLE and int(msg.buttons[8]) != self.wii_up:
-			self.wii_up =  int(msg.buttons[8])
-			self.wii_up_changed = True
-		if self.state != self.STATE_IDLE and int(msg.buttons[9]) != self.wii_down:
-			self.wii_down =  int(msg.buttons[9])
-			self.wii_down_changed = True
-		if int(msg.buttons[10]) != self.wii_home:
-			self.wii_home =  int(msg.buttons[10])
-			self.wii_home_changed = True
+	def on_rc_message(self, msg):
+		digital_joy_a_up = (msg.digital_joy_a & 0x01) != 0
+		digital_joy_a_down = (msg.digital_joy_a & 0x02) != 0
+
+		if self.state != self.STATE_IDLE:
+			if digital_joy_a_up != self.hmi_digital_joy_a_up:
+				self.hmi_digital_joy_a_up =  digital_joy_a_up
+				self.hmi_digital_joy_a_up_changed = True
+
+			if digital_joy_a_down != self.hmi_digital_joy_a_down:
+				self.hmi_digital_joy_a_down =  digital_joy_a_down
+				self.hmi_digital_joy_a_down_changed = True
 	
 	def publish_cmd_vel_message(self):
 		self.twist.header.stamp = rospy.Time.now()
@@ -303,20 +292,12 @@ class WptNavNode():
 
 	def updater(self):
 		while not rospy.is_shutdown():
-			if self.wii_a == True and self.wii_a_changed == True:
-				self.wii_a_changed = False
-				rospy.loginfo(rospy.get_name() + ': Current position: %.3f %.3f' % (self.wptnav.pose[0], self.wptnav.pose[1]))
-			if self.wii_home == True and self.wii_home_changed == True:
-				self.wii_home_changed = False
-				rospy.loginfo(rospy.get_name() + ": User reloaded waypoint list")
-				self.load_wpt_list()				
-				self.goto_next_wpt()
-			if self.wii_up == True and self.wii_up_changed == True:
-				self.wii_up_changed = False
+			if self.hmi_digital_joy_a_up == True and self.hmi_digital_joy_a_up_changed == True:
+				self.hmi_digital_joy_a_up_changed = False
 				rospy.loginfo(rospy.get_name() + ": User skipped waypoint")
 				self.goto_next_wpt()
-			if self.wii_down == True and self.wii_down_changed == True:
-				self.wii_down_changed = False
+			if self.hmi_digital_joy_a_down == True and self.hmi_digital_joy_a_down_changed == True:
+				self.hmi_digital_joy_a_down_changed = False
 				rospy.loginfo(rospy.get_name() + ": User selected previous waypoint")
 				self.goto_previous_wpt()
 

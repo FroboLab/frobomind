@@ -13,7 +13,7 @@ Old RoboCard based frobits using 1800/700 ohm voltage dividers:
 		<node pkg="frobit_waypoint_navigation" type="waypoint_navigation_node.py" name="wptnav" output="screen">
 			<param name="automode_sub" value="/fmPlan/automode" />
 			<param name="pose_sub" value="/fmKnowledge/pose" />
-			<param name="joy_sub" value="/fmLib/joy" />
+			<param name="remote_control_sub" value="/fmHMI/remote_control" />
 			<param name="cmd_vel_pub" value="/fmCommand/cmd_vel" />
 			<param name="implement_pub" value="/fmCommand/implement" />
 			<param name="status_pub" value="/fmInformation/wptnav_status" />
