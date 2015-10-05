@@ -1,0 +1,11 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmDecisionMakers">
+		<node pkg="keyboard_remote_control" name="kbd_remote" type="keyboard_remote_control_node.py" output="screen" >
+			<param name="keyboard_sub" value="/fmHMI/keyboard"/>
+			<param name="remote_control_pub" value="/fmHMI/remote_control"/>
+		</node>
+	</group>
+</launch>
+
