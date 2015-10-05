@@ -1,0 +1,9 @@
+Header header
+int8 led_a
+int8 led_b
+int8 led_c
+int8 led_d
+int8 buzzer
+int8 vibrator
+string text_line_1
+string text_line_2
