@@ -544,14 +544,8 @@ int main(int argc, char** argv) {
 	// covariances
 	std::vector<double> pose_covariance_diagonal_list;
 	std::vector<double> twist_covariance_diagonal_list;
-	nh.param("pose_covariance_diagonal", pose_covariance_diagonal_list);
-	nh.param("twist_covariance_diagonal", twist_covariance_diagonal_list);
-
-	if (pose_covariance_diagonal_list.size() != 6)
-		pose_covariance_diagonal_list = std::vector<double>(6);
-
-	if (twist_covariance_diagonal_list.size() != 6)
-		twist_covariance_diagonal_list = std::vector<double>(6);
+	nh.param("pose_covariance_diagonal", pose_covariance_diagonal_list, std::vector<double>(6));
+	nh.param("twist_covariance_diagonal", twist_covariance_diagonal_list, std::vector<double>(6));
 
 	// init class
 	SimpleOdom p(tick_to_meter_left,
