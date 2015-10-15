@@ -95,6 +95,7 @@ public:
 						int encoder_output,
 						int yaw_source,
 						int yaw_axis,
+						bool publish_transform,
 						std::vector<double> const &pose_covariance_diagonal_list,
 						std::vector<double> const &twist_covariance_diagonal_list)
 	{
@@ -105,6 +106,7 @@ public:
 		this->encoder_output = encoder_output;
 		this->yaw_source = yaw_source;
 		this->yaw_axis = yaw_axis;
+		this->publish_transform = publish_transform;
 
 		delta_ticks_l = delta_ticks_r = 0; // reset encoder ticks (since last published odometry)
 		x = y = theta = 0; // reset map pose
@@ -343,14 +345,17 @@ public:
 			geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
 
 			// publish the transform message
-			odom_trans.header.stamp = time_now;
-			odom_trans.header.frame_id = odom_frame;
-			odom_trans.child_frame_id = base_frame;
-			odom_trans.transform.translation.x = x;
-			odom_trans.transform.translation.y = y;
-			odom_trans.transform.translation.z = 0.0;
-			odom_trans.transform.rotation = odom_quat;
-			odom_broadcaster.sendTransform(odom_trans);
+			if (publish_transform)
+			{
+				odom_trans.header.stamp = time_now;
+				odom_trans.header.frame_id = odom_frame;
+				odom_trans.child_frame_id = base_frame;
+				odom_trans.transform.translation.x = x;
+				odom_trans.transform.translation.y = y;
+				odom_trans.transform.translation.z = 0.0;
+				odom_trans.transform.rotation = odom_quat;
+				odom_broadcaster.sendTransform(odom_trans);
+			}
 
 			// publish odometry message
 			odom.header.stamp = time_now;
@@ -391,6 +396,7 @@ private:
 	msgs::IntStamped prev_l, prev_r;
 	nav_msgs::Odometry odom;
 	geometry_msgs::TransformStamped odom_trans;
+	bool publish_transform;
 };
 
 // main
@@ -531,6 +537,10 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	// whether to publish transform or not
+	bool publish_transform;
+	nh.param("publish_transform", publish_transform, true);
+
 	// covariances
 	std::vector<double> pose_covariance_diagonal_list;
 	std::vector<double> twist_covariance_diagonal_list;
@@ -544,7 +554,15 @@ int main(int argc, char** argv) {
 		twist_covariance_diagonal_list = std::vector<double>(6);
 
 	// init class
-	SimpleOdom p(tick_to_meter_left, tick_to_meter_right, max_ticks_per_update, wheel_dist, encoder_output, yaw_source, yaw_axis, pose_covariance_diagonal_list, twist_covariance_diagonal_list);
+	SimpleOdom p(tick_to_meter_left,
+				 tick_to_meter_right,
+				 max_ticks_per_update,
+				 wheel_dist,
+				 encoder_output,
+				 yaw_source, yaw_axis,
+				 publish_transform,
+				 pose_covariance_diagonal_list,
+				 twist_covariance_diagonal_list);
 
 	// subscriber callback functions
 	s1 = nh.subscribe(subscribe_enc_l,15,&SimpleOdom::processLeftEncoder,&p);
