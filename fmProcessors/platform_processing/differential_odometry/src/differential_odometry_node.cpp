@@ -360,7 +360,7 @@ public:
 			// publish odometry message
 			odom.header.stamp = time_now;
 			odom.header.frame_id = odom_frame;
-			odom.child_frame_id = odom_frame;
+			odom.child_frame_id = base_frame;
 			odom.pose.pose.position.x = x;
 			odom.pose.pose.position.y = y;
 			odom.pose.pose.orientation = odom_quat;
