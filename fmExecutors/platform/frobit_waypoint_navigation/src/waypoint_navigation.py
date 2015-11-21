@@ -40,11 +40,11 @@ Navigation modes:
 2013-12-03 KJ Added ramp up which works like the previous ramp down
 2014-02-26 KJ Added support for PID feed forward
               Changed target navigation method
+2015-11-21 KJ Removed unnecessary reference to differential kinematics library
 """
 
 # imports
 from math import pi, atan2, sqrt, fabs, cos
-from differential_ifk_py.differential_kinematics import differential_kinematics
 from pid_controller import pid_controller
 
 class waypoint_navigation():
