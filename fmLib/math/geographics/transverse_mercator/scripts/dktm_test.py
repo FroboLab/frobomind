@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #*****************************************************************************
-# UTM projection conversion test
+# DKTM projection conversion test
 # Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
@@ -27,35 +27,38 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #*****************************************************************************
 """
-This file contains a simple Python script to test the UTM conversion class.
+This file contains a simple Python script to test the DKTM projection
+conversion class.
 
 Revision
 2013-04-05 KJ First version
 2015-03-09 KJ Minor update of the license text.
-2016-01-16 KJ Corrected a minor problem with the library location reference.
+2016-01-16 KJ Migrated from the KP2000 test script.
 """
-# import utmconv class
-from transverse_mercator_py.utm import utmconv
+# python imports
 from math import pi, cos
 
+# import and instantiate dktmconv class
+from transverse_mercator_py.dktm import dktmconv
+dktm = dktmconv()
+
 # define test position
-test_lat =  55.0000000000
-test_lon = 009.0000000000
+test_lat =  55.367
+test_lon = 010.432
+test_projection = dktm.dktm2
+
 print 'Test position [deg]:'
 print '  latitude:  %.10f'  % (test_lat)
 print '  longitude: %.10f'  % (test_lon)
 
-# instantiate utmconv class
-uc = utmconv()
+# convert from geodetic to DKTM
+(easting, northing) = dktm.geodetic_to_dktm (test_lat, test_lon, test_projection)
+print '\nConverted from geodetic to DKTM [m]'
+print '  %.5fe %.5fn' % (easting, northing)
 
-# convert from geodetic to UTM
-(hemisphere, zone, letter, easting, northing) = uc.geodetic_to_utm (test_lat,test_lon)
-print '\nConverted from geodetic to UTM [m]'
-print '  %d %c %.5fe %.5fn' % (zone, letter, easting, northing)
-
-# convert back from UTM to geodetic
-(lat, lon) = uc.utm_to_geodetic (hemisphere, zone, easting, northing)
-print '\nConverted back from UTM to geodetic [deg]:'
+# convert back from DKTM to geodetic
+(lat, lon) = dktm.dktm_to_geodetic (easting, northing, test_projection)
+print '\nConverted back to geodetic [deg]:'
 print '  latitude:  %.10f'  % (lat)
 print '  longitude: %.10f'  % (lon)
 

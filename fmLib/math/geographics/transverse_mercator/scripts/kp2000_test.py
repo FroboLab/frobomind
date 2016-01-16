@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #*****************************************************************************
 # KP2000 projection conversion test
-# Copyright (c) 2013-2015, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,30 +33,32 @@ conversion class.
 Revision
 2013-04-05 KJ First version
 2015-03-09 KJ Minor update of the license text.
+2016-01-16 KJ Corrected a minor problem with the library location reference.
 """
-# import kp2000conv class
-from transverse_mercator.kp2000 import kp2000conv
+
+# python imports
 from math import pi, cos
 
+# import and instantiate kp2000conv class
+from transverse_mercator_py.kp2000 import kp2000conv
+kp = kp2000conv()
+
 # define test position
-test_lat =  55.0000000000
-test_lon = 009.0000000000
-test_lat =  55.832245358
-test_lon = 009.507804944
+test_lat =  55.367
+test_lon = 010.432
+test_projection = kp.kp2000j
+
 print 'Test position [deg]:'
 print '  latitude:  %.10f'  % (test_lat)
 print '  longitude: %.10f'  % (test_lon)
 
-# instantiate kp2000conv class
-kp = kp2000conv()
-
 # convert from geodetic to KP2000
-(easting, northing) = kp.geodetic_to_kp2000 (test_lat, test_lon, kp.kp2000j)
+(easting, northing) = kp.geodetic_to_kp2000 (test_lat, test_lon, test_projection)
 print '\nConverted from geodetic to KP2000 [m]'
 print '  %.5fe %.5fn' % (easting, northing)
 
 # convert back from KP2000 to geodetic
-(lat, lon) = kp.kp2000_to_geodetic (easting, northing, kp.kp2000j)
+(lat, lon) = kp.kp2000_to_geodetic (easting, northing, test_projection)
 print '\nConverted back to geodetic [deg]:'
 print '  latitude:  %.10f'  % (lat)
 print '  longitude: %.10f'  % (lon)
