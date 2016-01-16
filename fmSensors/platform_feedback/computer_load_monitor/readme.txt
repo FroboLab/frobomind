@@ -1,6 +1,7 @@
 README
 computer_load_monitor information
 Written 2014-02-20 Kjeld Jensen, kjeld@frobomind.org
+Updated 2016-01-16 Kjeld Jensen, kjeld@frobomind.org
 
 
 GENERAL INFO
@@ -44,5 +45,15 @@ The value range is [0;1]
 It is the same value displayed before 'used' when running the command:
 
 $ top
+
+
+SCRIPTS
+The scripts directory contains the pythin script export_data.py to export CPU
+and Memory load values from a rosbag. Run the script with the filename of a
+rosbag as parameter to generate the files rosbag_cpu_load.txt
+rosbag_memory_load.txt and rosbag_rosout.txt
+
+Run the script plot_data.py to generate a plot of the CPU and memory load.
+The plot is also saved to the file cpu_memory_load.png
 
 
