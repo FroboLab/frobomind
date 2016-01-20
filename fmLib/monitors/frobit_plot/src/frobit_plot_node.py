@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboMind - Frobit plot node
-# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@ Revision
 2014-02-19 KJ Migrated to a frobit_plot component
 2014-04-19 KJ Added support for reversing the avatar
 2014-06-19 KJ Various bug fixes
+2016-01-17 KJ Changed 'avatar_reverse' to the global /caster_front parameter
 """
 
 # ROS imports
@@ -55,6 +56,7 @@ class ROSnode():
 		self.q = np.empty((4, ), dtype=np.float64) 
 
 		# Get parameters
+		caster_front = rospy.get_param("/caster_front", True)
 		plot_pose_track = rospy.get_param("~plot_pose_track",True)
 		plot_gnss_track = rospy.get_param("~plot_gnss_track",False)
 		plot_odometry_track = rospy.get_param("~plot_odometry_track",False)
@@ -70,10 +72,9 @@ class ROSnode():
 		avatar_extension_front = rospy.get_param("~avatar_extension_front",0.29) # [m] from geometric center
 		avatar_extension_rear = rospy.get_param("~avatar_extension_rear",0.06) # [m] from geometric center
 		avatar_extension_lateral = rospy.get_param("~avatar_extension_lateral",0.13) # [m] from geometric center
-		avatar_reverse = rospy.get_param("~avatar_reverse", False) # front/rear reverse
  
 		# setup map plot
-		self.plot = frobit_plot(plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, avatar_reverse)
+		self.plot = frobit_plot(plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, caster_front)
 
 		# setup yaw plot
 		self.plot_gnss_yaw = True

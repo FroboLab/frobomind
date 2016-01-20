@@ -34,6 +34,7 @@ Revision
 2014-02-19 KJ Migrated to a frobit_plot component
 2014-04-19 KJ Added support for reversing the avatar
 2014-06-19 KJ Various bug fixes
+2016-01-17 KJ Changed 'avatar_reverse' to 'caster_front'
 """
 # imports
 import matplotlib.pyplot as plt
@@ -42,7 +43,7 @@ from math import pi, sqrt, sin, cos
 import csv
 
 class frobit_plot():
-	def __init__(self, plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, avatar_reverse):
+	def __init__(self, plot_pose_track, plot_gnss_track, plot_odometry_track, plot_yaw, map_trackpoint_threshold, map_max_trackpoints, map_minimum_size, map_easting_offset, map_northing_offset, map_update_frequency, map_title, map_window_size, avatar_extension_front, avatar_extension_rear, avatar_extension_lateral, caster_front):
 		self.rad_to_deg = 180.0/pi
 		self.deg_to_rad = pi/180.0
 		self.save_time_lapse_images = False
@@ -63,7 +64,7 @@ class frobit_plot():
 		self.avatar_extension_front = avatar_extension_front
 		self.avatar_extension_rear = avatar_extension_rear
 		self.avatar_extension_lateral = avatar_extension_lateral
-		self.avatar_reverse = avatar_reverse
+		self.caster_front = caster_front
      
 		# Initialize map
 		self.map_image_cnt = 0
@@ -83,7 +84,7 @@ class frobit_plot():
 		al = avatar_extension_lateral		
 		ac = (af+(-ar)) * 0.2
 	
-		if self.avatar_reverse == False:
+		if self.caster_front == True:
 			self.avatar = [[af-ac,al],[af,al-ac],[af,-al+ac],[af-ac,-al],[ar,-al],[ar,al],[af-ac,al]] # Frobit
 		else:
 			self.avatar = [[af,al],[af,-al],[ar+ac,-al],[ar,-al+ac],[ar,al-ac],[ar+ac,al],[af,al]] # Frobit reversed
