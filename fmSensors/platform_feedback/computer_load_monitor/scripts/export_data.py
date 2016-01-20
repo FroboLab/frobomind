@@ -34,12 +34,12 @@ import sys
 import roslib
 import rosbag
 
-arg1 =  sys.argv[1:][0]
-
-if arg1 != '':
-	bag = rosbag.Bag (arg1)
+if len(sys.argv) == 2:
+	arg1 =  sys.argv[1:][0]
 else:
-	bag = rosbag.Bag ('test.bag')
+	arg1 = 'ros.bag'
+
+bag = rosbag.Bag (arg1)
 	
 def time_stamp (stamp):
 	secs = stamp.secs
