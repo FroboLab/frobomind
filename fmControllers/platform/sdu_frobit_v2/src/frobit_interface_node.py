@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # Frobobit V2 Interface
-# Copyright (c) 2013-2015, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 2014-08-21 KJ Added supply_voltage_scale_factor parameter to support the
               FroboMind Controller
 2015-08-19 KJ Renamed "deadman" topic to "actuation_enable"
+2016-01-17 KJ Implemented a global caster_front (true/false) parameter
 """
 
 # imports
@@ -79,7 +80,7 @@ class FrobitInterfaceNode():
 		self.w_dist = rospy.get_param("/diff_steer_wheel_distance", 1.0) # [m]
 		self.ticks_per_meter_left = rospy.get_param("/ticks_per_meter_left", 1000)
 		self.ticks_per_meter_right = rospy.get_param("/ticks_per_meter_right", 1000)
-		self.castor_front = rospy.get_param("~castor_front", "false")
+		self.caster_front = rospy.get_param("/caster_front", True)
 		acc_lin_max = rospy.get_param("~max_linear_acceleration", 1.0) # [m/s^2]
 		acc_ang_max = rospy.get_param("~max_angular_acceleration", 0.1) # [rad/s^2]
 		self.acc_lin_max_step = acc_lin_max/(self.update_rate * 1.0)		
@@ -303,11 +304,16 @@ class FrobitInterfaceNode():
 					elif self.frobit_state == self.STATE_ERR_LOWBAT:
 						rospy.logwarn (rospy.get_name() + ': Frobit says: Low battery')
 
-				el =  int(msg.data[1]);
+				if self.caster_front == True:
+					el =  int(msg.data[1])
+					er =  int(msg.data[2])
+				else:
+					el =  -int(msg.data[2])
+					er =  -int(msg.data[1])
+
 				self.enc_l += el
 				self.enc_l_buf.append (el)
 				del self.enc_l_buf[0]
-				er =  int(msg.data[2]);
 				self.enc_r += er
 				self.enc_r_buf.append (er)
 				del self.enc_r_buf[0]
@@ -421,8 +427,12 @@ class FrobitInterfaceNode():
 
 		self.nmea_pfbct.header.stamp = rospy.Time.now()
 		if self.actuation_enable_tout > rospy.get_time() and self.frobit_tout_active == False:
-			self.nmea_pfbct.data[0] = ('%d' % (self.ref_ticks_left))
-			self.nmea_pfbct.data[1] = ('%d' % (self.ref_ticks_right))
+			if self.caster_front == True:
+				self.nmea_pfbct.data[0] = ('%d' % (self.ref_ticks_left))
+				self.nmea_pfbct.data[1] = ('%d' % (self.ref_ticks_right))
+			else:
+				self.nmea_pfbct.data[1] = ('%d' % (-self.ref_ticks_left))
+				self.nmea_pfbct.data[0] = ('%d' % (-self.ref_ticks_right))
 		else:
 			self.nmea_pfbct.data[0] = '0'
 			self.nmea_pfbct.data[1] = '0'
