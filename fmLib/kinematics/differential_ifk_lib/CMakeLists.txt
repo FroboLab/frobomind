@@ -65,7 +65,7 @@ catkin_package(
 # add_executable(wiimote_interface_node src/wiimote_interface_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(${PROJECT_NAME} ${PROJECT_NAME})
+# add_dependencies(${PROJECT_NAME} ${PROJECT_NAME})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(wiimote_interface_node

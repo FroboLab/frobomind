@@ -69,7 +69,7 @@ include_directories(include
 add_executable(vectornav_vn100_node src/vectornav_vn100_node.cpp)
 
 ## Add dependencies to the executable
-add_dependencies(vectornav_vn100_node ${PROJECT_NAME} msgs_gencpp sensor_msgs_gencpp)
+add_dependencies(vectornav_vn100_node msgs_gencpp sensor_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(vectornav_vn100_node

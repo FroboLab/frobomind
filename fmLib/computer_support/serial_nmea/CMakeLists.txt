@@ -70,7 +70,7 @@ include_directories(include
 add_executable(serial_nmea_node src/serial_interface.cpp src/serial_nmea_node.cpp src/nmea_interface.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(serial_nmea_node ${PROJECT_NAME} msgs_gencpp)
+ add_dependencies(serial_nmea_node msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(serial_nmea_node

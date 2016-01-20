@@ -74,7 +74,7 @@ add_executable(computer_load_monitor_node src/computer_load_monitor.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(computer_load_monitor_node ${PROJECT_NAME} msgs_gencpp std_msgs_gencpp)
+add_dependencies(computer_load_monitor_node msgs_gencpp std_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(computer_load_monitor_node
