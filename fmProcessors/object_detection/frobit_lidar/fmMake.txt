@@ -1,0 +1,2 @@
+/frobomind/fmProcessors/object_detection/frobit_lidar
+/frobomind/fmLib/msgs

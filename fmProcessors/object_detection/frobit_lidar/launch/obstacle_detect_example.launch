@@ -1,0 +1,15 @@
+<!-- launch example -->
+
+<launch>
+	<group ns="fmProcessors">
+		<node pkg="frobit_lidar" name="obstacle_detect" type="obstacle_detect_node.py" output="screen">
+			<param name="scan_sub" value="/fmInformation/laser_scan"/>
+			<param name="wall_pose_pub" value="/fmKnowledge/obstacle"/>
+			<param name="obstacle_scan_width" value="0.2"/> 
+			<param name="distance_threshold_warning" value="0.50"/> 
+			<param name="distance_threshold_alarm" value="0.25"/> 
+			<param name="scans_skip" value="1"/> 
+		</node>
+	</group>
+</launch>
+
