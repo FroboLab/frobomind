@@ -1,0 +1,11 @@
+<!-- FroboMind launch file -->
+
+<launch>
+	<group ns="fmSafety">
+		<node pkg="frobit_lidar_obstacle_monitor" name="obstacle_monitor" type="obstacle_monitor_node.py" output="screen">
+	    		<param name="obstacle_sub" value="/fmKnowledge/obstacle" />
+	    		<param name="obstacle_safe_pub" value="/fmSafe/obstacle" />
+		</node>
+	</group>
+</launch>
+
