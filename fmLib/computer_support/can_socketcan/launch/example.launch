@@ -1,0 +1,32 @@
+<!-- SocketCAN example launch file -->
+
+<launch>
+	<!-- parameters --> 
+
+	<group ns="fmSafety">
+	</group>
+
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="can_socketcan" name="can" type="can_socketcan_node" respawn="true" output="screen">
+			<param name="device" value="can0"/>
+			<param name="can_from_device_pub" value="/fmSignal/can_from_device"/>
+			<param name="can_to_device_sub" value="/fmSignal/can_to_device"/>
+		</node>
+	</group>
+</launch>
+

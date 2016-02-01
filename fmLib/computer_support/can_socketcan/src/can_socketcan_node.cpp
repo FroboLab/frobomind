@@ -15,8 +15,8 @@ int main(int argc, char **argv)
   std::string device,publisher_topic,subscriber_topic;
 
   n.param<std::string>("device", device, "can0");
-  n.param<std::string>("publisher_topic", publisher_topic, "can_rx");
-  n.param<std::string>("subscriber_topic", subscriber_topic, "can_tx");
+  n.param<std::string>("can_from_device_pub", publisher_topic, "/fmSignal/can_from_device");
+  n.param<std::string>("can_to_device_sub", subscriber_topic, "/fmSignal/can_to_device");
 
   SocketCan can;
 
