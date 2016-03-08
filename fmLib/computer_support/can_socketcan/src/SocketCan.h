@@ -3,6 +3,7 @@
  *
  *  Created on: Mar 26, 2012
  *      Author: morl
+ * 2016-03-08 Kjeld Jensen kjen@mmmi.sdu.dk Added support for sending extended id's
  */
 
 #ifndef SOCKETCAN_H_
@@ -37,6 +38,7 @@ class SocketCan
 public:
 	SocketCan();
 	virtual ~SocketCan();
+	bool send_extended_id;
 
 	int initInterface(std::string interface);
 	void processCanTxEvent(const msgs::can::ConstPtr& msg);

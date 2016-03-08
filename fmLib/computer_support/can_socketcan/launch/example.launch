@@ -23,9 +23,10 @@
 
 	<group ns="fmLib">
 		<node pkg="can_socketcan" name="can" type="can_socketcan_node" respawn="true" output="screen">
-			<param name="device" value="can0"/>
 			<param name="can_from_device_pub" value="/fmSignal/can_from_device"/>
 			<param name="can_to_device_sub" value="/fmSignal/can_to_device"/>
+			<param name="device" value="can0"/>
+			<param name="send_extended_id" value="false"/>
 		</node>
 	</group>
 </launch>

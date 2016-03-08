@@ -3,7 +3,8 @@
  *
  *  Created on: Mar 26, 2012
  *      Author: morl
- */
+ * 2016-03-08 Kjeld Jensen kjen@mmmi.sdu.dk Added support for sending extended id's
+*/
 
 #include "SocketCan.h"
 
@@ -62,17 +63,21 @@ int SocketCan::initInterface(std::string interface)
 void SocketCan::processCanTxEvent(const msgs::can::ConstPtr& msg)
 {
 	can_frame tx;
-
-	tx.can_id = msg->id;
+	
+	if (send_extended_id == true)
+	{
+		tx.can_id = msg->id | CAN_EFF_FLAG;
+	}
+	else
+	{
+		tx.can_id = msg->id;	
+	}
 	// XXX
 	// Compatability with can4linux flags which are used in msgs::can
 	// bit 2 is EFF which means we have to set bit 31 in the id flag
 	// other flags might become relevant also but currently only this flag is supported.
 	// XXX
-	if(msg->flags & 0x04)
-	{
-		tx.can_id = msg->id;
-	}
+	
 	tx.can_dlc = msg->length;
 
 	for(int i=0; i<msg->length; i++)
