@@ -1,6 +1,6 @@
 /****************************************************************************
-# FroboMind template_cpp_node
-# Copyright (c) 2011-2013, author Morten Larsen mortenlarsens@gmail.com
+# FroboMind claas_eye_drive_node
+# Copyright (c) 2011-2013 Morten Larsen mortenlarsens@gmail.com
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -10,9 +10,9 @@
 #	* Redistributions in binary form must reproduce the above copyright
 #  	notice, this list of conditions and the following disclaimer in the
 #  	documentation and/or other materials provided with the distribution.
-#	* Neither the name FroboMind nor the
-#  	names of its contributors may be used to endorse or promote products
-#  	derived from this software without specific prior written permission.
+#       * Neither the name of the copyright holder nor the names of its
+#       contributors may be used to endorse or promote products derived from
+#       this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -24,14 +24,22 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*****************************************************************************
+
+2016-03-08 Kjeld Jensen kjen@mmmi.sdu.dk
+  Updated code together with CLAAS, added support for sending Machine info
+  messages to the eye_drive
+
 ****************************************************************************/
 #include <ros/ros.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <msgs/can.h>
-#include <msgs/claas_row_cam.h>
-
+#include <msgs/claas_campilot.h>
 
 typedef enum
 {
+	STOP = 0x40,
 	INIT1 = 0x20,
 	INIT2 = 0x21,
 	INIT3 = 0x22,
@@ -98,24 +106,27 @@ public:
 	int number_of_rows;
 	int rows_between_wheels;
 	int debug_setting;
-
-
 };
 
-class EyeDrive
+class CamPilot
 {
 public:
-	EyeDrive(CameraConfig config)
+	CamPilot(CameraConfig config)
 	{
 		this->config = config;
 		timeout = 1;
 		communication_timeout = 5;
 		is_initialised = false;
-		quality = heading = offset = 0;
+		first_time_init = false;
+		quality = heading = offset = 0.0;
 		last_update = ros::Time::now();
+		user_angle = 0;
+		user_offset = 0;
+		machine_auto_mode = false;
+		machine_velocity = false;
 	}
 
-	~EyeDrive()
+	~CamPilot()
 	{
 
 	}
@@ -125,20 +136,24 @@ public:
 		uint8_t buf[24];
 		config.to_init_message(buf);
 
+		transmitStopMsg();
+		usleep (100000); /* 100ms delay required by eye_drive */
 		for(int i=0;i<3;i++)
 		{
 			transmitInitMsg(&(buf[i*8]));
+			usleep (100000); /* 100ms delay required by eye_drive */
 		}
 	}
 
 	void processCanRxEvent(const msgs::can::ConstPtr& msg)
 	{
-		int temp_val;
+		double temp_val;
 		if(msg->id == (uint32_t)(0x142000C8))
 		{
+			//ROS_INFO("Got data");
 			quality = msg->data[1];
 
-			temp_val = msg->data[2] * 0x100 + msg->data[3];
+			temp_val = (msg->data[2]<<8) + msg->data[3];
 			if (temp_val > 0x8000) /* Convert Two's complement: */
 			{
 			        temp_val =  temp_val - 0x10000;
@@ -146,14 +161,14 @@ public:
 			temp_val =  temp_val/10;
 			offset = temp_val;
 
-			temp_val = msg->data[4] * 0x100 +msg->data[5];
+			temp_val = (msg->data[4]<<8) + msg->data[5];
 			if (temp_val > 0x8000) /* Convert Two's complement: */
 			{
 			        temp_val =  temp_val - 0x10000;
 			}
 			temp_val =  temp_val/100;
 			heading = temp_val;
-			debug = ((msg->data[6] * 0x100 + msg->data[7])/100);
+			debug = (((msg->data[6]<<8) + msg->data[7])/100);
 
 			if((msg->header.stamp - last_update).toSec() > timeout)
 			{
@@ -162,10 +177,26 @@ public:
 
 			last_update = msg->header.stamp;
 		}
-		if(msg->id == 201326776)
+		if(msg->id == 201326776) /* 0xC0000B8 */
 		{
-			ROS_DEBUG("Got heartbeat");
+			// ROS_INFO("Got heartbeat");
+			if (first_time_init == false)
+			{	
+				initCamera();
+				ROS_INFO("Initializing");
+				first_time_init = true;
+			}
 		}
+	}
+
+	void processMachineAutoModeEvent(const std_msgs::Bool::ConstPtr& msg)
+	{
+		machine_auto_mode = msg->data;
+	}
+
+	void processMachineVelocityEvent(const std_msgs::Int32::ConstPtr& msg)
+	{
+		machine_velocity = msg->data;
 	}
 
 	void processTimerEvent(const ros::TimerEvent& e)
@@ -207,10 +238,45 @@ public:
 
 	ros::Publisher can_tx_pub;
 	ros::Subscriber can_rx_sub;
+	ros::Subscriber machine_auto_mode_sub;
+	ros::Subscriber machine_velocity_sub;
 	ros::Publisher cam_row_pub;
 
 	std::string frame_id;
 private:
+
+	void transmitMachineInfoMsg(void)
+	{
+		can_tx_msg.header.stamp = ros::Time::now();
+		can_tx_msg.flags = 0x04; // EFF is indicated in flags (atleast when using can4linux)
+		can_tx_msg.id = 0x1425003C;
+		can_tx_msg.length = 8;
+		can_tx_msg.data[0] = 0; /* indicate 100 ms message interval (int msb) */
+		can_tx_msg.data[1] = 100; /* indicate 100 ms message interval (int lsb) */
+		can_tx_msg.data[2] = machine_auto_mode; /* 0=manual, 1=auto */
+		can_tx_msg.data[3] = machine_velocity >> 8; /* machine velocity [mm/s] (int msb) */
+		can_tx_msg.data[4] = machine_velocity & 0xff; /* machine velocity [mm/s] (int lsb) */
+		can_tx_msg.data[5] = user_angle >> 8; /* not used in current setup (int msb) */
+		can_tx_msg.data[6] = user_angle & 0xff; /* not used in current setup (int msb) */
+		can_tx_msg.data[7] = user_offset; /* not used in current setup */
+		can_tx_pub.publish(can_tx_msg);
+	}
+
+	void transmitStopMsg(void)
+	{
+		can_tx_msg.header.stamp = ros::Time::now();
+		can_tx_msg.flags = 0x04; // EFF is indicated in flags (atleast when using can4linux)
+		can_tx_msg.id = 0x1424003C;
+		can_tx_msg.length = 8;
+		can_tx_msg.data[0] = STOP;
+		for(int i=1;i<8;i++)
+		{
+			can_tx_msg.data[i] = 0;
+		}
+
+		can_tx_pub.publish(can_tx_msg);
+	}
+
 
 	void transmitInitMsg(uint8_t buf[8])
 	{
@@ -224,22 +290,26 @@ private:
 		}
 
 		can_tx_pub.publish(can_tx_msg);
-		sleep(1);
 	}
 
 	CameraConfig config;
 
-
 	msgs::can can_tx_msg;
-	msgs::claas_row_cam cam_tx_msg;
+	msgs::claas_campilot cam_tx_msg;
 
 	ros::Time last_update;
 
 	int quality;
-	int heading;
-	int offset;
+	double heading;
+	double offset;
 	int debug;
 
+	bool machine_auto_mode;
+	unsigned int machine_velocity;
+	unsigned int user_angle;
+	unsigned char user_offset;
+
+	bool first_time_init;
 	bool is_initialised;
 
 	double timeout;
@@ -250,20 +320,23 @@ private:
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "EyeDriveNode");
+	ros::init(argc, argv, "claas_campilot_node");
 	ros::NodeHandle nh;
 	ros::NodeHandle n("~");
 
-	std::string can_rx_topic,can_tx_topic,row_topic,frame_id;
+	std::string can_rx_topic,can_tx_topic,machine_auto_mode_sub_topic, machine_velocity_sub_topic, row_topic,frame_id;
 	double publish_rate;
+
+	CameraConfig conf;
 
 	ros::Timer t;
 
-	n.param<std::string>("Can_rx_subscriber_topic",can_rx_topic,"fmBSP/can_0_rx");
-	n.param<std::string>("Can_tx_publisher_topic",can_tx_topic,"fmBSP/can_0_tx");
-	n.param<std::string>("row_publisher_topic",row_topic,"fmSensor/rows");
+	n.param<std::string>("can_from_device_sub",can_rx_topic,"/fmSignal/can_from_campilot");
+	n.param<std::string>("can_to_device_pub",can_tx_topic,"/fmSignal/can_to_campilot");
+	n.param<std::string>("machine_auto_mode_sub",machine_auto_mode_sub_topic,"/fmPlan/cam_machine_automode");
+	n.param<std::string>("machine_velocity_sub",machine_velocity_sub_topic,"/fmKnowledge/cam_machine_velocity");
+	n.param<std::string>("cam_rows_pub",row_topic,"/fmKnowledge/cam_rows");
 
-	CameraConfig conf;
 
 	n.param<int>("cam_program",conf.program,0x03);
 	n.param<int>("cam_height",conf.height_cm,160);
@@ -272,22 +345,24 @@ int main(int argc, char **argv)
 	n.param<int>("cam_target_width",conf.target_width_cm,15);
 	n.param<int>("cam_target_height",conf.target_height_cm,12);
 	n.param<int>("cam_target_distance",conf.target_distance_cm,75);
-	n.param<int>("cam_minor_distance",conf.target_minor_distance_cm,0);
+	n.param<int>("cam_minor_distance",conf.target_minor_distance_cm,75);
 	n.param<int>("cam_number_of_rows",conf.number_of_rows,1);
 	n.param<int>("cam_rows_between_wheels",conf.rows_between_wheels,0x03);
 
 	n.param<double>("publish_rate",publish_rate,25.0);
-	n.param<std::string>("frame_id",frame_id,"rowcam_link");
+	n.param<std::string>("frame_id",frame_id,"campilot_link");
 
 
-	EyeDrive camera(conf);
+	CamPilot camera(conf);
 
 	camera.frame_id = frame_id;
-	camera.can_rx_sub  = nh.subscribe<msgs::can> (can_rx_topic.c_str(),10,&EyeDrive::processCanRxEvent,&camera);
+	camera.can_rx_sub  = nh.subscribe<msgs::can> (can_rx_topic.c_str(),10,&CamPilot::processCanRxEvent,&camera);
 	camera.can_tx_pub  = nh.advertise<msgs::can> (can_tx_topic.c_str(),10);
-	camera.cam_row_pub = nh.advertise<msgs::claas_row_cam> (row_topic.c_str(),1);
+	camera.machine_auto_mode_sub = nh.subscribe<std_msgs::Bool> (machine_auto_mode_sub_topic.c_str(),10,&CamPilot::processMachineAutoModeEvent,&camera);
+	camera.machine_velocity_sub = nh.subscribe<std_msgs::Int32> (machine_velocity_sub_topic.c_str(),10,&CamPilot::processMachineVelocityEvent,&camera);
+	camera.cam_row_pub = nh.advertise<msgs::claas_campilot> (row_topic.c_str(),1);
 
-	t= nh.createTimer(ros::Duration(1.0/publish_rate),&EyeDrive::processTimerEvent,&camera);
+	t= nh.createTimer(ros::Duration(1.0/publish_rate),&CamPilot::processTimerEvent,&camera);
 
 
 	ros::spin();

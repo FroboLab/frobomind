@@ -1,0 +1,52 @@
+<!-- CLAAS eyedrive example launch file -->
+
+<launch>
+	<!-- parameters --> 
+
+	<group ns="fmSafety">
+	</group>
+
+	<group ns="fmSensors">
+		<node pkg="claas_campilot" name="campilot" type="class_campilot_node" respawn="true" output="screen">
+			<param name="can_from_device_sub" value="/fmSignal/can_from_campilot"/>
+			<param name="can_to_device_pub" value="/fmSignal/can_to_campilot"/>
+			<param name="machine_auto_mode_sub" value="/fmPlan/cam_machine_automode"/>
+			<param name="machine_velocity_sub" value="/fmKnowledge/cam_machine_velocity"/>
+			<param name="cam_rows_pub" value="/fmKnowledge/cam_rows"/>
+			<param name="cam_program" value="0x03"/>
+			<param name="cam_height" value="160"/>
+			<param name="cam_angle" value="45"/>
+			<param name="cam_threshold" value="0x80"/>
+			<param name="cam_target_width" value="15"/>
+			<param name="cam_target_height" value="12"/>
+			<param name="cam_target_distance" value="75"/>
+			<param name="cam_minor_distance" value="75"/>
+			<param name="cam_number_of_rows" value="3"/>
+			<param name="cam_rows_between_wheels" value="3"/>
+			<param name="publish_rate" value="25.0"/>
+			<param name="frame_id" value="campilot_link"/>
+		</node>
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="can_socketcan" name="can" type="can_socketcan_node" respawn="true" output="screen">
+			<param name="can_from_device_pub" value="/fmSignal/can_from_campilot"/>
+			<param name="can_to_device_sub" value="/fmSignal/can_to_campilot"/>
+			<param name="device" value="can0"/>
+			<param name="send_extended_id" value="true"/>
+		</node>
+	</group>
+</launch>
+

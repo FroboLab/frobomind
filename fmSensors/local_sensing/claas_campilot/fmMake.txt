@@ -1,0 +1,3 @@
+/frobomind/fmSensors/local_sensing/claas_campilot
+/frobomind/fmLib/msgs
+/frobomind/fmLib/computer_support/can_socketcan

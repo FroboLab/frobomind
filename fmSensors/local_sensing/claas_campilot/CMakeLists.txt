@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(claas_eye_drive)
+project(claas_campilot)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -45,8 +45,8 @@ find_package(catkin REQUIRED COMPONENTS msgs roscpp)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-#  LIBRARIES class_eye_drive
+#   INCLUDE_DIRS include
+#  LIBRARIES class_campilot
 #  CATKIN_DEPENDS msgs roscpp
 #  DEPENDS system_lib
 )
@@ -57,22 +57,22 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(include
-  ${catkin_INCLUDE_DIRS}
+#  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(class_eye_drive
-#   src/${PROJECT_NAME}/class_eye_drive.cpp
+# add_library(class_campilot
+#   src/${PROJECT_NAME}/class_campilot.cpp
 # )
 
 ## Declare a cpp executable
- add_executable(class_eye_drive_node src/eye_drive.cpp)
+ add_executable(class_campilot_node src/campilot.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(class_eye_drive_node ${PROJECT_NAME} msgs_gencpp)
+ add_dependencies(class_campilot_node ${PROJECT_NAME} msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(class_eye_drive_node
+ target_link_libraries(class_campilot_node
    ${catkin_LIBRARIES}
  )
 
@@ -88,7 +88,7 @@ include_directories(include
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS class_eye_drive class_eye_drive_node
+# install(TARGETS class_campilot class_campilot_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -113,7 +113,7 @@ include_directories(include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_class_eye_drive.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_class_campilot.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
