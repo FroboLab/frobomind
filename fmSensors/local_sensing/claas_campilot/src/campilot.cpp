@@ -122,8 +122,8 @@ public:
 		last_update = ros::Time::now();
 		user_angle = 0;
 		user_offset = 0;
-		machine_auto_mode = false;
-		machine_velocity = false;
+		machine_auto_mode = false; /* assume we are not yet well aligned with the row while no updates have been received */
+		machine_velocity = 300; /* just to keep it different from zero while no velocity updates have been received */
 	}
 
 	~CamPilot()
@@ -151,6 +151,8 @@ public:
 		if(msg->id == (uint32_t)(0x142000C8))
 		{
 			//ROS_INFO("Got data");
+
+			/* get the data from the CAN frame */
 			quality = msg->data[1];
 
 			temp_val = (msg->data[2]<<8) + msg->data[3];
@@ -168,8 +170,17 @@ public:
 			}
 			temp_val =  temp_val/100;
 			heading = temp_val;
-			debug = (((msg->data[6]<<8) + msg->data[7])/100);
+			// debug = (((msg->data[6]<<8) + msg->data[7])/100);
 
+			/* we got data now send the ROS message */
+			cam_tx_msg.header.stamp = ros::Time::now();
+			cam_tx_msg.header.frame_id = frame_id;
+			cam_tx_msg.quality = quality;
+			cam_tx_msg.heading = heading;
+			cam_tx_msg.offset = offset;
+			cam_row_pub.publish(cam_tx_msg);
+
+			/* test if the message delay is too high */
 			if((msg->header.stamp - last_update).toSec() > timeout)
 			{
 				ROS_WARN_THROTTLE(1,"Timeout value exceeded");
@@ -216,6 +227,8 @@ public:
 		}
 		else
 		{
+			transmitMachineInfoMsg();
+
 			ros::Time t = ros::Time::now();
 			if( (t - last_update).toSec() > communication_timeout)
 			{
@@ -223,14 +236,6 @@ public:
 				ROS_WARN_THROTTLE(1,"Lost Connection to eye drive, retrying");
 				quality = heading = offset = 0;
 			}
-			cam_tx_msg.header.stamp = ros::Time::now();
-			cam_tx_msg.header.frame_id = frame_id;
-			cam_tx_msg.quality = quality;
-			cam_tx_msg.heading = heading;
-			cam_tx_msg.offset = offset;
-
-
-			cam_row_pub.publish(cam_tx_msg);
 		}
 
 
@@ -325,7 +330,6 @@ int main(int argc, char **argv)
 	ros::NodeHandle n("~");
 
 	std::string can_rx_topic,can_tx_topic,machine_auto_mode_sub_topic, machine_velocity_sub_topic, row_topic,frame_id;
-	double publish_rate;
 
 	CameraConfig conf;
 
@@ -336,7 +340,6 @@ int main(int argc, char **argv)
 	n.param<std::string>("machine_auto_mode_sub",machine_auto_mode_sub_topic,"/fmPlan/cam_machine_automode");
 	n.param<std::string>("machine_velocity_sub",machine_velocity_sub_topic,"/fmKnowledge/cam_machine_velocity");
 	n.param<std::string>("cam_rows_pub",row_topic,"/fmKnowledge/cam_rows");
-
 
 	n.param<int>("cam_program",conf.program,0x03);
 	n.param<int>("cam_height",conf.height_cm,160);
@@ -349,7 +352,6 @@ int main(int argc, char **argv)
 	n.param<int>("cam_number_of_rows",conf.number_of_rows,1);
 	n.param<int>("cam_rows_between_wheels",conf.rows_between_wheels,0x03);
 
-	n.param<double>("publish_rate",publish_rate,25.0);
 	n.param<std::string>("frame_id",frame_id,"campilot_link");
 
 
@@ -362,8 +364,7 @@ int main(int argc, char **argv)
 	camera.machine_velocity_sub = nh.subscribe<std_msgs::Int32> (machine_velocity_sub_topic.c_str(),10,&CamPilot::processMachineVelocityEvent,&camera);
 	camera.cam_row_pub = nh.advertise<msgs::claas_campilot> (row_topic.c_str(),1);
 
-	t= nh.createTimer(ros::Duration(1.0/publish_rate),&CamPilot::processTimerEvent,&camera);
-
+	t= nh.createTimer(ros::Duration(0.1),&CamPilot::processTimerEvent,&camera); /* obs: machine info is specified to be sent at 10 hz in the CAN packet */
 
 	ros::spin();
 

@@ -15,10 +15,10 @@ can_from_device_sub		"/fmSignal/can_from_campilot"
 can_to_device_pub		"/fmSignal/can_to_campilot"
 
 machine_auto_mode_sub		"/fmPlan/cam_machine_automode"
-	set to true when well aligned in row
+	set to true only when well aligned in row, this will improve sensing significantly.
 
 machine_velocity_sub		"/fmKnowledge/cam_machine_velocity"
-	update with the machine velocity [mm/s]
+	update with the machine velocity [mm/s], this will improve sensing.
 
 cam_rows_pub			"/fmKnowledge/cam_rows"
 	row angle [1/100 degrees], distance [1/10 mm], quality factor [0;255]

@@ -23,7 +23,6 @@
 			<param name="cam_minor_distance" value="75"/>
 			<param name="cam_number_of_rows" value="3"/>
 			<param name="cam_rows_between_wheels" value="3"/>
-			<param name="publish_rate" value="25.0"/>
 			<param name="frame_id" value="campilot_link"/>
 		</node>
 	</group>
