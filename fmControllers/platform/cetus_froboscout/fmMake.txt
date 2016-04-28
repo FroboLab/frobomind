@@ -1,0 +1,10 @@
+/frobomind/fmLib/msgs
+/frobomind/fmDecisionMakers/hmi/keyboard_remote_control
+/frobomind/fmDecisionMakers/mission_planners/frobit_wptnav_mission
+/frobomind/fmControllers/platform/cetus_froboscout
+/frobomind/fmSafety/incident_handler/basic_incident_handler
+/frobomind/fmLib/hmi_support/keyboard_interface
+/frobomind/fmLib/kinematics/differential_ifk_lib
+/frobomind/fmLib/computer_support/serial_nmea
+#/frobomind/fmLib/monitors/plot_velocity
+

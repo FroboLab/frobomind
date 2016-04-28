@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboScout Interface
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,14 @@
 """
 2013-10-01 KJ First version
 2013-11-18 KJ Added support for publish wheel status
+2016-04-28 KJ Migrated from monitoring the deadman topic to the
+              actuation_enable topic. Updated to support queue_size
+
 """
 
 # imports
 import rospy
-from msgs.msg import nmea, IntStamped, PropulsionModuleStatus, PropulsionModuleFeedback
-from std_msgs.msg import Bool
+from msgs.msg import BoolStamped, nmea, IntStamped, PropulsionModuleStatus, PropulsionModuleFeedback
 from geometry_msgs.msg import Twist, TwistStamped
 from differential_ifk_py.differential_kinematics import differential_kinematics
 from time import sleep
@@ -50,7 +52,7 @@ class FroboScoutInterfaceNode():
 		self.count = 0
 
 		# locally defined parameters
-		self.deadman_tout_duration = 0.2 # [s]
+		self.actuation_enable_tout_duration = 0.2 # [s]
 		self.cmd_vel_tout_duration = 0.2 # [s]
 		self.w_tout_duration = 0.2 # [s]
 
@@ -110,7 +112,7 @@ class FroboScoutInterfaceNode():
 		self.dk = differential_kinematics(self.w_dist)
 
 		# get topic names
-		self.deadman_topic = rospy.get_param("~deadman_sub",'/fmCommand/deadman')
+		self.actuation_enable_topic = rospy.get_param("~actuation_enable_sub",'/fmCommand/actuation_enable')
 		self.cmd_vel_topic = rospy.get_param("~cmd_vel_sub",'/fmCommand/cmd_vel')
 		self.enc_left_topic = rospy.get_param("~enc_left_pub",'/fmInformation/enc_left')
 		self.enc_right_topic = rospy.get_param("~enc_right_pub",'/fmInformation/enc_right')
@@ -125,8 +127,8 @@ class FroboScoutInterfaceNode():
 		self.wr_pub_topic = rospy.get_param("~wheel_right_pub",'/fmSignal/wheel_right_nmea_out')
 
 		# setup wheel ctrl topic publisher
-		self.wl_pub = rospy.Publisher(self.wl_pub_topic, nmea)
-		self.wr_pub = rospy.Publisher(self.wr_pub_topic, nmea)
+		self.wl_pub = rospy.Publisher(self.wl_pub_topic, nmea, queue_size = 0)
+		self.wr_pub = rospy.Publisher(self.wr_pub_topic, nmea, queue_size = 0)
 		self.nmea = nmea()
 		self.nmea.data.append('0')
 		self.nmea.valid = True
@@ -140,14 +142,14 @@ class FroboScoutInterfaceNode():
 		self.wr_fb_state = 0
 		self.enc_left = 0
 		self.enc_right = 0
-		self.enc_left_pub = rospy.Publisher(self.enc_left_topic, IntStamped)
-		self.enc_right_pub = rospy.Publisher(self.enc_right_topic, IntStamped)
+		self.enc_left_pub = rospy.Publisher(self.enc_left_topic, IntStamped, queue_size = 10)
+		self.enc_right_pub = rospy.Publisher(self.enc_right_topic, IntStamped, queue_size = 10)
 		self.intstamp = IntStamped()
 
 		# setup wheel status topic publisher
 		if self.pub_status_interval > 0:
-			self.w_stat_left_pub = rospy.Publisher(self.w_stat_left_pub_topic, PropulsionModuleStatus)
-			self.w_stat_right_pub = rospy.Publisher(self.w_stat_right_pub_topic, PropulsionModuleStatus)
+			self.w_stat_left_pub = rospy.Publisher(self.w_stat_left_pub_topic, PropulsionModuleStatus, queue_size = 5)
+			self.w_stat_right_pub = rospy.Publisher(self.w_stat_right_pub_topic, PropulsionModuleStatus, queue_size = 5)
 			self.w_stat = PropulsionModuleStatus()
 
 		# setup wheel feedback topic publisher
@@ -158,13 +160,13 @@ class FroboScoutInterfaceNode():
 			self.wr_fb_vel = 0.0
 			self.wr_fb_vel_set = 0.0
 			self.wr_fb_thrust = 0.0
-			self.w_fb_left_pub = rospy.Publisher(self.w_fb_left_pub_topic, PropulsionModuleFeedback)
-			self.w_fb_right_pub = rospy.Publisher(self.w_fb_right_pub_topic, PropulsionModuleFeedback)
+			self.w_fb_left_pub = rospy.Publisher(self.w_fb_left_pub_topic, PropulsionModuleFeedback, queue_size = 5)
+			self.w_fb_right_pub = rospy.Publisher(self.w_fb_right_pub_topic, PropulsionModuleFeedback, queue_size = 5)
 			self.w_fb = PropulsionModuleFeedback()
 
 		# setup subscription topic callbacks
-		self.deadman_tout = 0
-		rospy.Subscriber(self.deadman_topic, Bool, self.on_deadman_message)
+		self.actuation_enable_tout = 0
+		rospy.Subscriber(self.actuation_enable_topic, BoolStamped, self.on_actuation_enable_message)
 		self.cmd_vel_tout = 0
 		self.cmd_vel_tout_active = True
 		self.wl_tout = 0
@@ -199,7 +201,7 @@ class FroboScoutInterfaceNode():
 		return vel_actual
 
 	def update_vel (self):
-		if self.deadman_tout < rospy.get_time() or self.wl_fb_state >= self.w_STATE_ERR or self.wr_fb_state >= self.w_STATE_ERR:
+		if self.actuation_enable_tout < rospy.get_time() or self.wl_fb_state >= self.w_STATE_ERR or self.wr_fb_state >= self.w_STATE_ERR:
 			self.vel_lin_desired = 0.0
 			self.vel_ang_desired = 0.0
 
@@ -213,11 +215,11 @@ class FroboScoutInterfaceNode():
 		self.ref_ticks_left = self.ref_vel_left*self.ticks_per_meter_left;
 		self.ref_ticks_right = self.ref_vel_right*self.ticks_per_meter_right;
 
-	def on_deadman_message(self, msg):
+	def on_actuation_enable_message(self, msg):
 		if msg.data == True:
-			self.deadman_tout = rospy.get_time() + self.deadman_tout_duration
+			self.actuation_enable_tout = rospy.get_time() + self.actuation_enable_tout_duration
 		else:
-			self.deadman_tout = 0
+			self.actuation_enable_tout = 0
 
 	def on_cmd_vel_message(self, msg):
 		# update timeout
@@ -315,7 +317,7 @@ class FroboScoutInterfaceNode():
 		self.nmea.header.stamp = rospy.Time.now()
 		self.nmea.type = 'PFSCT'
 		self.nmea.length = 1
-		if self.deadman_tout > rospy.get_time() and self.wl_tout_active == False and self.wr_tout_active == False:
+		if self.actuation_enable_tout > rospy.get_time() and self.wl_tout_active == False and self.wr_tout_active == False:
 			self.nmea.data[0] = ('%d' % (self.ref_ticks_left + 0.5))
 			self.wl_pub.publish (self.nmea)
 			self.nmea.data[0] = ('%d' % (self.ref_ticks_right + 0.5))
