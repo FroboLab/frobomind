@@ -46,6 +46,7 @@ public:
 	ros::Publisher can_rx_publisher_;
 	ros::Subscriber can_tx_subscriber_;
 
+	int initialized;
 private:
 	void canReadSome();
 	void canRxHandler(const boost::system::error_code& error, size_t bytes_transferred);

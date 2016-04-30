@@ -16,7 +16,7 @@
 
 SocketCan::SocketCan() : descriptor_(ioService_)
 {
-
+	initialized = false;
 }
 
 SocketCan::~SocketCan()
@@ -63,14 +63,14 @@ int SocketCan::initInterface(std::string interface)
 void SocketCan::processCanTxEvent(const msgs::can::ConstPtr& msg)
 {
 	can_frame tx;
-	
+
 	if (send_extended_id == true)
 	{
 		tx.can_id = msg->id | CAN_EFF_FLAG;
 	}
 	else
 	{
-		tx.can_id = msg->id;	
+		tx.can_id = msg->id;
 	}
 	// XXX
 	// Compatability with can4linux flags which are used in msgs::can
@@ -101,7 +101,7 @@ void SocketCan::canRxHandler(const boost::system::error_code& error, size_t byte
 	// this bit is removed from the id before publishing this message, instead bit 2 is set in flags
 	// XXX
     can_rx_msg_.header.stamp = ros::Time::now();
-    if (bytes_transferred)
+    if (bytes_transferred && initialized)
     {
       // move bit 31 of id downto bit 2 of flags
       can_rx_msg_.flags = (rx_.can_id & (1 << 31)) >> 29;

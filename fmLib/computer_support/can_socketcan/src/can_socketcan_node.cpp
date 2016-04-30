@@ -32,6 +32,7 @@ int main(int argc, char **argv)
   {
 	  can.can_rx_publisher_ = nh.advertise<msgs::can>(publisher_topic.c_str(),20);
 	  can.can_tx_subscriber_ = nh.subscribe(subscriber_topic.c_str(),20,&SocketCan::processCanTxEvent,&can);
+	  can.initialized = true;
 	  ros::spin();
   }
 
