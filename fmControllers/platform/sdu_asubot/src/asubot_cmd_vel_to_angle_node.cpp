@@ -26,6 +26,7 @@
  # Project: Field Robot - Vehicle Interface Computer
  # Author: Søren Hundevadt Nielsen <shn@kbm.sdu.dk>
  # Created: Aug 23, 2011 Søren Hundevadt Nielsen, Source written
+ # Updated: Feb 1, 2015 Kjeld Jensen, changed topic names.
  ****************************************************************************/
 
 #include "ros/ros.h"
@@ -36,7 +37,7 @@ ros::Timer can_tx_timer;
 msgs::steering_angle_cmd aes25_msg;
 geometry_msgs::Twist twist_cmd_out;
 ros::Publisher wheel_pub;
-ros::Publisher twist_pub;
+ros::Publisher asubot_cmd_vel_pub;
 
 double vehicle_length;
 
@@ -53,30 +54,30 @@ void twistmsgCallbackHandler(const geometry_msgs::TwistStampedConstPtr& twist_ms
 
 	twist_cmd_out.linear.x = V;
 
-	twist_pub.publish(twist_cmd_out);
+	asubot_cmd_vel_pub.publish(twist_cmd_out);
 	wheel_pub.publish(aes25_msg);
 }
 
 int main(int argc, char **argv) {
 
-	ros::init(argc, argv, "ASuBot_twist_to_angle_node");
+	ros::init(argc, argv, "asubot_cmd_vel_to_angle_node");
 
 	ros::NodeHandle nh("~");
 	ros::NodeHandle n;
 
 	std::string publisher_topic;
-	std::string twist_subscriber_topic, twist_publisher_topic;
+	std::string cmd_vel_subscriber_topic, asubot_cmd_vel_publisher_topic;
 
 	std::string ASubot_wheel_publisher_topic;
 
-	nh.param<std::string> ("steering_angle_publisher_topic", ASubot_wheel_publisher_topic,"/fmKinematics/steering_angle_cmd");
-	nh.param<std::string> ("cmd_vel_publisher_topic", twist_publisher_topic,"/fmKinematics/cmd_vel");
-	nh.param<std::string> ("twist_subscriber_topic", twist_subscriber_topic,"/fmControllers/cmd_vel");
+	nh.param<std::string> ("aes25_angle_pub", ASubot_wheel_publisher_topic,"/fmCommand/aes25_angle_cmd");
+	nh.param<std::string> ("asubot_cmd_vel_pub", asubot_cmd_vel_publisher_topic,"/fmCommand/asubot_cmd_vel");
+	nh.param<std::string> ("cmd_vel_sub", cmd_vel_subscriber_topic,"/fmCommand/cmd_vel");
 	nh.param<double> ("axle_distance_front_rear",vehicle_length,1.56);
 
 	wheel_pub = nh.advertise<msgs::steering_angle_cmd> (ASubot_wheel_publisher_topic.c_str(),1,1);
-	twist_pub = nh.advertise<geometry_msgs::Twist>(twist_publisher_topic,1,1);
-	ros::Subscriber twist_sub = nh.subscribe<geometry_msgs::TwistStamped> (twist_subscriber_topic.c_str(), 1, &twistmsgCallbackHandler);
+	asubot_cmd_vel_pub = nh.advertise<geometry_msgs::Twist>(asubot_cmd_vel_publisher_topic,1,1);
+	ros::Subscriber cmd_vel_sub = nh.subscribe<geometry_msgs::TwistStamped> (cmd_vel_subscriber_topic.c_str(), 1, &twistmsgCallbackHandler);
 
 	aes25_msg.header.stamp = ros::Time::now();
 
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
 	aes25_msg.steering_angle = 0;
 	twist_cmd_out.linear.x = 0;
 	wheel_pub.publish(aes25_msg);
-	twist_pub.publish(twist_cmd_out);
+	asubot_cmd_vel_pub.publish(twist_cmd_out);
 
 	ros::Rate r(10);
 	while (ros::ok()) {

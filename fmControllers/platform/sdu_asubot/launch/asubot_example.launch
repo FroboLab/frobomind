@@ -1,0 +1,80 @@
+<!-- ASuBot example launch file -->
+
+<launch>
+	<!-- parameters --> 
+
+
+	<group ns="fmSafety">
+	</group>
+
+	<!--group ns="fmSensors">
+		<node pkg="leine_linde_encoder" name="encoder_angle" type="leine_linde_encoder_node" respawn="true">
+			<param name="encoder_id" value="33"/>
+			<param name="publish_rate" value="20"/>
+			<param name="poll_interval_ms" value="20"/>
+			<param name="publisher_topic" value="/fmSignal/can_to_asubot" />
+			<param name="subscriber_topic" value="/fmSignal/can_from_asubot" />
+			<param name="enc_publisher_topic" value="/fmInformation/encoder_angle" />
+			<param name="invert_output" value="false"/>
+			<param name="use_current_position_as_offset" value="false"></param>
+		</node>
+	
+		<node pkg="leine_linde_encoder" name="rear_encoder_left" type="leine_linde_encoder_node" respawn="true">
+			<param name="encoder_id" value="11"/>
+			<param name="publish_rate" value="20"/>
+			<param name="poll_interval_ms" value="20"/>
+			<param name="publisher_topic" value="/fmSignal/can_to_asubot" />
+			<param name="subscriber_topic" value="/fmSignal/can_from_asubot" />
+			<param name="enc_publisher_topic" value="/fmInformation/encoder_left" />
+			<param name="invert_output" value="true"/>
+			<param name="use_current_position_as_offset" value="true"></param>
+		</node>
+	
+		<node pkg="leine_linde_encoder" name="rear_encoder_right" type="leine_linde_encoder_node" respawn="true">
+			<param name="encoder_id" value="22"/>
+			<param name="publish_rate" value="20"/>
+			<param name="poll_interval_ms" value="20"/>
+			<param name="publisher_topic" value="/fmSignal/can_to_asubot" />
+			<param name="subscriber_topic" value="/fmSignal/can_from_asubot" />
+			<param name="enc_publisher_topic" value="/fmInformation/encoder_right" />
+			<param name="invert_output" value="false"/>
+			<param name="use_current_position_as_offset" value="true"></param>
+		</node>
+	</group-->
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+		<!--node pkg="sdu_asubot" name="asubot_cmd_vel_to_angle" type="asubot_cmd_vel_to_angle_node" respawn="true" output="screen">
+			<param name="cmd_vel_sub" value="/fmCommand/cmd_vel"/>
+			<param name="asubot_cmd_vel_pub" value="/fmCommand/asubot_cmd_vel"/>
+			<param name="aes25_angle_pub" value="/fmCommand/aes25_angle_cmd"/>
+			<param name="axle_distance_front_rear" value="1.56"/>
+		</node-->
+
+		<!--node pkg="topcon_aes25" name="topcon_aes_25" type="topcon_aes25_node" respawn="true"  output="screen">
+			<param name="aes25_can_pub" value="/fmSignal/can_to_asubot"/>
+			<param name="aes25_can_sub" value="/fmSignal/can_from_asubot"/>
+			<param name="aes25_angle_sub" value="/fmCommand/aes25_angle_cmd"/>
+			<param name="status_pub" value="/fmInformation/aes25_status"/>
+			<param name="controller_period" value="0.02"/>
+		</node-->
+	</group>
+
+	<group ns="fmLib">
+		<node pkg="can_socketcan" name="can" type="can_socketcan_node" respawn="true" output="screen">
+			<param name="device" value="can0"/>
+			<param name="can_from_device_pub" value="/fmSignal/can_from_asubot"/>
+			<param name="can_to_device_sub" value="/fmSignal/can_to_asubot"/>
+			<param name="send_extended_id" value="false"/>
+		</node>
+	</group>
+</launch>
+

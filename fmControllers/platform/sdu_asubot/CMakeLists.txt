@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS msgs geometry_msgs roscpp)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and scripts declared therein get installed
-# catkin_python_setup()
+catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -45,7 +45,7 @@ find_package(catkin REQUIRED COMPONENTS msgs geometry_msgs roscpp)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
+#   INCLUDE_DIRS include
 #  LIBRARIES asubot
 #  CATKIN_DEPENDS msgs geometry_msgs roscpp
 #  DEPENDS system_lib
@@ -57,7 +57,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(include
-  ${catkin_INCLUDE_DIRS}
+#  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -66,13 +66,13 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
- add_executable(asubot_node src/ASuBot_twist_to_angle_cmd.cpp)
+ add_executable(asubot_cmd_vel_to_angle_node src/asubot_cmd_vel_to_angle_node.cpp)
 
 ## Add dependencies to the executable
- add_dependencies(asubot_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpps)
+ add_dependencies(asubot_cmd_vel_to_angle_node ${PROJECT_NAME} msgs_gencpp geometry_msgs_gencpps)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(asubot_node
+ target_link_libraries(asubot_cmd_vel_to_angle_node
    ${catkin_LIBRARIES}
  )
 
