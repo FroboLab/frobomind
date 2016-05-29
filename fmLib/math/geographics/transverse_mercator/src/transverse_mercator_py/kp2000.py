@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 #*****************************************************************************
 # KP2000 projection conversion
-# Copyright (c) 2013-2015, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
-#    * Neither the name of the copyright holder nor the names of its
-#      contributors may be used to endorse or promote products derived from
-#      this software without specific prior written permission.
+#	* Redistributions of source code must retain the above copyright
+#	  notice, this list of conditions and the following disclaimer.
+#	* Redistributions in binary form must reproduce the above copyright
+#	  notice, this list of conditions and the following disclaimer in the
+#	  documentation and/or other materials provided with the distribution.
+#	* Neither the name of the copyright holder nor the names of its
+#	  contributors may be used to endorse or promote products derived from
+#	  this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -34,18 +34,19 @@ The class utilizes the tranmerc class located in transverse_mercator.py
 The functions do not check for out of range or errors in input.
 
 geodetic_to_kp2000 (latitude, longitude, projection)
-    latitude: Accepted range is [-90;90] [deg]
-    longitude: Accepted range is [-180;180] [deg]
-    projection: kp2000j/kp2000s/kp2000b
-    Returns: easting [m], northing [m]
+	latitude: Accepted range is [-90;90] [deg]
+	longitude: Accepted range is [-180;180] [deg]
+	projection: kp2000j/kp2000s/kp2000b
+	Returns: easting [m], northing [m]
 
 kp2000_to_geodetic (easting, northing, projection)
-    projection: kp2000j/kp2000s/kp2000b
-    Returns: geodetic latitude [deg], geodetic longitude [deg]
+	projection: kp2000j/kp2000s/kp2000b
+	Returns: geodetic latitude [deg], geodetic longitude [deg]
 
 Revision
 2013-04-05 KJ Library created
 2015-03-09 KJ Minor update of the license text.
+2016-05-29 KJ Updated to support Python3.
 """
 
 # imports
@@ -65,37 +66,37 @@ scale_factor = [0.99995, 0.99995, 1.0]
 
 #*****************************************************************************
 class kp2000conv():
-    def __init__(self):
-	self.kp2000j = 0 # KP2000 Jylland (Jutland) & Fyn (Funen) projection 
-	self.kp2000s = 1 # KP2000 Sjaelland (Sealand) projection
-	self.kp2000b = 2 # KP2000 Bornholm projection
-        self.deg_to_rad = pi/180.0
-        self.rad_to_deg = 180.0/pi
-	self.central_meridian = []
-	for i in xrange(len(central_meridian)):
-	    self.central_meridian.append(central_meridian[i]*self.deg_to_rad)
-	self.tm = tranmerc()
+	def __init__(self):
+		self.kp2000j = 0 # KP2000 Jylland (Jutland) & Fyn (Funen) projection 
+		self.kp2000s = 1 # KP2000 Sjaelland (Sealand) projection
+		self.kp2000b = 2 # KP2000 Bornholm projection
+		self.deg_to_rad = pi/180.0
+		self.rad_to_deg = 180.0/pi
+		self.central_meridian = []
+		for i in range(len(central_meridian)):
+			self.central_meridian.append(central_meridian[i]*self.deg_to_rad)
+		self.tm = tranmerc()
 
-    def geodetic_to_kp2000 (self, latitude, longitude, projection):
-	# set parameters for KP2000
-	self.tm.set_params (wgs84_a, wgs84_f, origin_latitude, \
-            self.central_meridian[projection], false_easting[projection], \
-            false_northing, scale_factor[projection])
+	def geodetic_to_kp2000 (self, latitude, longitude, projection):
+		# set parameters for KP2000
+		self.tm.set_params (wgs84_a, wgs84_f, origin_latitude, \
+			self.central_meridian[projection], false_easting[projection], \
+			false_northing, scale_factor[projection])
 
-	# perform conversion and return KP2000 projection easting and northing
-	return self.tm.geodetic_to_tranmerc \
-            (latitude*self.deg_to_rad, longitude*self.deg_to_rad)
+		# perform conversion and return KP2000 projection easting and northing
+		return self.tm.geodetic_to_tranmerc \
+			(latitude*self.deg_to_rad, longitude*self.deg_to_rad)
  
-    def kp2000_to_geodetic (self, easting, northing, projection):
-	# set parameters for KP2000
-	self.tm.set_params (wgs84_a, wgs84_f, origin_latitude, \
-            self.central_meridian[projection], false_easting[projection], \
-            false_northing, scale_factor[projection])
+	def kp2000_to_geodetic (self, easting, northing, projection):
+		# set parameters for KP2000
+		self.tm.set_params (wgs84_a, wgs84_f, origin_latitude, \
+			self.central_meridian[projection], false_easting[projection], \
+			false_northing, scale_factor[projection])
 
-	# perform conversion
-        (lat,lon) = self.tm.tranmerc_to_geodetic (easting, northing)
+		# perform conversion
+		(lat,lon) = self.tm.tranmerc_to_geodetic (easting, northing)
 
-	# return geodetic latitude and longitude in degrees
-	return (lat*self.rad_to_deg, lon*self.rad_to_deg)
+		# return geodetic latitude and longitude in degrees
+		return (lat*self.rad_to_deg, lon*self.rad_to_deg)
 
 #*****************************************************************************
