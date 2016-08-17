@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboMind - Frobit plot functions
-# Copyright (c) 2013-2014, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ Revision
 2014-04-19 KJ Added support for reversing the avatar
 2014-06-19 KJ Various bug fixes
 2016-01-17 KJ Changed 'avatar_reverse' to 'caster_front'
+2016-08-18 KJ Updated draw() to canvas.draw() to support Ubuntu 16.04 and ROS Kinetic
 """
 # imports
 import matplotlib.pyplot as plt
@@ -200,6 +201,7 @@ class frobit_plot():
 
 		# draw the pose track
 		if self.plot_pose_track and self.pose_pos != []:
+
 			poseT = zip(*self.pose_pos)		
 			pose_plt = plot(poseT[0],poseT[1],'#ff0000')
 
@@ -238,8 +240,14 @@ class frobit_plot():
 			if  self.pose_yaw != []:
 				plt.figure(3)
 				pose_yaw_plt = plot(self.pose_yaw,'r')
-		if self.plot_gnss_track or self.plot_pose_track or self.plot_odometry_track or self.plot_yaw:
-			draw()
+
+		if self.plot_gnss_track or self.plot_pose_track:
+			self.fig1.canvas.draw()
+ 		if self.plot_odometry_track:
+			self.fig2.canvas.draw()
+		if self.plot_yaw:
+			self.fig3.canvas.draw()
+			
 
 	def save(self, file_name):
 		if self.plot_gnss_track or self.plot_pose_track:

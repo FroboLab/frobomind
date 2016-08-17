@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboMind Propulsion feedback node
-# Copyright (c) 2013, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2013-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -30,6 +30,7 @@
 
 Revision
 2013-11-17 KJ First version
+2016-08-18 KJ Updated draw() to canvas.draw() to support Ubuntu 16.04 and ROS Kinetic
 """
 
 import rospy
@@ -57,6 +58,7 @@ class propulsion_feedback_node():
 		self.feedback_zero_cnt = 0
 
 		ion()
+		self.fig = plt.figure(num=1)
 		subplot (211)
 		self.p_vel, = plot(self.plot_vel, "red")
 		self.p_vel_set, = plot(self.plot_vel_set, "blue")
@@ -69,7 +71,7 @@ class propulsion_feedback_node():
 		ylim([-self.max_thrust, self.max_thrust])
 		ylabel('Thrust')
 		grid (True)
-		draw() # redraw plot
+		self.fig.canvas.draw() # redraw plot
 
 		# Get topic names
 		prop_fb_topic = rospy.get_param("~propulsion_feedback_sub",'/fmInformation/wheel_feedback_right')
@@ -105,7 +107,7 @@ class propulsion_feedback_node():
 			self.p_vel.set_ydata (self.plot_vel)
 			self.p_vel_set.set_ydata (self.plot_vel_set)
 			self.p_thrust.set_ydata (self.plot_thrust)
-			draw() # redraw plot
+			self.fig.canvas.draw() # redraw plot
 			self.r.sleep()
 
 # Main function.    

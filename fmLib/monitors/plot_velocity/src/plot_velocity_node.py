@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #/****************************************************************************
 # FroboMind plot velocity node
-# Copyright (c) 2014, Kjeld Jensen <kjeld@frobomind.org>
+# Copyright (c) 2014-2016, Kjeld Jensen <kjeld@frobomind.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -11,9 +11,9 @@
 #    * Redistributions in binary form must reproduce the above copyright
 #      notice, this list of conditions and the following disclaimer in the
 #      documentation and/or other materials provided with the distribution.
-#    * Neither the name FroboMind nor the
-#      names of its contributors may be used to endorse or promote products
-#      derived from this software without specific prior written permission.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -30,6 +30,7 @@
 
 Revision
 2014-03-03 KJ First version
+2016-08-18 KJ Updated draw() to canvas.draw() to support Ubuntu 16.04 and ROS Kinetic
 """
 
 import rospy
@@ -57,6 +58,7 @@ class ROSnode():
 		self.vel_zero_cnt = 0
 
 		ion()
+		self.fig = plt.figure(num=1)
 		subplot (211)
 		self.p_vel_lin, = plot(self.plot_vel_lin, "red")
 		ylim([-self.max_lin_vel, self.max_lin_vel])
@@ -69,7 +71,7 @@ class ROSnode():
 		ylabel('Angular [rad/s]')
 		xlabel('Samples')
 		grid (True)
-		draw() # redraw plot
+		self.fig.canvas.draw() # redraw plot
 
 		# Get topic names
 		vel_topic = rospy.get_param("~velocity_sub",'/fmCommand/cmd_vel')
@@ -102,7 +104,7 @@ class ROSnode():
 			# replace plot y data
 			self.p_vel_lin.set_ydata (self.plot_vel_lin)
 			self.p_vel_ang.set_ydata (self.plot_vel_ang)
-			draw() # redraw plot
+			self.fig.canvas.draw() # redraw plot
 			self.r.sleep()
 
 # Main function.    
