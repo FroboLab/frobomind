@@ -1,0 +1,51 @@
+<!-- GT-Position serial server launch file -->
+
+<launch>
+	<group ns="fmSafety">
+	</group>
+
+	<group ns="fmSensors">
+	</group>
+
+	<group ns="fmProcessors">
+	</group>
+
+	<group ns="fmDecisionMakers">
+	</group>
+
+	<group ns="fmExecutors">
+	</group>
+
+	<group ns="fmControllers">
+	</group>
+
+	<group ns="fmLib">
+		<!-- Read GT-Position data from GT Windows computer -->
+		<node pkg="serial_nmea" name="gt_nmea_in" type="serial_nmea_node" respawn="true" output="screen">
+			<param name="nmea_from_device_pub" value="/fmData/nmea_from_gt_pos"/>
+			<param name="nmea_to_device_sub" value="/fmData/nmea_to_gt_pos"/>
+			<param name="serial_device" value="/dev/gt_pos_win"/>
+			<param name="serial_baudrate" value="115200"/>
+			<param name="use_nmea_checksum" value="true"/>
+		</node>
+
+		<!-- Run an instance of this node for each robot using the GT-Position system -->
+		<!-- Replace "robot" with the GT-Position ID for this sender -->b
+		<!-- Supported output_formats are: nmea/slip -->
+		<node pkg="gt_position" name="gt_server_robot" type="gt_serial_server_node.py" respawn="true" output="screen">
+			<param name="nmea_from_gt_pos_sub" value="/fmData/nmea_from_gt_pos"/>
+			<param name="position_ok_pub" value="/fmData/robot_position_ok"/>
+			<param name="gpgga_pub" value="/fmData/robot_gpgga"/>
+			<param name="output_format" value="nmea"/>
+			<param name="serial_device" value="/dev/gt_pos_robot"/>
+			<param name="serial_baudrate" value="57600"/>
+			<param name="robot_id" value="robot"/>
+			<param name="latitude_offset" value="55.47038"/>
+			<param name="longitude_offset" value="10.32966"/>
+			<param name="altitude_offset" value="0.0"/>
+		</node>
+	</group>
+</launch>
+
+
+

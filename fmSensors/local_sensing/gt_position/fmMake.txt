@@ -1,0 +1,5 @@
+/frobomind/fmSensors/local_sensing/gt_position
+/frobomind/fmLib/computer_support/serial_nmea
+/frobomind/fmLib/math/geographics/transverse_mercator
+/frobomind/fmLib/msgs
+
