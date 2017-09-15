@@ -131,7 +131,7 @@ class ROSnode():
 			lats = '%02d%02d%s' % (latd, int(latm), latms)
 			lons = '%03d%02d%s' % (lond, int(lonm), lonms)
 
-			msg_out = 'GPGGA,%s,%s,%c,%s,%c,1,06,1.0,%.3f,M,0.0,M,,*'  % (utc, lats, lath, lons, lonh, alt)
+			msg_out = 'GPGGA,%s,%s,%c,%s,%c,4,06,1.0,%.3f,M,0.0,M,,*'  % (utc, lats, lath, lons, lonh, alt)
 		else:
 			msg_out = 'GPGGA,%s,,,,,0,0,,,M,,M,,*' % (utc)
 
@@ -139,7 +139,7 @@ class ROSnode():
 		cs = 0
 		for i in range(len(msg_out)-3):
 		  cs ^= ord(msg_out[i])		  
-		msg_out = '$' + msg_out + format(cs, '02x')
+		msg_out = '$' + msg_out + format(cs, '02x') + '\r\n'
 		self.ser_dev.write(msg_out)
 
 		self.last_nmea_sent = rospy.get_time()
